@@ -23,17 +23,14 @@ const Login = () => {
     
     try {
       const { user, profile } = await signIn(email, password);
-      if (!user) {
-        throw new Error("Login failed - no user returned");
-      }
-      // Only navigate after we have both user and profile
-      if (profile) {
-        navigate("/dashboard");
-      } else {
+      
+      // After successful sign in, we should automatically be redirected by PrivateRoute
+      // No need to manually navigate here, as the auth state change will trigger the redirect
+      
+      if (!profile) {
         toast({
-          variant: "destructive",
-          title: "Login incomplete",
-          description: "Your profile could not be loaded. Please try again.",
+          title: "Note",
+          description: "Signing you in...",
         });
       }
     } catch (err) {

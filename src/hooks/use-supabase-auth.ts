@@ -114,17 +114,29 @@ export default function useSupabaseAuth() {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // Important: Reset loading state before starting sign in
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error || !data.user) {
-      throw error || new Error("Failed to sign in");
+      if (error || !data.user) {
+        throw error || new Error("Failed to sign in");
+      }
+
+      const profile = await fetchProfile(data.user.id);
+      
+      // Set the user state immediately
+      setUser(data.user);
+      setProfile(profile);
+      
+      return { user: data.user, profile };
+    } finally {
+      setLoading(false);
     }
-
-    const profile = await fetchProfile(data.user.id);
-    return { user: data.user, profile };
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
