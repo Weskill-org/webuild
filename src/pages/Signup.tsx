@@ -45,12 +45,37 @@ const Signup = () => {
         company_name: role === 'company' ? formData.companyName : null,
       };
 
-      await signUp(formData.email, formData.password, profileData);
-      toast({
-        title: "Account created!",
-        description: "Welcome to Webuild. You can now access your dashboard.",
-      });
-      navigate("/dashboard");
+      const res: any = await signUp(formData.email, formData.password, profileData);
+
+      // If signUp requires email confirmation, auth user may be null
+      if (res?.requiresConfirmation) {
+        toast({
+          title: "Confirm your email",
+          description: "We sent you a confirmation email. Please confirm your address before signing in.",
+        });
+        navigate("/login");
+        return;
+      }
+
+      if (res?.profileError) {
+        // Profile creation failed (likely RLS or missing session). Instruct user to sign in after confirming email
+        toast({
+          variant: "destructive",
+          title: "Account created — profile incomplete",
+          description: "Your authentication account was created, but we couldn't create your profile automatically. Please sign in after confirming your email and complete your profile in Settings.",
+        });
+        navigate("/login");
+        return;
+      }
+
+      if (res?.user) {
+        toast({
+          title: "Account created!",
+          description: "Welcome to Webuild. Redirecting to your dashboard.",
+        });
+        navigate("/dashboard");
+        return;
+      }
     } catch (err) {
       console.error("Signup failed:", err);
       toast({

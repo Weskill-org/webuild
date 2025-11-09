@@ -62,21 +62,34 @@ export default function useSupabaseAuth() {
       password,
     });
 
-    if (authError || !authData.user) {
-      throw authError || new Error("Failed to create user");
+    if (authError) {
+      throw authError;
     }
 
-    // Create profile
+    // If the signup flow requires email confirmation, `authData.user` may be null
+    // and no session will be available. In that case we should not attempt to insert
+    // into `profiles` (RLS will block it). Return an object indicating confirmation is required.
+    if (!authData.user) {
+      return { user: null, requiresConfirmation: true } as const;
+    }
+
+    const user = authData.user;
+
+    // Try to create profile. This may fail if RLS/policies require auth.uid() to match and
+    // the client isn't authenticated yet (depending on your Supabase settings). If profile
+    // insertion fails, return the error so the UI can surface it and the user can retry
+    // after confirming email / signing in.
     const { error: profileError } = await supabase
       .from("profiles")
-      .insert([{ id: authData.user.id, ...profileData }]);
+      .insert([{ id: user.id, ...profileData }]);
 
     if (profileError) {
-      // TODO: Should probably delete the auth user if profile creation fails
-      throw profileError;
+      // Return a structured error instead of throwing so the UI can handle flows where
+      // profile creation must happen after email confirmation or from an authenticated session.
+      return { user, profileError } as const;
     }
 
-    return authData.user;
+    return { user } as const;
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
