@@ -15,11 +15,15 @@ import {
   DollarSign
 } from "lucide-react";
 import useRealtime from "@/hooks/use-realtime";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { projects, messages, wallets, transactions, certificates, activeProjectsCount, completedCount, walletBalance, unreadMessages } = useRealtime();
+  const navigate = useNavigate();
+  const { signOut, profile } = useAuth() as any;
 
   const stats = [
     { label: "Active Projects", value: String(activeProjectsCount), icon: TrendingUp, color: "text-blue-600" },
@@ -40,20 +44,26 @@ const Dashboard = () => {
             <span className="text-xl font-bold">Webuild</span>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <MessageSquare className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-5 h-5" />
-            </Button>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <span className="text-white font-medium">JD</span>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')}>
+                <Bell className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/messages')}>
+                <MessageSquare className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+                <Settings className="w-5 h-5" />
+              </Button>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate('/settings')}
+                onKeyDown={(e) => e.key === 'Enter' && navigate('/settings')}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center cursor-pointer"
+              >
+                <span className="text-white font-medium">{profile?.full_name ? profile.full_name.split(' ').map(n=>n[0]).slice(0,2).join('') : 'Me'}</span>
+              </div>
             </div>
-          </div>
         </div>
       </header>
 
