@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import ProfileSettings from "./pages/ProfileSettings";
+import Notifications from "./pages/Notifications";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<ProfileSettings />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/messages" element={<Messages />} />
               {/* Add other protected routes here */}
             </Route>
 
