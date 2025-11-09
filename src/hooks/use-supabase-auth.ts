@@ -114,17 +114,32 @@ export default function useSupabaseAuth() {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    console.log('Starting sign in process...');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error || !data.user) {
-      throw error || new Error("Failed to sign in");
+      console.log('Sign in response:', { data, error });
+
+      if (error) {
+        console.error('Supabase auth error:', error);
+        throw error;
+      }
+
+      if (!data.user) {
+        console.error('No user returned from sign in');
+        throw new Error("Failed to sign in - no user returned");
+      }
+
+      console.log('Setting user state:', data.user);
+      setUser(data.user);
+      return data.user;
+    } catch (err) {
+      console.error('Sign in error:', err);
+      throw err;
     }
-
-    setUser(data.user);
-    return data.user;
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
