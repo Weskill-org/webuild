@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import useFirebaseAuth from "@/hooks/use-firebase-auth";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle } = useFirebaseAuth();
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "student";
 
@@ -22,9 +24,21 @@ const Signup = () => {
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement Firebase authentication
-    console.log("Signup with:", formData, "Role:", role);
-    navigate("/dashboard");
+    // Simple client-side validation
+    if (formData.password !== formData.confirmPassword) {
+      console.error("Passwords do not match");
+      return;
+    }
+
+    (async () => {
+      try {
+        await signUp(formData.email, formData.password);
+        // TODO: persist additional profile info (role, name, etc.)
+        navigate("/dashboard");
+      } catch (err) {
+        console.error("Signup failed", err);
+      }
+    })();
   };
 
   const getRoleTitle = () => {
@@ -145,7 +159,14 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button type="button" variant="outline" className="w-full">
+            <Button type="button" variant="outline" className="w-full" onClick={async () => {
+              try {
+                await signInWithGoogle();
+                navigate('/dashboard');
+              } catch (err) {
+                console.error('Google sign up error', err);
+              }
+            }}>
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"

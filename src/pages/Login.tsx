@@ -5,17 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useFirebaseAuth from "@/hooks/use-firebase-auth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn, signInWithGoogle } = useFirebaseAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement Firebase authentication
-    console.log("Login with:", email, password);
-    navigate("/dashboard");
+    // Use Firebase auth hook to sign in
+    (async () => {
+      try {
+        await signIn(email, password);
+        navigate("/dashboard");
+      } catch (err) {
+        console.error("Login failed", err);
+        // TODO: show UI error (toast)
+      }
+    })();
   };
 
   return (
@@ -86,7 +95,14 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="button" variant="outline" className="w-full">
+            <Button type="button" variant="outline" className="w-full" onClick={async () => {
+              try {
+                await signInWithGoogle();
+                navigate('/dashboard');
+              } catch (err) {
+                console.error('Google sign in error', err);
+              }
+            }}>
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
