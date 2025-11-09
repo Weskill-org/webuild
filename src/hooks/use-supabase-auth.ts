@@ -1,0 +1,163 @@
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+
+export default function useSupabaseAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      setLoading(false);
+      return null;
+    }
+
+    setProfile(data);
+    setLoading(false);
+    return data;
+  };
+
+  const signUp = useCallback(async (email: string, password: string, profileData: Omit<ProfileInsert, "id">) => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError || !authData.user) {
+      throw authError || new Error("Failed to create user");
+    }
+
+    // Create profile
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert([{ id: authData.user.id, ...profileData }]);
+
+    if (profileError) {
+      // TODO: Should probably delete the auth user if profile creation fails
+      throw profileError;
+    }
+
+    return authData.user;
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.user) {
+      throw error || new Error("Failed to sign in");
+    }
+
+    const profile = await fetchProfile(data.user.id);
+    return { user: data.user, profile };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + "/auth/callback"
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }, []);
+
+  const signOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  }, []);
+
+  const updateProfile = useCallback(async (updates: Partial<Omit<Profile, "id">>) => {
+    if (!user) throw new Error("No user logged in");
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    setProfile(data);
+    return data;
+  }, [user]);
+
+  const uploadAvatar = useCallback(async (file: File) => {
+    if (!user) throw new Error("No user logged in");
+    if (!file) throw new Error("No file provided");
+
+    const fileExt = file.name.split('.').pop();
+    const filePath = `avatars/${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // Create a public URL (bucket must be public) or use signed URL if private
+    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = publicData?.publicUrl ?? null;
+
+    // Persist logo_url to profile
+    await updateProfile({ logo_url: publicUrl });
+    return publicUrl;
+  }, [user, updateProfile]);
+
+  return {
+    user,
+    profile,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    signInWithGoogle,
+    updateProfile,
+  } as const;
+}

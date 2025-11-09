@@ -14,45 +14,18 @@ import {
   Clock,
   DollarSign
 } from "lucide-react";
+import useRealtime from "@/hooks/use-realtime";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const projects = [
-    {
-      id: 1,
-      title: "E-commerce Website Development",
-      company: "TechCorp Solutions",
-      budget: "$2,000 - $3,000",
-      duration: "3 months",
-      skills: ["React", "Node.js", "MongoDB"],
-      applicants: 12
-    },
-    {
-      id: 2,
-      title: "Mobile App UI/UX Design",
-      company: "StartupHub",
-      budget: "$1,500 - $2,500",
-      duration: "2 months",
-      skills: ["Figma", "UI/UX", "Prototyping"],
-      applicants: 8
-    },
-    {
-      id: 3,
-      title: "AI Chatbot Integration",
-      company: "InnovateLabs",
-      budget: "$3,000 - $5,000",
-      duration: "4 months",
-      skills: ["Python", "TensorFlow", "NLP"],
-      applicants: 15
-    }
-  ];
+  const { projects, messages, wallets, transactions, certificates, activeProjectsCount, completedCount, walletBalance, unreadMessages } = useRealtime();
 
   const stats = [
-    { label: "Active Projects", value: "2", icon: TrendingUp, color: "text-blue-600" },
-    { label: "Completed", value: "8", icon: Award, color: "text-green-600" },
-    { label: "Wallet Balance", value: "$2,450", icon: DollarSign, color: "text-purple-600" },
-    { label: "Hours Worked", value: "156", icon: Clock, color: "text-orange-600" }
+    { label: "Active Projects", value: String(activeProjectsCount), icon: TrendingUp, color: "text-blue-600" },
+    { label: "Completed", value: String(completedCount), icon: Award, color: "text-green-600" },
+    { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-purple-600" },
+    { label: "Unread Messages", value: String(unreadMessages), icon: MessageSquare, color: "text-orange-600" }
   ];
 
   return (
@@ -132,39 +105,43 @@ const Dashboard = () => {
           </div>
 
           <div className="grid gap-4">
-            {projects.map((project) => (
-              <Card key={project.id} className="p-6 hover:shadow-lg transition-all duration-300">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                    <p className="text-muted-foreground">{project.company}</p>
+            {projects && projects.length > 0 ? (
+              projects.map((project: any) => (
+                <Card key={project.id} className="p-6 hover:shadow-lg transition-all duration-300">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">{project.title ?? 'Untitled project'}</h3>
+                      <p className="text-muted-foreground">{project.company ?? project.owner_name ?? project.owner_id}</p>
+                    </div>
+                    <Badge variant="secondary">{project.applicants ?? project.applicant_count ?? 0} applicants</Badge>
                   </div>
-                  <Badge variant="secondary">{project.applicants} applicants</Badge>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <DollarSign className="w-4 h-4" />
-                    {project.budget}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <DollarSign className="w-4 h-4" />
+                      {project.budget ?? project.budget_range ?? '—'}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      {project.duration ?? project.estimated_duration ?? '—'}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    {project.duration}
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {(project.skills ?? []).map((skill: string, index: number) => (
+                      <Badge key={index} variant="outline">{skill}</Badge>
+                    ))}
                   </div>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {project.skills.map((skill, index) => (
-                    <Badge key={index} variant="outline">{skill}</Badge>
-                  ))}
-                </div>
-
-                <div className="flex gap-3">
-                  <Button className="flex-1">Apply Now</Button>
-                  <Button variant="outline">View Details</Button>
-                </div>
-              </Card>
-            ))}
+                  <div className="flex gap-3">
+                    <Button className="flex-1">Apply Now</Button>
+                    <Button variant="outline">View Details</Button>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="p-6">No projects found</Card>
+            )}
           </div>
         </div>
       </div>

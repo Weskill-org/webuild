@@ -14,7 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          role: 'company' | 'student' | 'campus'
+          university: string | null
+          company_name: string | null
+          website: string | null
+          logo_url: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          role: 'company' | 'student' | 'campus'
+          university?: string | null
+          company_name?: string | null
+          website?: string | null
+          logo_url?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          role?: 'company' | 'student' | 'campus'
+          university?: string | null
+          company_name?: string | null
+          website?: string | null
+          logo_url?: string | null
+          created_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

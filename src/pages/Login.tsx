@@ -5,26 +5,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useFirebaseAuth from "@/hooks/use-firebase-auth";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useFirebaseAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Use Firebase auth hook to sign in
-    (async () => {
-      try {
-        await signIn(email, password);
-        navigate("/dashboard");
-      } catch (err) {
-        console.error("Login failed", err);
-        // TODO: show UI error (toast)
-      }
-    })();
+    setLoading(true);
+    
+    try {
+      await signIn(email, password);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login failed", err);
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Please check your credentials and try again",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

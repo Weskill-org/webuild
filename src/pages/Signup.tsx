@@ -5,11 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import useFirebaseAuth from "@/hooks/use-firebase-auth";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signUp, signInWithGoogle } = useFirebaseAuth();
+  const { signUp, signInWithGoogle } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "student";
 
@@ -22,23 +25,42 @@ const Signup = () => {
     universityName: ""
   });
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple client-side validation
     if (formData.password !== formData.confirmPassword) {
-      console.error("Passwords do not match");
+      toast({
+        variant: "destructive",
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match and try again.",
+      });
       return;
     }
 
-    (async () => {
-      try {
-        await signUp(formData.email, formData.password);
-        // TODO: persist additional profile info (role, name, etc.)
-        navigate("/dashboard");
-      } catch (err) {
-        console.error("Signup failed", err);
-      }
-    })();
+    setLoading(true);
+    try {
+      const profileData = {
+        role,
+        full_name: role === 'student' ? formData.fullName : null,
+        university: role === 'campus' ? formData.universityName : null,
+        company_name: role === 'company' ? formData.companyName : null,
+      };
+
+      await signUp(formData.email, formData.password, profileData);
+      toast({
+        title: "Account created!",
+        description: "Welcome to Webuild. You can now access your dashboard.",
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Signup failed:", err);
+      toast({
+        variant: "destructive",
+        title: "Signup failed",
+        description: err instanceof Error ? err.message : "Please try again or contact support",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getRoleTitle = () => {
