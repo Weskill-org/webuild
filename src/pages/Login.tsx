@@ -22,8 +22,20 @@ const Login = () => {
     setLoading(true);
     
     try {
-      await signIn(email, password);
-      navigate("/dashboard");
+      const { user, profile } = await signIn(email, password);
+      if (!user) {
+        throw new Error("Login failed - no user returned");
+      }
+      // Only navigate after we have both user and profile
+      if (profile) {
+        navigate("/dashboard");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login incomplete",
+          description: "Your profile could not be loaded. Please try again.",
+        });
+      }
     } catch (err) {
       console.error("Login failed", err);
       toast({
@@ -104,14 +116,27 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="button" variant="outline" className="w-full" onClick={async () => {
-              try {
-                await signInWithGoogle();
-                navigate('/dashboard');
-              } catch (err) {
-                console.error('Google sign in error', err);
-              }
-            }}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const data = await signInWithGoogle();
+                  // Google OAuth will redirect, no need to navigate
+                  console.log('Google sign in started:', data);
+                } catch (err) {
+                  console.error('Google sign in error', err);
+                  toast({
+                    variant: "destructive",
+                    title: "Google Sign In Failed",
+                    description: err instanceof Error ? err.message : "Could not sign in with Google",
+                  });
+                  setLoading(false);
+                }
+              }}>
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
