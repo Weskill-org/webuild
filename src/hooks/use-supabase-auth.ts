@@ -12,29 +12,50 @@ export default function useSupabaseAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+    // Get initial session (wrapped to ensure loading is cleared)
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('getSession error', error);
+        }
+
+        const session = (data as any)?.session;
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error('getSession exception', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    // Listen for auth changes
+    const onAuth = supabase.auth.onAuthStateChange(async (event, session) => {
+      try {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error('onAuthStateChange handler error', err);
+      } finally {
         setLoading(false);
       }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
+    const subscription = (onAuth as any)?.data?.subscription ?? (onAuth as any)?.subscription ?? onAuth;
 
     return () => {
-      subscription.unsubscribe();
+      try {
+        subscription?.unsubscribe?.();
+      } catch (err) {
+        // ignore
+      }
     };
   }, []);
 
