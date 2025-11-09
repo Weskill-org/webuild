@@ -14,47 +14,34 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string
-          full_name: string | null
-          role: 'company' | 'student' | 'campus'
-          university: string | null
-          company_name: string | null
-          website: string | null
-          logo_url: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id: string
-          full_name?: string | null
-          role: 'company' | 'student' | 'campus'
-          university?: string | null
-          company_name?: string | null
-          website?: string | null
-          logo_url?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          full_name?: string | null
-          role?: 'company' | 'student' | 'campus'
-          university?: string | null
-          company_name?: string | null
-          website?: string | null
-          logo_url?: string | null
-          created_at?: string | null
-        }
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_id_by_firebase_uid: {
+        Args: { _firebase_uid: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "student" | "company" | "campus" | "admin"
+      application_status: "pending" | "accepted" | "rejected" | "withdrawn"
+      project_status:
+        | "draft"
+        | "open"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      transaction_type: "credit" | "debit" | "commission" | "withdrawal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -181,6 +168,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["student", "company", "campus", "admin"],
+      application_status: ["pending", "accepted", "rejected", "withdrawn"],
+      project_status: [
+        "draft",
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      transaction_type: ["credit", "debit", "commission", "withdrawal"],
+    },
   },
 } as const
