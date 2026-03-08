@@ -12,14 +12,13 @@ import {
   MessageSquare,
   Briefcase,
   PlusCircle,
-  Users,
-  BookOpen,
-  BarChart3,
 } from "lucide-react";
 import useRealtime from "@/hooks/use-realtime";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import DashboardLayout from "@/components/DashboardLayout";
+import EarningsChart from "@/components/EarningsChart";
+import TopCompanies from "@/components/TopCompanies";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,6 +31,7 @@ const Dashboard = () => {
     walletBalance,
     unreadMessages,
     certificates,
+    transactions,
   } = useRealtime();
 
   const displayName = profile?.full_name || profile?.company_name || profile?.university || "there";
@@ -54,9 +54,9 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: "Active Projects", value: activeProjectsCount, icon: TrendingUp, color: "text-primary" },
-          { label: "Completed", value: completedCount, icon: Award, color: "text-green-600" },
-          { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-purple-600" },
-          { label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-orange-600" },
+          { label: "Completed", value: completedCount, icon: Award, color: "text-primary" },
+          { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-primary" },
+          { label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-primary" },
         ].map((stat, i) => (
           <Card key={i} className="p-5">
             <div className="flex items-center justify-between">
@@ -81,6 +81,25 @@ const Dashboard = () => {
           </Button>
         </div>
       )}
+
+      {/* Widgets row */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <EarningsChart transactions={transactions} />
+        {profile?.role === "student" && <TopCompanies />}
+        {profile?.role === "campus" && (
+          <Card className="p-6">
+            <h3 className="font-semibold mb-3">Campus Quick Actions</h3>
+            <div className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/batches")}>
+                Manage Batches
+              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/students")}>
+                Manage Students
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
 
       {/* Search */}
       <div className="mb-6">
@@ -115,7 +134,7 @@ const Dashboard = () => {
               .filter(p => !searchQuery || p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
               .slice(0, 5)
               .map((project) => (
-                <Card key={project.id} className="p-5 hover:shadow-md transition-shadow">
+                <Card key={project.id} className="p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-lg font-semibold mb-1">{project.title}</h3>
@@ -137,19 +156,12 @@ const Dashboard = () => {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 mb-4">
+                  <div className="flex flex-wrap gap-1.5">
                     {(project.required_skills ?? []).map((skill, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
                         {skill}
                       </Badge>
                     ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {profile?.role === "student" && (
-                      <Button size="sm" className="flex-1">Apply Now</Button>
-                    )}
-                    <Button size="sm" variant="outline">View Details</Button>
                   </div>
                 </Card>
               ))

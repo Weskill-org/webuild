@@ -1,0 +1,190 @@
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { BookOpen, PlusCircle, Loader2, Users, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/components/ui/use-toast";
+import DashboardLayout from "@/components/DashboardLayout";
+
+interface Batch {
+  id: string;
+  campus_id: string;
+  name: string;
+  department: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
+}
+
+const Batches = () => {
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ name: "", department: "", start_date: "", end_date: "" });
+
+  const fetchBatches = async () => {
+    if (!profile) return;
+    setLoading(true);
+    const { data } = await supabase.from("batches").select("*").eq("campus_id", profile.id).order("created_at", { ascending: false });
+    const batchList = (data as unknown as Batch[]) ?? [];
+    setBatches(batchList);
+
+    // Get student counts
+    if (batchList.length > 0) {
+      const counts: Record<string, number> = {};
+      for (const b of batchList) {
+        const { count } = await supabase.from("batch_students").select("*", { count: "exact", head: true }).eq("batch_id", b.id);
+        counts[b.id] = count ?? 0;
+      }
+      setStudentCounts(counts);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBatches();
+  }, [profile]);
+
+  const handleCreate = async () => {
+    if (!profile || !form.name.trim()) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("batches").insert({
+        campus_id: profile.id,
+        name: form.name,
+        department: form.department || null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+      });
+      if (error) throw error;
+      toast({ title: "Batch created!" });
+      setCreateOpen(false);
+      setForm({ name: "", department: "", start_date: "", end_date: "" });
+      fetchBatches();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("batches").delete().eq("id", id);
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+      return;
+    }
+    setBatches((prev) => prev.filter((b) => b.id !== id));
+    toast({ title: "Batch deleted" });
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Batches</h1>
+            <p className="text-muted-foreground">Manage your campus batches and student groups</p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <PlusCircle className="w-4 h-4" />
+            New Batch
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : batches.length === 0 ? (
+          <Card className="p-8 text-center">
+            <BookOpen className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-muted-foreground mb-3">No batches created yet</p>
+            <Button onClick={() => setCreateOpen(true)}>Create Your First Batch</Button>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {batches.map((batch) => (
+              <Card key={batch.id} className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">{batch.name}</h3>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                      {batch.department && <span>{batch.department}</span>}
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {studentCounts[batch.id] ?? 0} students
+                      </span>
+                    </div>
+                    {(batch.start_date || batch.end_date) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {batch.start_date && new Date(batch.start_date).toLocaleDateString()}
+                        {batch.start_date && batch.end_date && " → "}
+                        {batch.end_date && new Date(batch.end_date).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(batch.id)}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Batch</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Batch Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., CS Batch 2026" />
+            </div>
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="e.g., Computer Science" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={submitting || !form.name.trim()}>
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Create Batch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
+  );
+};
+
+export default Batches;
