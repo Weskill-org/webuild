@@ -33,34 +33,37 @@ export default function useRealtime() {
   ) => {
     const { eventType, new: newRow, old: oldRow } = payload;
 
-    const updater = <T extends { id: string }>(arr: T[], setArr: (v: T[]) => void) => {
-      if (eventType === 'INSERT' && newRow) {
-        setArr([newRow as unknown as T, ...arr]);
-      } else if (eventType === 'UPDATE' && newRow) {
-        setArr(arr.map((r) => (r.id === newRow.id ? newRow as unknown as T : r)));
-      } else if (eventType === 'DELETE' && oldRow) {
-        setArr(arr.filter((r) => r.id !== oldRow.id));
-      }
+    const updater = <T extends { id: string }>(setArr: React.Dispatch<React.SetStateAction<T[]>>) => {
+      setArr((prev) => {
+        if (eventType === 'INSERT' && newRow) {
+          return [newRow as unknown as T, ...prev];
+        } else if (eventType === 'UPDATE' && newRow) {
+          return prev.map((r) => (r.id === newRow.id ? newRow as unknown as T : r));
+        } else if (eventType === 'DELETE' && oldRow) {
+          return prev.filter((r) => r.id !== oldRow.id);
+        }
+        return prev;
+      });
     };
 
     switch (table) {
       case 'projects':
-        updater(projects, setProjects);
+        updater(setProjects);
         break;
       case 'messages':
-        updater(messages, setMessages);
+        updater(setMessages);
         break;
       case 'wallets':
-        updater(wallets, setWallets);
+        updater(setWallets);
         break;
       case 'transactions':
-        updater(transactions, setTransactions);
+        updater(setTransactions);
         break;
       case 'certificates':
-        updater(certificates, setCertificates);
+        updater(setCertificates);
         break;
     }
-  }, [projects, messages, wallets, transactions, certificates]);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
