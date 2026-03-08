@@ -15,6 +15,11 @@ import Dashboard from "./pages/Dashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
+import Projects from "./pages/Projects";
+import CreateProject from "./pages/CreateProject";
+import ProjectMarketplace from "./pages/ProjectMarketplace";
+import Wallet from "./pages/Wallet";
+import Certificates from "./pages/Certificates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +45,11 @@ const App = () => (
               <Route path="/settings" element={<ProfileSettings />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/new" element={<CreateProject />} />
+              <Route path="/marketplace" element={<ProjectMarketplace />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/certificates" element={<Certificates />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
