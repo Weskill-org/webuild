@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -20,28 +20,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_id_by_firebase_uid: {
-        Args: { _firebase_uid: string }
-        Returns: string
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "student" | "company" | "campus" | "admin"
-      application_status: "pending" | "accepted" | "rejected" | "withdrawn"
-      project_status:
-        | "draft"
-        | "open"
-        | "in_progress"
-        | "completed"
-        | "cancelled"
-      transaction_type: "credit" | "debit" | "commission" | "withdrawal"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -168,17 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["student", "company", "campus", "admin"],
-      application_status: ["pending", "accepted", "rejected", "withdrawn"],
-      project_status: [
-        "draft",
-        "open",
-        "in_progress",
-        "completed",
-        "cancelled",
-      ],
-      transaction_type: ["credit", "debit", "commission", "withdrawal"],
-    },
+    Enums: {},
   },
 } as const
