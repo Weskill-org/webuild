@@ -78,6 +78,8 @@ export default function useSupabaseAuth() {
         data: {
           full_name: profileData.full_name,
           role: profileData.role,
+          company_name: profileData.company_name,
+          university: profileData.university,
         },
         emailRedirectTo: window.location.origin,
       }
