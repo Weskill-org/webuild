@@ -9,6 +9,8 @@ import Landing from "./pages/Landing";
 import RoleSelection from "./pages/RoleSelection";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import Notifications from "./pages/Notifications";
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected Routes */}
             <Route element={<PrivateRoute />}>
@@ -36,10 +40,8 @@ const App = () => (
               <Route path="/settings" element={<ProfileSettings />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/messages" element={<Messages />} />
-              {/* Add other protected routes here */}
             </Route>
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

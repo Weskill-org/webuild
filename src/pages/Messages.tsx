@@ -1,46 +1,48 @@
-import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import useRealtime from "@/hooks/use-realtime";
 import { useAuth } from "@/providers/AuthProvider";
+import DashboardLayout from "@/components/DashboardLayout";
+import { MessageSquare } from "lucide-react";
 
 const Messages = () => {
-  const { messages } = useRealtime() as any;
-  const { profile } = useAuth() as any;
-
-  useEffect(() => {
-    // could mark messages as read when opened (left as TODO)
-  }, []);
+  const { messages } = useRealtime();
+  const { profile } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Messages</h1>
+        <h1 className="text-2xl font-bold mb-6">Messages</h1>
 
-        <div className="grid gap-4">
-          {(!messages || messages.length === 0) && (
-            <Card className="p-6">No messages yet</Card>
-          )}
-
-          {messages && messages.map((m: any) => (
-            <Card key={m.id} className="p-4">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-medium">{m.subject ?? m.body?.slice(0, 60)}</p>
-                  <p className="text-sm text-muted-foreground">From: {m.sender_name ?? m.sender_id}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</p>
-                  <div className="mt-2">
-                    <Button variant="ghost" size="sm">Open</Button>
+        <div className="grid gap-3">
+          {messages.length === 0 ? (
+            <Card className="p-8 text-center">
+              <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">No messages yet</p>
+            </Card>
+          ) : (
+            messages.map((m) => (
+              <Card key={m.id} className={`p-4 ${!m.read && m.recipient_id === profile?.id ? "border-primary/30 bg-primary/5" : ""}`}>
+                <div className="flex justify-between items-start">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{m.subject || m.body.slice(0, 60)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {m.sender_id === profile?.id ? "To: " : "From: "}{m.sender_id === profile?.id ? m.recipient_id : m.sender_id}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(m.created_at).toLocaleDateString()}
+                    </p>
+                    <Button variant="ghost" size="sm" className="mt-1">Open</Button>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
