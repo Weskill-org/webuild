@@ -72,7 +72,7 @@ const VerifyCertificate = () => {
             </div>
             <div className="flex items-center justify-center gap-2 mb-4">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>
+              <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Verified</Badge>
             </div>
             <h1 className="text-2xl font-bold mb-6">Certificate of Completion</h1>
             <div className="space-y-3 text-left">

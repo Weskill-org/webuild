@@ -16,10 +16,14 @@ import ProfileSettings from "./pages/ProfileSettings";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
 import CreateProject from "./pages/CreateProject";
 import ProjectMarketplace from "./pages/ProjectMarketplace";
 import Wallet from "./pages/Wallet";
 import Certificates from "./pages/Certificates";
+import Batches from "./pages/Batches";
+import Students from "./pages/Students";
+import VerifyCertificate from "./pages/VerifyCertificate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +42,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify/:uid" element={<VerifyCertificate />} />
             
             {/* Protected Routes */}
             <Route element={<PrivateRoute />}>
@@ -47,9 +52,12 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<CreateProject />} />
+              <Route path="/projects/:id" element={<ProjectDetails />} />
               <Route path="/marketplace" element={<ProjectMarketplace />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/certificates" element={<Certificates />} />
+              <Route path="/batches" element={<Batches />} />
+              <Route path="/students" element={<Students />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

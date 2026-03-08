@@ -121,7 +121,7 @@ const ProjectDetails = () => {
       toast({ variant: "destructive", title: "Error", description: error.message });
       return;
     }
-    setApplications((prev) => prev.map((a) => (a.id === appId ? { ...a, status } : a)));
+    setApplications((prev) => prev.map((a) => (a.id === appId ? { ...a, status: status as ProjectApplication["status"] } : a)));
     toast({ title: `Application ${status}` });
   };
 
