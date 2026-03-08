@@ -17,6 +17,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
+import PublicProfile from "./pages/PublicProfile";
 import CreateProject from "./pages/CreateProject";
 import ProjectMarketplace from "./pages/ProjectMarketplace";
 import Wallet from "./pages/Wallet";
