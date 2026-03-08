@@ -92,6 +92,24 @@ const ProjectDetails = () => {
         }
       }
 
+      // Check if user already left a review and find accepted applicant
+      if (profile && projRes.data) {
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("*")
+          .eq("project_id", id)
+          .eq("reviewer_id", profile.id)
+          .maybeSingle();
+        if (existingReview) setMyReview(existingReview as unknown as Review);
+
+        // Find accepted applicant for review targeting
+        const accepted = apps.find((a) => a.status === "accepted");
+        if (accepted) {
+          const { data: accProfile } = await supabase.from("profiles").select("*").eq("id", accepted.applicant_id).single();
+          if (accProfile) setAcceptedApplicant(accProfile as unknown as Profile);
+        }
+      }
+
       setLoading(false);
     })();
   }, [id, profile]);
