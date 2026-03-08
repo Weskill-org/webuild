@@ -59,7 +59,16 @@ const Projects = () => {
     setSaving(true);
     const { error } = await supabase
       .from("projects")
-      .update({ title: editTitle, description: editDescription })
+      .update({
+        title: editTitle,
+        description: editDescription,
+        budget_min: editBudgetMin,
+        budget_max: editBudgetMax,
+        duration: editDuration || null,
+        category: editCategory || null,
+        required_skills: editSkills.split(",").map(s => s.trim()).filter(Boolean),
+        status: editStatus,
+      })
       .eq("id", editProject.id);
     setSaving(false);
     if (error) {
