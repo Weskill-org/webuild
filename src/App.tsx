@@ -26,6 +26,15 @@ import Batches from "./pages/Batches";
 import Students from "./pages/Students";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import AdminDashboard from "./pages/AdminDashboard";
+import Leaderboard from "./pages/Leaderboard";
+import Portfolio from "./pages/Portfolio";
+import LearningResources from "./pages/LearningResources";
+import SkillQuizzes from "./pages/SkillQuizzes";
+import ActivityFeed from "./pages/ActivityFeed";
+import Disputes from "./pages/Disputes";
+import Partnerships from "./pages/Partnerships";
+import CampusAnalytics from "./pages/CampusAnalytics";
+import BulkImport from "./pages/BulkImport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,12 +65,21 @@ const App = () => (
               <Route path="/projects/new" element={<CreateProject />} />
               <Route path="/projects/:id" element={<ProjectDetails />} />
               <Route path="/profile/:id" element={<PublicProfile />} />
+              <Route path="/portfolio/:id" element={<Portfolio />} />
               <Route path="/marketplace" element={<ProjectMarketplace />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/batches" element={<Batches />} />
               <Route path="/students" element={<Students />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/resources" element={<LearningResources />} />
+              <Route path="/quizzes" element={<SkillQuizzes />} />
+              <Route path="/activity" element={<ActivityFeed />} />
+              <Route path="/disputes" element={<Disputes />} />
+              <Route path="/partnerships" element={<Partnerships />} />
+              <Route path="/campus-analytics" element={<CampusAnalytics />} />
+              <Route path="/bulk-import" element={<BulkImport />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
