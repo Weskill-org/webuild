@@ -32,13 +32,13 @@ const Certificates = () => {
                     </Badge>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`/verify/${cert.certificate_uid}`, "_blank")}
+                    >
                       <ExternalLink className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-1" />
-                      PDF
+                      Verify
                     </Button>
                   </div>
                 </div>
