@@ -17,6 +17,7 @@ import {
   BookOpen,
   PlusCircle,
   Search,
+  Shield,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
