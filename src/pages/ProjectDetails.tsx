@@ -48,6 +48,10 @@ const ProjectDetails = () => {
   const [coverLetter, setCoverLetter] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [myApplication, setMyApplication] = useState<ProjectApplication | null>(null);
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [acceptedApplicant, setAcceptedApplicant] = useState<Profile | null>(null);
 
   const isOwner = profile?.id === project?.owner_id;
   const isStudent = profile?.role === "student";
