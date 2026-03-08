@@ -46,6 +46,12 @@ const Projects = () => {
     setEditProject(project);
     setEditTitle(project.title);
     setEditDescription(project.description ?? "");
+    setEditBudgetMin(project.budget_min);
+    setEditBudgetMax(project.budget_max);
+    setEditDuration(project.duration ?? "");
+    setEditCategory(project.category ?? "");
+    setEditSkills((project.required_skills ?? []).join(", "));
+    setEditStatus(project.status);
   };
 
   const handleSave = async () => {
