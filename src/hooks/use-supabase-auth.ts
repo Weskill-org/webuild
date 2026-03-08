@@ -87,8 +87,9 @@ export default function useSupabaseAuth() {
       throw authError;
     }
 
-    if (!authData.user) {
-      return { user: null, requiresConfirmation: true } as const;
+    // If there's no session, email confirmation is required
+    if (!authData.session) {
+      return { user: authData.user ?? null, requiresConfirmation: true } as const;
     }
 
     return { user: authData.user } as const;
