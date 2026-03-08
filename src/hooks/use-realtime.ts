@@ -180,7 +180,7 @@ export default function useRealtime() {
     return () => {
       channel.unsubscribe();
     };
-  }, [user, profile, applyChange]);
+  }, [user, profile?.id, profile?.role, applyChange]);
 
   const activeProjectsCount = projects.filter((p) => !p.completed).length;
   const completedCount = projects.filter((p) => p.completed).length;
