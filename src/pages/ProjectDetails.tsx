@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
 import ReviewDialog from "@/components/ReviewDialog";
 import ReviewsSection from "@/components/ReviewsSection";
+import FileDeliverables from "@/components/FileDeliverables";
 import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
 
 const ProjectDetails = () => {
