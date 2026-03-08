@@ -31,12 +31,17 @@ const Login = () => {
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login failed", err);
+      const code = err?.code;
+      let description = "Invalid email or password";
+      if (code === "email_not_confirmed") {
+        description = "Please confirm your email before logging in. Check your inbox for the confirmation link.";
+      }
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Invalid email or password",
+        description,
       });
       setLoading(false);
     }
