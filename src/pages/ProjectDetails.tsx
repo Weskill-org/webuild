@@ -412,9 +412,11 @@ const ProjectDetails = () => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{owner.company_name || owner.full_name}</p>
+                    <Link to={`/profile/${owner.id}`} className="font-medium truncate hover:text-primary transition-colors">
+                      {owner.company_name || owner.full_name}
+                    </Link>
                     {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}
