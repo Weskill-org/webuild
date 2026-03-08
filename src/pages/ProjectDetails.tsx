@@ -330,6 +330,37 @@ const ProjectDetails = () => {
                 </div>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <ReviewsSection projectId={id} title="Project Reviews" />
+
+            {/* Leave Review Button */}
+            {project.status === "completed" && profile && !myReview && (
+              (() => {
+                const canReview =
+                  (isOwner && acceptedApplicant) ||
+                  (!isOwner && myApplication?.status === "accepted");
+                if (!canReview) return null;
+                const target = isOwner
+                  ? { id: acceptedApplicant!.id, name: acceptedApplicant!.full_name || "Student" }
+                  : { id: project.owner_id, name: owner?.company_name || owner?.full_name || "Company" };
+                return (
+                  <Card className="p-6 text-center">
+                    <Star className="w-8 h-8 mx-auto mb-2 text-yellow-400" />
+                    <p className="font-semibold mb-1">How was your experience?</p>
+                    <p className="text-sm text-muted-foreground mb-4">Leave a review for {target.name}</p>
+                    <Button onClick={() => { setReviewTarget(target); setReviewOpen(true); }}>
+                      <Star className="w-4 h-4 mr-2" /> Leave Review
+                    </Button>
+                  </Card>
+                );
+              })()
+            )}
+            {myReview && (
+              <Card className="p-4 bg-primary/5 border-primary/20">
+                <p className="text-sm text-muted-foreground">✓ You've already reviewed this project</p>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar info */}
