@@ -1,17 +1,20 @@
 import { createContext, useContext, ReactNode } from 'react';
 import useSupabaseAuth from '@/hooks/use-supabase-auth';
 import type { User } from '@supabase/supabase-js';
-import type { Profile } from '@/hooks/use-supabase-auth';
+import type { Profile } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User; profile: Profile | null }>;
-  signUp: (email: string, password: string, profileData: Omit<Profile, "id" | "created_at">) => Promise<User>;
+  signUp: (email: string, password: string, profileData: Partial<Omit<Profile, "id" | "created_at">>) => Promise<{ user: User | null; requiresConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<any>;
   updateProfile: (updates: Partial<Omit<Profile, "id">>) => Promise<Profile>;
+  uploadAvatar: (file: File) => Promise<string | null>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

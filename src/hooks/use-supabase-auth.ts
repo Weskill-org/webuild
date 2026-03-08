@@ -1,18 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Profile } from "@/types/database";
 
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+export type { Profile };
 
 export default function useSupabaseAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+
+    setProfile(data as Profile);
+    return data as Profile;
+  }, []);
+
   useEffect(() => {
-    // Get initial session (wrapped to ensure loading is cleared)
     (async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -20,7 +34,7 @@ export default function useSupabaseAuth() {
           console.error('getSession error', error);
         }
 
-        const session = (data as any)?.session;
+        const session = data?.session;
         setUser(session?.user ?? null);
         if (session?.user) {
           await fetchProfile(session.user.id);
@@ -32,8 +46,7 @@ export default function useSupabaseAuth() {
       }
     })();
 
-    // Listen for auth changes
-    const onAuth = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -48,99 +61,57 @@ export default function useSupabaseAuth() {
       }
     });
 
-    const subscription = (onAuth as any)?.data?.subscription ?? (onAuth as any)?.subscription ?? onAuth;
-
     return () => {
-      try {
-        subscription?.unsubscribe?.();
-      } catch (err) {
-        // ignore
-      }
+      subscription?.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching profile:", error);
-      setLoading(false);
-      return null;
-    }
-
-    setProfile(data);
-    setLoading(false);
-    return data;
-  };
-
-  const signUp = useCallback(async (email: string, password: string, profileData: Omit<ProfileInsert, "id">) => {
+  const signUp = useCallback(async (
+    email: string, 
+    password: string, 
+    profileData: Partial<Omit<Profile, "id" | "created_at">>
+  ) => {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: profileData.full_name,
+          role: profileData.role,
+        },
+        emailRedirectTo: window.location.origin,
+      }
     });
 
     if (authError) {
       throw authError;
     }
 
-    // If the signup flow requires email confirmation, `authData.user` may be null
-    // and no session will be available. In that case we should not attempt to insert
-    // into `profiles` (RLS will block it). Return an object indicating confirmation is required.
     if (!authData.user) {
       return { user: null, requiresConfirmation: true } as const;
     }
 
-    const user = authData.user;
-
-    // Try to create profile. This may fail if RLS/policies require auth.uid() to match and
-    // the client isn't authenticated yet (depending on your Supabase settings). If profile
-    // insertion fails, return the error so the UI can surface it and the user can retry
-    // after confirming email / signing in.
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert([{ id: user.id, ...profileData }]);
-
-    if (profileError) {
-      // Return a structured error instead of throwing so the UI can handle flows where
-      // profile creation must happen after email confirmation or from an authenticated session.
-      return { user, profileError } as const;
-    }
-
-    return { user } as const;
+    return { user: authData.user } as const;
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    console.log('Starting sign in process...');
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      console.log('Sign in response:', { data, error });
-
-      if (error) {
-        console.error('Supabase auth error:', error);
-        throw error;
-      }
-
-      if (!data.user) {
-        console.error('No user returned from sign in');
-        throw new Error("Failed to sign in - no user returned");
-      }
-
-      console.log('Setting user state:', data.user);
-      setUser(data.user);
-      return data.user;
-    } catch (err) {
-      console.error('Sign in error:', err);
-      throw err;
+    if (error) {
+      throw error;
     }
-  }, []);
+
+    if (!data.user) {
+      throw new Error("Failed to sign in - no user returned");
+    }
+
+    setUser(data.user);
+    const profile = await fetchProfile(data.user.id);
+    return { user: data.user, profile };
+  }, [fetchProfile]);
 
   const signInWithGoogle = useCallback(async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -160,6 +131,8 @@ export default function useSupabaseAuth() {
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setUser(null);
+    setProfile(null);
   }, []);
 
   const updateProfile = useCallback(async (updates: Partial<Omit<Profile, "id">>) => {
@@ -173,8 +146,8 @@ export default function useSupabaseAuth() {
       .single();
 
     if (error) throw error;
-    setProfile(data);
-    return data;
+    setProfile(data as Profile);
+    return data as Profile;
   }, [user]);
 
   const uploadAvatar = useCallback(async (file: File) => {
@@ -190,14 +163,24 @@ export default function useSupabaseAuth() {
 
     if (uploadError) throw uploadError;
 
-    // Create a public URL (bucket must be public) or use signed URL if private
     const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
     const publicUrl = publicData?.publicUrl ?? null;
 
-    // Persist logo_url to profile
     await updateProfile({ logo_url: publicUrl });
     return publicUrl;
   }, [user, updateProfile]);
+
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }, []);
 
   return {
     user,
@@ -208,5 +191,8 @@ export default function useSupabaseAuth() {
     signOut,
     signInWithGoogle,
     updateProfile,
+    uploadAvatar,
+    resetPassword,
+    updatePassword,
   } as const;
 }
