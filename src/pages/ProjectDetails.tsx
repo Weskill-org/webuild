@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,12 +22,15 @@ import {
   Loader2,
   Users,
   Send,
+  Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
-import type { Project, ProjectMilestone, ProjectApplication, Profile } from "@/types/database";
+import ReviewDialog from "@/components/ReviewDialog";
+import ReviewsSection from "@/components/ReviewsSection";
+import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +48,10 @@ const ProjectDetails = () => {
   const [coverLetter, setCoverLetter] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [myApplication, setMyApplication] = useState<ProjectApplication | null>(null);
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [acceptedApplicant, setAcceptedApplicant] = useState<Profile | null>(null);
 
   const isOwner = profile?.id === project?.owner_id;
   const isStudent = profile?.role === "student";
@@ -82,6 +89,24 @@ const ProjectDetails = () => {
           const map: Record<string, Profile> = {};
           profiles.forEach((p: any) => (map[p.id] = p as Profile));
           setApplicantProfiles(map);
+        }
+      }
+
+      // Check if user already left a review and find accepted applicant
+      if (profile && projRes.data) {
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("*")
+          .eq("project_id", id)
+          .eq("reviewer_id", profile.id)
+          .maybeSingle();
+        if (existingReview) setMyReview(existingReview as unknown as Review);
+
+        // Find accepted applicant for review targeting
+        const accepted = apps.find((a) => a.status === "accepted");
+        if (accepted) {
+          const { data: accProfile } = await supabase.from("profiles").select("*").eq("id", accepted.applicant_id).single();
+          if (accProfile) setAcceptedApplicant(accProfile as unknown as Profile);
         }
       }
 
@@ -305,6 +330,37 @@ const ProjectDetails = () => {
                 </div>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <ReviewsSection projectId={id} title="Project Reviews" />
+
+            {/* Leave Review Button */}
+            {project.status === "completed" && profile && !myReview && (
+              (() => {
+                const canReview =
+                  (isOwner && acceptedApplicant) ||
+                  (!isOwner && myApplication?.status === "accepted");
+                if (!canReview) return null;
+                const target = isOwner
+                  ? { id: acceptedApplicant!.id, name: acceptedApplicant!.full_name || "Student" }
+                  : { id: project.owner_id, name: owner?.company_name || owner?.full_name || "Company" };
+                return (
+                  <Card className="p-6 text-center">
+                    <Star className="w-8 h-8 mx-auto mb-2 text-yellow-400" />
+                    <p className="font-semibold mb-1">How was your experience?</p>
+                    <p className="text-sm text-muted-foreground mb-4">Leave a review for {target.name}</p>
+                    <Button onClick={() => { setReviewTarget(target); setReviewOpen(true); }}>
+                      <Star className="w-4 h-4 mr-2" /> Leave Review
+                    </Button>
+                  </Card>
+                );
+              })()
+            )}
+            {myReview && (
+              <Card className="p-4 bg-primary/5 border-primary/20">
+                <p className="text-sm text-muted-foreground">✓ You've already reviewed this project</p>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar info */}
@@ -356,9 +412,11 @@ const ProjectDetails = () => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{owner.company_name || owner.full_name}</p>
+                    <Link to={`/profile/${owner.id}`} className="font-medium truncate hover:text-primary transition-colors">
+                      {owner.company_name || owner.full_name}
+                    </Link>
                     {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}
@@ -396,6 +454,19 @@ const ProjectDetails = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      {reviewTarget && (
+        <ReviewDialog
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          projectId={project.id}
+          reviewerId={profile!.id}
+          revieweeId={reviewTarget.id}
+          revieweeName={reviewTarget.name}
+          onReviewSubmitted={(review) => setMyReview(review)}
+        />
+      )}
     </DashboardLayout>
   );
 };

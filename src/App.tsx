@@ -17,6 +17,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
+import PublicProfile from "./pages/PublicProfile";
 import CreateProject from "./pages/CreateProject";
 import ProjectMarketplace from "./pages/ProjectMarketplace";
 import Wallet from "./pages/Wallet";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<CreateProject />} />
               <Route path="/projects/:id" element={<ProjectDetails />} />
+              <Route path="/profile/:id" element={<PublicProfile />} />
               <Route path="/marketplace" element={<ProjectMarketplace />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/certificates" element={<Certificates />} />

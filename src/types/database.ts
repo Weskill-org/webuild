@@ -110,3 +110,13 @@ export interface BatchStudent {
   student_id: string;
   joined_at: string;
 }
+
+export interface Review {
+  id: string;
+  project_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  rating: number;
+  feedback: string | null;
+  created_at: string;
+}
