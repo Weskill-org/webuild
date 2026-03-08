@@ -332,6 +332,13 @@ const ProjectDetails = () => {
               </Card>
             )}
 
+            {/* File Deliverables */}
+            {(isOwner || myApplication?.status === "accepted") && (
+              <Card className="p-6">
+                <FileDeliverables projectId={project.id} canUpload={isOwner || myApplication?.status === "accepted"} />
+              </Card>
+            )}
+
             {/* Reviews Section */}
             <ReviewsSection projectId={id} title="Project Reviews" />
 
