@@ -25,6 +25,7 @@ import Certificates from "./pages/Certificates";
 import Batches from "./pages/Batches";
 import Students from "./pages/Students";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
