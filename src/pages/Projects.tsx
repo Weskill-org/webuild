@@ -1,11 +1,24 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Briefcase, DollarSign, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, Briefcase, DollarSign, Clock, Pencil, Trash2 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import useRealtime from "@/hooks/use-realtime";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
+import type { Project } from "@/types/database";
 
 const Projects = () => {
   const { projects } = useRealtime();
@@ -14,6 +27,49 @@ const Projects = () => {
 
   const isCompany = profile?.role === "company";
   const myProjects = isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
+
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const openEdit = (project: Project) => {
+    setEditProject(project);
+    setEditTitle(project.title);
+    setEditDescription(project.description ?? "");
+  };
+
+  const handleSave = async () => {
+    if (!editProject) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("projects")
+      .update({ title: editTitle, description: editDescription })
+      .eq("id", editProject.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Project updated" });
+      setEditProject(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const { error } = await supabase.from("projects").delete().eq("id", deleteTarget.id);
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Project deleted" });
+      setDeleteTarget(null);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -71,8 +127,18 @@ const Projects = () => {
                   <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}`)}>
                     View Details
                   </Button>
-                  {isCompany && project.status === "open" && (
-                    <Button size="sm" variant="secondary">View Applicants</Button>
+                  {isCompany && project.owner_id === profile?.id && (
+                    <>
+                      <Button size="sm" variant="secondary" onClick={() => openEdit(project)} className="gap-1">
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(project)} className="gap-1">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </Button>
+                      {project.status === "open" && (
+                        <Button size="sm" variant="secondary" onClick={() => navigate(`/projects/${project.id}`)}>View Applicants</Button>
+                      )}
+                    </>
                   )}
                 </div>
               </Card>
@@ -90,6 +156,42 @@ const Projects = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editProject} onOpenChange={(o) => !o && setEditProject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>Update your project details below.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Project title" />
+            <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving || !editTitle.trim()}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. The project and all related data will be permanently removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
