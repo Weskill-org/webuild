@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
@@ -36,33 +36,30 @@ const Signup = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Password too short",
+        description: "Password must be at least 6 characters.",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const profileData = {
-        role,
+        role: role as 'student' | 'company' | 'campus',
         full_name: role === 'student' ? formData.fullName : null,
         university: role === 'campus' ? formData.universityName : null,
         company_name: role === 'company' ? formData.companyName : null,
       };
 
-      const res: any = await signUp(formData.email, formData.password, profileData);
+      const res = await signUp(formData.email, formData.password, profileData);
 
-      // If signUp requires email confirmation, auth user may be null
       if (res?.requiresConfirmation) {
         toast({
           title: "Confirm your email",
           description: "We sent you a confirmation email. Please confirm your address before signing in.",
-        });
-        navigate("/login");
-        return;
-      }
-
-      if (res?.profileError) {
-        // Profile creation failed (likely RLS or missing session). Instruct user to sign in after confirming email
-        toast({
-          variant: "destructive",
-          title: "Account created — profile incomplete",
-          description: "Your authentication account was created, but we couldn't create your profile automatically. Please sign in after confirming your email and complete your profile in Settings.",
         });
         navigate("/login");
         return;
@@ -178,6 +175,7 @@ const Signup = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
+                minLength={6}
               />
             </div>
 
@@ -193,8 +191,15 @@ const Signup = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Create My Account
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create My Account"
+              )}
             </Button>
 
             <div className="relative my-6">
@@ -206,14 +211,23 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button type="button" variant="outline" className="w-full" onClick={async () => {
-              try {
-                await signInWithGoogle();
-                navigate('/dashboard');
-              } catch (err) {
-                console.error('Google sign up error', err);
-              }
-            }}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              onClick={async () => {
+                try {
+                  await signInWithGoogle();
+                } catch (err) {
+                  console.error('Google sign up error', err);
+                  toast({
+                    variant: "destructive",
+                    title: "Google sign up failed",
+                    description: "Please try again",
+                  });
+                }
+              }}
+            >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"

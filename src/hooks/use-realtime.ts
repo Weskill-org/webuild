@@ -3,27 +3,42 @@ import { supabase } from '@/integrations/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from '@/hooks/use-toast';
+import type { Project, Message, Wallet, Transaction, Certificate } from '@/types/database';
 
 type TableName = 'projects' | 'wallets' | 'transactions' | 'messages' | 'certificates';
 
-export default function useRealtime() {
-  const { user, profile } = useAuth() as any;
-  const [projects, setProjects] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [certificates, setCertificates] = useState<any[]>([]);
+interface RealtimeRow {
+  id: string;
+  recipient_id?: string;
+  sender_id?: string;
+  owner_id?: string;
+  balance?: number;
+  completed?: boolean;
+  title?: string;
+  sender_name?: string;
+  [key: string]: any;
+}
 
-  // Helper to apply change to state
-  const applyChange = useCallback((table: TableName, payload: RealtimePostgresChangesPayload<any>) => {
+export default function useRealtime() {
+  const { user, profile } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+
+  const applyChange = useCallback((
+    table: TableName, 
+    payload: RealtimePostgresChangesPayload<RealtimeRow>
+  ) => {
     const { eventType, new: newRow, old: oldRow } = payload;
 
-    const updater = (arr: any[], setArr: (v: any[]) => void) => {
-      if (eventType === 'INSERT') {
-        setArr([newRow, ...arr]);
-      } else if (eventType === 'UPDATE') {
-        setArr(arr.map((r) => (r.id === newRow.id ? newRow : r)));
-      } else if (eventType === 'DELETE') {
+    const updater = <T extends { id: string }>(arr: T[], setArr: (v: T[]) => void) => {
+      if (eventType === 'INSERT' && newRow) {
+        setArr([newRow as unknown as T, ...arr]);
+      } else if (eventType === 'UPDATE' && newRow) {
+        setArr(arr.map((r) => (r.id === newRow.id ? newRow as unknown as T : r)));
+      } else if (eventType === 'DELETE' && oldRow) {
         setArr(arr.filter((r) => r.id !== oldRow.id));
       }
     };
@@ -54,102 +69,108 @@ export default function useRealtime() {
 
     const tables: TableName[] = ['projects', 'wallets', 'transactions', 'messages', 'certificates'];
 
-    // Subscribe to INSERT/UPDATE/DELETE for each table
     tables.forEach((table) => {
-      channel.on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
-        try {
-          const ev = payload as RealtimePostgresChangesPayload<any>;
+      channel.on(
+        'postgres_changes', 
+        { event: '*', schema: 'public', table }, 
+        (payload: RealtimePostgresChangesPayload<RealtimeRow>) => {
+          try {
+            const newRow = payload.new as RealtimeRow | null;
+            const oldRow = payload.old as RealtimeRow | null;
 
-          // Role-aware filtering
-          const newRow = ev.new ?? null;
-          const oldRow = ev.old ?? null;
+            // Messages: only care if recipient or sender is the current user
+            if (table === 'messages') {
+              const isForUser = 
+                (newRow && (newRow.recipient_id === profile?.id || newRow.sender_id === profile?.id)) || 
+                (oldRow && (oldRow.recipient_id === profile?.id || oldRow.sender_id === profile?.id));
+              if (!isForUser) return;
 
-          // Messages: only care if recipient or sender is the current user
-          if (table === 'messages') {
-            const isForUser = (newRow && (newRow.recipient_id === profile?.id || newRow.sender_id === profile?.id)) || (oldRow && (oldRow.recipient_id === profile?.id || oldRow.sender_id === profile?.id));
-            if (!isForUser) return;
-
-            // New message received for user -> toast
-            if (ev.eventType === 'INSERT' && newRow.recipient_id === profile?.id) {
-              toast({ title: 'New message', description: `From ${newRow.sender_name ?? 'someone'}` });
-            }
-          }
-
-          // Wallets & transactions: only if owner is current user
-          if (table === 'wallets' || table === 'transactions') {
-            const ownerId = newRow?.owner_id ?? oldRow?.owner_id;
-            if (ownerId !== profile?.id) return;
-
-            // Wallet balance change -> toast
-            if (table === 'wallets' && ev.eventType === 'UPDATE' && newRow && oldRow && newRow.balance !== oldRow.balance) {
-              const diff = (newRow.balance ?? 0) - (oldRow.balance ?? 0);
-              toast({ title: 'Wallet updated', description: `Balance ${diff >= 0 ? 'increased' : 'decreased'} by $${Math.abs(diff)}` });
-            }
-          }
-
-          // Projects: students see all new projects, companies see their own
-          if (table === 'projects') {
-            if (ev.eventType === 'INSERT') {
-              // New project posted
-              if (profile?.role === 'student') {
-                toast({ title: 'New project posted', description: newRow?.title });
+              if (payload.eventType === 'INSERT' && newRow?.recipient_id === profile?.id) {
+                toast({ title: 'New message', description: `From ${newRow.sender_name ?? 'someone'}` });
               }
-              // for companies we only care if it's their own project
-              if (profile?.role === 'company' && newRow?.owner_id !== profile?.id) return;
             }
 
-            if (ev.eventType === 'UPDATE' && newRow && oldRow) {
-              // Project completion
-              if (!oldRow.completed && newRow.completed) {
-                // If company owner or campus or student who applied - show toast
-                const showToUser = profile?.role === 'company' ? newRow.owner_id === profile?.id : true;
-                if (showToUser) {
-                  toast({ title: 'Project completed', description: newRow.title });
+            // Wallets & transactions: only if owner is current user
+            if (table === 'wallets' || table === 'transactions') {
+              const ownerId = newRow?.owner_id ?? oldRow?.owner_id;
+              if (ownerId !== profile?.id) return;
+
+              if (table === 'wallets' && payload.eventType === 'UPDATE' && newRow && oldRow && newRow.balance !== oldRow.balance) {
+                const diff = (newRow.balance ?? 0) - (oldRow.balance ?? 0);
+                toast({ title: 'Wallet updated', description: `Balance ${diff >= 0 ? 'increased' : 'decreased'} by $${Math.abs(diff)}` });
+              }
+            }
+
+            // Projects
+            if (table === 'projects') {
+              if (payload.eventType === 'INSERT' && newRow) {
+                if (profile?.role === 'student') {
+                  toast({ title: 'New project posted', description: newRow.title });
+                }
+                if (profile?.role === 'company' && newRow.owner_id !== profile?.id) return;
+              }
+
+              if (payload.eventType === 'UPDATE' && newRow && oldRow) {
+                if (!oldRow.completed && newRow.completed) {
+                  const showToUser = profile?.role === 'company' ? newRow.owner_id === profile?.id : true;
+                  if (showToUser) {
+                    toast({ title: 'Project completed', description: newRow.title });
+                  }
                 }
               }
             }
-          }
 
-          // Certificates: if owned by user
-          if (table === 'certificates') {
-            const ownerId = newRow?.owner_id ?? oldRow?.owner_id;
-            if (ownerId !== profile?.id) return;
-          }
+            // Certificates: if owned by user
+            if (table === 'certificates') {
+              const studentId = (newRow as any)?.student_id ?? (oldRow as any)?.student_id;
+              if (studentId !== profile?.id) return;
+            }
 
-          // If we reach here, apply the change to local state
-          applyChange(table, ev as RealtimePostgresChangesPayload<any>);
-        } catch (err) {
-          // swallow - don't crash realtime subscription
+            applyChange(table, payload);
+          } catch (err) {
+            // swallow
+          }
         }
-      });
+      );
     });
 
     channel.subscribe();
 
-    // Initial fetch for current state
+    // Initial fetch
     (async () => {
       try {
-        // Projects: for students show active/open projects, for companies show their posted projects, campus maybe all
         let projQuery = supabase.from('projects').select('*');
         if (profile?.role === 'company') {
           projQuery = projQuery.eq('owner_id', profile.id);
         }
         const { data: projData } = await projQuery;
-        setProjects(projData ?? []);
+        setProjects((projData as Project[]) ?? []);
 
-        const { data: msgData } = await supabase.from('messages').select('*').or(`recipient_id.eq.${profile?.id},sender_id.eq.${profile?.id}`);
-        setMessages(msgData ?? []);
+        const { data: msgData } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`recipient_id.eq.${profile?.id},sender_id.eq.${profile?.id}`);
+        setMessages((msgData as Message[]) ?? []);
 
-        const { data: walletData } = await supabase.from('wallets').select('*').eq('owner_id', profile?.id);
-        setWallets(walletData ?? []);
+        const { data: walletData } = await supabase
+          .from('wallets')
+          .select('*')
+          .eq('owner_id', profile?.id ?? '');
+        setWallets((walletData as Wallet[]) ?? []);
 
-        const { data: txData } = await supabase.from('transactions').select('*').eq('owner_id', profile?.id);
-        setTransactions(txData ?? []);
+        const { data: txData } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('wallet_id', wallets[0]?.id ?? '');
+        setTransactions((txData as Transaction[]) ?? []);
 
-        const { data: certData } = await supabase.from('certificates').select('*').eq('owner_id', profile?.id);
-        setCertificates(certData ?? []);
+        const { data: certData } = await supabase
+          .from('certificates')
+          .select('*')
+          .eq('student_id', profile?.id ?? '');
+        setCertificates((certData as Certificate[]) ?? []);
       } catch (err) {
-        // console.error(err);
+        console.error('Realtime initial fetch error', err);
       }
     })();
 
@@ -158,7 +179,6 @@ export default function useRealtime() {
     };
   }, [user, profile, applyChange]);
 
-  // Derived stats
   const activeProjectsCount = projects.filter((p) => !p.completed).length;
   const completedCount = projects.filter((p) => p.completed).length;
   const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);

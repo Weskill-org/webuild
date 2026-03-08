@@ -14,7 +14,436 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      batch_students: {
+        Row: {
+          batch_id: string
+          id: string
+          joined_at: string | null
+          student_id: string
+        }
+        Insert: {
+          batch_id: string
+          id?: string
+          joined_at?: string | null
+          student_id: string
+        }
+        Update: {
+          batch_id?: string
+          id?: string
+          joined_at?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_students_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batches: {
+        Row: {
+          campus_id: string
+          created_at: string | null
+          department: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+        }
+        Insert: {
+          campus_id: string
+          created_at?: string | null
+          department?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+        }
+        Update: {
+          campus_id?: string
+          created_at?: string | null
+          department?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          certificate_uid: string | null
+          company_name: string | null
+          id: string
+          issued_at: string | null
+          project_id: string | null
+          project_title: string | null
+          qr_data: string | null
+          student_id: string
+        }
+        Insert: {
+          certificate_uid?: string | null
+          company_name?: string | null
+          id?: string
+          issued_at?: string | null
+          project_id?: string | null
+          project_title?: string | null
+          qr_data?: string | null
+          student_id: string
+        }
+        Update: {
+          certificate_uid?: string | null
+          company_name?: string | null
+          id?: string
+          issued_at?: string | null
+          project_id?: string | null
+          project_title?: string | null
+          qr_data?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          recipient_id: string
+          sender_id: string
+          subject: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          recipient_id: string
+          sender_id: string
+          subject?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          recipient_id?: string
+          sender_id?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          company_name: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          linkedin: string | null
+          logo_url: string | null
+          role: string | null
+          skills: string[] | null
+          university: string | null
+          website: string | null
+        }
+        Insert: {
+          bio?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          linkedin?: string | null
+          logo_url?: string | null
+          role?: string | null
+          skills?: string[] | null
+          university?: string | null
+          website?: string | null
+        }
+        Update: {
+          bio?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          linkedin?: string | null
+          logo_url?: string | null
+          role?: string | null
+          skills?: string[] | null
+          university?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      project_applications: {
+        Row: {
+          applicant_id: string
+          cover_letter: string | null
+          created_at: string | null
+          id: string
+          project_id: string
+          status: string | null
+        }
+        Insert: {
+          applicant_id: string
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          project_id: string
+          status?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestones: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          order_index: number | null
+          project_id: string
+          title: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number | null
+          project_id: string
+          title: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number | null
+          project_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          category: string | null
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          duration: string | null
+          end_date: string | null
+          id: string
+          owner_id: string
+          pricing_type: string | null
+          required_skills: string[] | null
+          start_date: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          category?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          end_date?: string | null
+          id?: string
+          owner_id: string
+          pricing_type?: string | null
+          required_skills?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          category?: string | null
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          end_date?: string | null
+          id?: string
+          owner_id?: string
+          pricing_type?: string | null
+          required_skills?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          owner_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          owner_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          owner_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
