@@ -190,6 +190,56 @@ export type Database = {
           },
         ]
       }
+      escrow: {
+        Row: {
+          amount: number
+          commission: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          payer_id: string
+          project_id: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          commission?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          payer_id: string
+          project_id: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          commission?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          payer_id?: string
+          project_id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrow_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
