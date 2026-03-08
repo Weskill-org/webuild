@@ -187,9 +187,54 @@ const Projects = () => {
             <DialogTitle>Edit Project</DialogTitle>
             <DialogDescription>Update your project details below.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Project title" />
-            <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={4} />
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="space-y-1.5">
+              <Label>Title</Label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Project title" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={3} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Budget Min ($)</Label>
+                <Input type="number" value={editBudgetMin} onChange={(e) => setEditBudgetMin(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Budget Max ($)</Label>
+                <Input type="number" value={editBudgetMax} onChange={(e) => setEditBudgetMax(Number(e.target.value))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Duration</Label>
+                <Input value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="e.g. 2 weeks" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Category</Label>
+                <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} placeholder="e.g. Web Development" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Required Skills (comma-separated)</Label>
+              <Input value={editSkills} onChange={(e) => setEditSkills(e.target.value)} placeholder="React, TypeScript, Node.js" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditProject(null)}>Cancel</Button>
