@@ -454,6 +454,19 @@ const ProjectDetails = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      {reviewTarget && (
+        <ReviewDialog
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          projectId={project.id}
+          reviewerId={profile!.id}
+          revieweeId={reviewTarget.id}
+          revieweeName={reviewTarget.name}
+          onReviewSubmitted={(review) => setMyReview(review)}
+        />
+      )}
     </DashboardLayout>
   );
 };
