@@ -46,19 +46,17 @@ export default function useSupabaseAuth() {
       }
     })();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-      } catch (err) {
-        console.error('onAuthStateChange handler error', err);
-      } finally {
-        setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        // Fire-and-forget to avoid deadlock in onAuthStateChange
+        fetchProfile(session.user.id).catch(err =>
+          console.error('onAuthStateChange fetchProfile error', err)
+        );
+      } else {
+        setProfile(null);
       }
+      setLoading(false);
     });
 
     return () => {
