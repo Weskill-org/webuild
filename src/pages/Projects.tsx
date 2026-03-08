@@ -31,6 +31,12 @@ const Projects = () => {
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editBudgetMin, setEditBudgetMin] = useState(0);
+  const [editBudgetMax, setEditBudgetMax] = useState(0);
+  const [editDuration, setEditDuration] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editSkills, setEditSkills] = useState("");
+  const [editStatus, setEditStatus] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
