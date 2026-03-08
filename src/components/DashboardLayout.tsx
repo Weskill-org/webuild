@@ -18,6 +18,14 @@ import {
   PlusCircle,
   Search,
   Shield,
+  Trophy,
+  Activity,
+  AlertTriangle,
+  Handshake,
+  BarChart3,
+  FileSpreadsheet,
+  GraduationCap,
+  BadgeCheck,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -43,8 +51,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Projects", icon: Briefcase, path: "/projects" },
     { label: "Post Project", icon: PlusCircle, path: "/projects/new", roles: ["company"] },
     { label: "Browse Projects", icon: Search, path: "/marketplace", roles: ["student"] },
+    { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
+    { label: "Activity Feed", icon: Activity, path: "/activity" },
+    { label: "Quizzes", icon: GraduationCap, path: "/quizzes", roles: ["student"] },
+    { label: "Resources", icon: BookOpen, path: "/resources" },
     { label: "Batches", icon: BookOpen, path: "/batches", roles: ["campus"] },
     { label: "Students", icon: Users, path: "/students", roles: ["campus"] },
+    { label: "Bulk Import", icon: FileSpreadsheet, path: "/bulk-import", roles: ["campus"] },
+    { label: "Analytics", icon: BarChart3, path: "/campus-analytics", roles: ["campus"] },
+    { label: "Partnerships", icon: Handshake, path: "/partnerships", roles: ["company", "campus"] },
+    { label: "Disputes", icon: AlertTriangle, path: "/disputes" },
     { label: "Messages", icon: MessageSquare, path: "/messages", badge: unreadMessages },
     { label: "Wallet", icon: Wallet, path: "/wallet" },
     { label: "Certificates", icon: Award, path: "/certificates" },
@@ -160,7 +176,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Mobile nav scroll */}
           <div className="flex overflow-x-auto gap-1 px-3 pb-2">
-            {filteredNav.slice(0, 7).map((item) => {
+            {filteredNav.slice(0, 8).map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <button
