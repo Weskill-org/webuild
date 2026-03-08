@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,12 +22,15 @@ import {
   Loader2,
   Users,
   Send,
+  Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
-import type { Project, ProjectMilestone, ProjectApplication, Profile } from "@/types/database";
+import ReviewDialog from "@/components/ReviewDialog";
+import ReviewsSection from "@/components/ReviewsSection";
+import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
