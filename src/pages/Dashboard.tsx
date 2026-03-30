@@ -53,12 +53,16 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Active Projects", value: activeProjectsCount, icon: TrendingUp, color: "text-primary" },
-          { label: "Completed", value: completedCount, icon: Award, color: "text-primary" },
-          { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-primary" },
-          { label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-primary" },
+          { label: "Active Projects", value: activeProjectsCount, icon: TrendingUp, color: "text-primary", path: "/projects" },
+          { label: "Completed", value: completedCount, icon: Award, color: "text-primary", path: "/projects" },
+          { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-primary", path: "/wallet" },
+          { label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-primary", path: "/messages" },
         ].map((stat, i) => (
-          <Card key={i} className="p-5">
+          <Card 
+            key={i} 
+            className={`p-5 transition-all duration-200 ${stat.path ? "cursor-pointer hover:shadow-md hover:border-primary/30" : ""}`}
+            onClick={() => stat.path && navigate(stat.path)}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>

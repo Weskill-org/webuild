@@ -98,8 +98,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <img src={profile.logo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
               ) : (
                 <span className="text-primary-foreground font-medium text-sm">
-                  {profile?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("") || 
-                   profile?.company_name?.[0] || "?"}
+                  {profile?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("") ||
+                    profile?.company_name?.[0] || "?"}
                 </span>
               )}
             </div>
@@ -120,11 +120,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  }`}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
                 <span className="truncate">{item.label}</span>
@@ -182,11 +181,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                    }`}
                 >
                   <item.icon className="w-3.5 h-3.5" />
                   {item.label}
