@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 md:top-8 md:right-8 z-50">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md animate-fade-in">
         <Button variant="ghost" onClick={() => navigate("/login")} className="mb-8">
           <ArrowLeft className="w-4 h-4 mr-2" />

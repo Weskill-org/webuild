@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import useRealtime from "@/hooks/use-realtime";
@@ -26,7 +26,10 @@ import {
   FileSpreadsheet,
   GraduationCap,
   BadgeCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -45,6 +48,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const { unreadMessages } = useRealtime();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -81,18 +85,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-sidebar">
+      <aside
+        className={`hidden md:flex flex-col border-r border-border bg-sidebar h-screen sticky top-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "w-20" : "w-64"
+          }`}
+      >
         {/* Logo */}
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+        <div className={`h-16 flex items-center gap-2 border-b border-sidebar-border transition-all duration-300 ${isSidebarCollapsed ? "px-4 justify-center" : "px-6"
+          }`}>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-lg">W</span>
           </div>
-          <span className="text-lg font-bold text-sidebar-foreground">Webuild</span>
+          {!isSidebarCollapsed && (
+            <span className="text-lg font-bold text-sidebar-foreground truncate animate-fade-in">Webuild</span>
+          )}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className={`p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-accent-foreground transition-all duration-300 ${isSidebarCollapsed ? "mt-2" : "ml-auto"
+              }`}
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
         </div>
 
         {/* Profile summary */}
-        <div className="px-4 py-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
+        <div className={`py-4 border-b border-sidebar-border transition-all duration-300 ${isSidebarCollapsed ? "px-2" : "px-4"
+          }`}>
+          <div className={`flex items-center gap-3 ${isSidebarCollapsed ? "flex-col" : ""}`}>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
               {profile?.logo_url ? (
                 <img src={profile.logo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -103,48 +122,58 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </span>
               )}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {profile?.full_name || profile?.company_name || profile?.university || "User"}
-              </p>
-              <p className="text-xs text-muted-foreground capitalize">{profile?.role ?? "—"}</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="min-w-0 animate-fade-in">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {profile?.full_name || profile?.company_name || profile?.university || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground capitalize">{profile?.role ?? "—"}</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className={`flex-1 py-4 space-y-1 overflow-y-auto transition-all duration-300 ${isSidebarCollapsed ? "px-2" : "px-3"
+          }`}>
           {filteredNav.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive
+                className={`w-full flex items-center transition-colors px-3 py-2.5 rounded-lg text-sm ${isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  }`}
+                  } ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}
+                title={isSidebarCollapsed ? item.label : ""}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{item.label}</span>
-                {item.badge && item.badge > 0 ? (
-                  <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5">
+                {!isSidebarCollapsed && <span className="truncate animate-fade-in">{item.label}</span>}
+                {item.badge && item.badge > 0 && !isSidebarCollapsed ? (
+                  <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5 animate-fade-in">
                     {item.badge}
                   </Badge>
                 ) : null}
+                {item.badge && item.badge > 0 && isSidebarCollapsed && (
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+                )}
               </button>
             );
           })}
         </nav>
 
         {/* Sign out */}
-        <div className="p-3 border-t border-sidebar-border">
+        <div className={`p-3 border-t border-sidebar-border transition-all duration-300 ${isSidebarCollapsed ? "flex justify-center" : ""
+          }`}>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className={`w-full flex items-center transition-colors px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive ${isSidebarCollapsed ? "justify-center" : "gap-3"
+              }`}
+            title={isSidebarCollapsed ? "Sign Out" : ""}
           >
             <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            {!isSidebarCollapsed && <span className="animate-fade-in">Sign Out</span>}
           </button>
         </div>
       </aside>
@@ -161,6 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="font-bold">Webuild</span>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate("/messages")}>
                 <MessageSquare className="w-5 h-5" />
               </Button>
@@ -195,7 +225,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto relative">
+          <div className="hidden md:block fixed top-4 right-4 md:right-8 z-50">
+            <ThemeToggle />
+          </div>
           {children}
         </main>
       </div>

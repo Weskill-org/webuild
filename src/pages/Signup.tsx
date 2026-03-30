@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -95,6 +96,9 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
+      <div className="fixed top-4 right-4 md:top-8 md:right-8 z-50">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md animate-fade-in">
         <Button 
           variant="ghost" 

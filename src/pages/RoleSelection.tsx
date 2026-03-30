@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Briefcase, GraduationCap, Building2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const RoleSelection = () => {
   const navigate = useNavigate();
@@ -32,6 +33,9 @@ const RoleSelection = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 md:top-8 md:right-8 z-50">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-5xl animate-fade-in">
         <Button 
           variant="ghost" 
