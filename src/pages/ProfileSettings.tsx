@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const ProfileSettings = () => {
-  const { profile, updateProfile, uploadAvatar } = useAuth();
+  const { profile, updateProfile, uploadAvatar, user } = useAuth();
   const [form, setForm] = useState({
     full_name: "",
     university: "",
@@ -101,6 +101,15 @@ const ProfileSettings = () => {
               </div>
             </div>
 
+            <div className="space-y-1 pb-2">
+              <div className="text-sm text-muted-foreground">
+                Email: <span className="font-medium text-foreground">{user?.email ?? "—"}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Role: <span className="capitalize font-medium text-foreground">{profile?.role ?? "—"}</span>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="full_name">Full Name</Label>
               <Input
@@ -108,10 +117,6 @@ const ProfileSettings = () => {
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               />
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              Role: <span className="capitalize font-medium text-foreground">{profile?.role ?? "—"}</span>
             </div>
 
             {profile?.role === "company" && (

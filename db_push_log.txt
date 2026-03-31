@@ -1,0 +1,23 @@
+Initialising login role...
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20251109112837_1c8f7a3b-0419-4ea1-93ca-9b22d246b7f0.sql
+ • 20260308104411_09b6154d-d8c0-4765-b95d-86846d5c15e5.sql
+ • 20260308104430_0c5c65a1-20f3-4f00-8169-b6cd6b6699b4.sql
+ • 20260308104741_a3cf3cfa-7200-4849-bddc-3b0f6de42e5f.sql
+ • 20260308125403_49849009-f425-4096-839c-7ea29e4f7bd5.sql
+ • 20260308133227_e96f98a8-0d0c-403e-84fd-0c9ebaa84c27.sql
+ • 20260308153207_87987421-d374-4cf5-8602-57bbb808bc5c.sql
+ • 20260308153232_81942582-e040-4779-a1b1-eab67fbe45e3.sql
+ • 20260308153439_b73f4b46-4351-4d09-818c-d0c8849f068f.sql
+ • 20260308153911_77d7ffa2-fe83-4d32-9179-a54711d2704f.sql
+ • 20260331120000_add_phone_column.sql
+
+ [Y/n] y
+Applying migration 20251109112837_1c8f7a3b-0419-4ea1-93ca-9b22d246b7f0.sql...
+NOTICE (42710): extension "uuid-ossp" already exists, skipping
+ERROR: type "app_role" already exists (SQLSTATE 42710)                       
+At statement: 1                                                              
+-- Create enum for user roles                                                
+create type public.app_role as enum ('student', 'company', 'campus', 'admin')
+Try rerunning the command with --debug to troubleshoot the error.

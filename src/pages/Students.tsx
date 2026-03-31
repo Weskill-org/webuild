@@ -16,9 +16,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Users, PlusCircle, Loader2, Search } from "lucide-react";
+import { Users, PlusCircle, Loader2, Search, Mail, Phone, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -45,10 +46,20 @@ const Students = () => {
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
-  const [studentEmail, setStudentEmail] = useState("");
-  const [addBatchId, setAddBatchId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
+
+  // New student form fields
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentPhone, setNewStudentPhone] = useState("");
+  const [addBatchId, setAddBatchId] = useState("");
+
+  // Result feedback
+  const [addResult, setAddResult] = useState<{
+    status: "invited" | "linked" | "already_enrolled" | "error";
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -58,62 +69,115 @@ const Students = () => {
     })();
   }, [profile]);
 
-  useEffect(() => {
+  const fetchStudents = async () => {
     if (!profile || batches.length === 0) {
       setLoading(false);
       return;
     }
-    (async () => {
-      setLoading(true);
-      const batchIds = selectedBatch === "all" ? batches.map((b) => b.id) : [selectedBatch];
-      const { data: bsData } = await supabase.from("batch_students").select("*").in("batch_id", batchIds);
-      const bsList = (bsData as unknown as BatchStudent[]) ?? [];
+    setLoading(true);
+    const batchIds = selectedBatch === "all" ? batches.map((b) => b.id) : [selectedBatch];
+    const { data: bsData } = await supabase.from("batch_students").select("*").in("batch_id", batchIds);
+    const bsList = (bsData as unknown as BatchStudent[]) ?? [];
 
-      if (bsList.length > 0) {
-        const ids = [...new Set(bsList.map((bs) => bs.student_id))];
-        const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
-        const profileMap: Record<string, Profile> = {};
-        (profiles ?? []).forEach((p: any) => (profileMap[p.id] = p as Profile));
-        setStudents(bsList.map((bs) => ({ ...bs, profile: profileMap[bs.student_id] })));
-      } else {
-        setStudents([]);
-      }
-      setLoading(false);
-    })();
+    if (bsList.length > 0) {
+      const ids = [...new Set(bsList.map((bs) => bs.student_id))];
+      const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
+      const profileMap: Record<string, Profile> = {};
+      (profiles ?? []).forEach((p: any) => (profileMap[p.id] = p as Profile));
+      setStudents(bsList.map((bs) => ({ ...bs, profile: profileMap[bs.student_id] })));
+    } else {
+      setStudents([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchStudents();
   }, [profile, batches, selectedBatch]);
 
   const handleAddStudent = async () => {
-    if (!addBatchId || !studentEmail.trim()) return;
-    setSubmitting(true);
-    try {
-      // Find student by looking up profiles (email not stored in profiles, so we search by name)
-      // In reality, you'd use an admin API or edge function. For now, search profiles.
-      const { data: found } = await supabase.from("profiles").select("id").eq("role", "student").limit(50);
-      // Simplified: try to find by full_name match
-      const { data: matchData } = await supabase.from("profiles").select("id, full_name").ilike("full_name", `%${studentEmail}%`).eq("role", "student").limit(5);
-      
-      if (!matchData || matchData.length === 0) {
-        toast({ variant: "destructive", title: "Student not found", description: "No student found with that name." });
-        return;
-      }
+    if (!addBatchId || !newStudentEmail.trim() || !newStudentName.trim()) return;
+    if (!profile) return;
 
-      const studentId = matchData[0].id;
-      const { error } = await supabase.from("batch_students").insert({ batch_id: addBatchId, student_id: studentId });
+    setSubmitting(true);
+    setAddResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-student", {
+        body: {
+          mode: "single",
+          email: newStudentEmail.trim(),
+          full_name: newStudentName.trim(),
+          phone: newStudentPhone.trim() || undefined,
+          campus_id: profile.id,
+          batch_id: addBatchId,
+        },
+      });
+
       if (error) throw error;
-      toast({ title: "Student added to batch!" });
-      setAddOpen(false);
-      setStudentEmail("");
-      // Refresh
-      setSelectedBatch((prev) => prev);
+
+      const result = data?.results?.[0];
+      if (result) {
+        setAddResult({ status: result.status, message: result.message });
+
+        if (result.status === "invited") {
+          toast({
+            title: "Invite Sent! ✉️",
+            description: `An invitation email has been sent to ${newStudentEmail.trim()}`,
+          });
+        } else if (result.status === "linked") {
+          toast({
+            title: "Student Linked! 🔗",
+            description: result.message,
+          });
+        } else if (result.status === "already_enrolled") {
+          toast({
+            variant: "destructive",
+            title: "Already Enrolled",
+            description: result.message,
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.message,
+          });
+        }
+
+        // Refresh students list if succeeded
+        if (result.status === "invited" || result.status === "linked") {
+          setTimeout(() => {
+            fetchStudents();
+            setAddOpen(false);
+            resetForm();
+          }, 1500);
+        }
+      }
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error", description: err.message });
+      setAddResult({ status: "error", message: err.message });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const resetForm = () => {
+    setNewStudentEmail("");
+    setNewStudentName("");
+    setNewStudentPhone("");
+    setAddBatchId("");
+    setAddResult(null);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setAddOpen(open);
+    if (!open) resetForm();
+  };
+
   const filtered = students.filter((s) =>
-    !search || s.profile?.full_name?.toLowerCase().includes(search.toLowerCase())
+    !search ||
+    s.profile?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    s.profile?.phone?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -157,6 +221,7 @@ const Students = () => {
           <Card className="p-8 text-center">
             <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
             <p className="text-muted-foreground">No students found</p>
+            <p className="text-sm text-muted-foreground mt-1">Add students by inviting them via email</p>
           </Card>
         ) : (
           <div className="grid gap-3">
@@ -172,8 +237,14 @@ const Students = () => {
                     </div>
                     <div>
                       <p className="font-medium">{s.profile?.full_name || "Unknown"}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                         {batchName && <Badge variant="outline" className="text-xs">{batchName}</Badge>}
+                        {s.profile?.phone && (
+                          <span className="flex items-center gap-1 text-xs">
+                            <Phone className="w-3 h-3" />
+                            {s.profile.phone}
+                          </span>
+                        )}
                         {s.profile?.skills && s.profile.skills.slice(0, 3).map((sk, i) => (
                           <Badge key={i} variant="secondary" className="text-xs">{sk}</Badge>
                         ))}
@@ -190,16 +261,25 @@ const Students = () => {
         )}
       </div>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
+      {/* Add Student Dialog — Invite-Based */}
+      <Dialog open={addOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Student to Batch</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              Add Student
+            </DialogTitle>
+            <DialogDescription>
+              Invite a new student by email. They'll receive a login link to join the platform.
+              If a student with this email already exists, they'll be linked to your batch.
+            </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Batch *</Label>
+              <Label htmlFor="add-batch">Batch *</Label>
               <Select value={addBatchId} onValueChange={setAddBatchId}>
-                <SelectTrigger>
+                <SelectTrigger id="add-batch">
                   <SelectValue placeholder="Select batch" />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,16 +289,90 @@ const Students = () => {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label>Student Name *</Label>
-              <Input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="Search by student name..." />
+              <Label htmlFor="student-email">Email Address *</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="student-email"
+                  type="email"
+                  value={newStudentEmail}
+                  onChange={(e) => setNewStudentEmail(e.target.value)}
+                  placeholder="student@example.com"
+                  className="pl-9"
+                  disabled={submitting}
+                />
+              </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="student-name">Full Name *</Label>
+              <Input
+                id="student-name"
+                value={newStudentName}
+                onChange={(e) => setNewStudentName(e.target.value)}
+                placeholder="John Doe"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="student-phone">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="student-phone"
+                  type="tel"
+                  value={newStudentPhone}
+                  onChange={(e) => setNewStudentPhone(e.target.value)}
+                  placeholder="+91 9876543210"
+                  className="pl-9"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* Result feedback */}
+            {addResult && (
+              <div
+                className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
+                  addResult.status === "invited"
+                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                    : addResult.status === "linked"
+                    ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                    : "bg-destructive/10 text-destructive"
+                }`}
+              >
+                {addResult.status === "invited" || addResult.status === "linked" ? (
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                )}
+                <p>{addResult.message}</p>
+              </div>
+            )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddStudent} disabled={submitting || !addBatchId || !studentEmail.trim()}>
-              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Add Student
+            <Button variant="outline" onClick={() => handleDialogClose(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddStudent}
+              disabled={submitting || !addBatchId || !newStudentEmail.trim() || !newStudentName.trim()}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Invite Student
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

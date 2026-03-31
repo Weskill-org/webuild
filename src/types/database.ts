@@ -12,6 +12,7 @@ export interface Profile {
   skills: string[];
   linkedin: string | null;
   bio: string | null;
+  phone: string | null;
   created_at: string;
 }
 

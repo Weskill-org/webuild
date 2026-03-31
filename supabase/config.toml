@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.recommend-projects]
 verify_jwt = false
+
+[functions.invite-student]
+verify_jwt = false
