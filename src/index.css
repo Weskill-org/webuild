@@ -174,3 +174,25 @@ All colors MUST be HSL.
   scrollbar-width: auto;
   scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
 }
+
+/* Base styling for browser built-in calendar icon */
+::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Dark mode styling for calendar icon */
+.dark ::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.9);
+  opacity: 0.7;
+}
+
+.dark ::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
