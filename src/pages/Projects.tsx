@@ -14,6 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useRealtime from "@/hooks/use-realtime";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
@@ -40,6 +41,8 @@ const Projects = () => {
   const [editSkills, setEditSkills] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -110,22 +113,40 @@ const Projects = () => {
           )}
         </div>
 
-        <div className="grid gap-4">
-          {myProjects.length > 0 ? (
-            myProjects.map((project) => (
-              <Card key={project.id} className="p-5 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
+        <Tabs defaultValue="all" className="w-full mb-8" onValueChange={setFilter}>
+          <TabsList className="grid w-full max-w-md grid-cols-4 h-11 p-1 bg-muted/50 rounded-xl">
+            <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">All</TabsTrigger>
+            <TabsTrigger value="open" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Open</TabsTrigger>
+            <TabsTrigger value="in_progress" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm truncate">In Progress</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Done</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="grid gap-6">
+          {myProjects
+            .filter(p => filter === "all" || p.status === filter)
+            .length > 0 ? (
+            myProjects
+              .filter(p => filter === "all" || p.status === filter)
+              .map((project) => (
+              <Card key={project.id} className="p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-border/50 group">
+                <div className="flex justify-between items-start mb-4">
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-lg font-semibold mb-1 truncate">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors truncate">{project.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{project.description}</p>
                   </div>
-                  <Badge variant={
-                    project.status === "open" ? "default" :
-                    project.status === "in_progress" ? "secondary" :
-                    project.status === "completed" ? "outline" : "destructive"
-                  } className="ml-3 shrink-0">
-                    {project.status}
-                  </Badge>
+                  <button 
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                    className="ml-4 shrink-0 transition-transform active:scale-95"
+                  >
+                    <Badge variant={
+                      project.status === "open" ? "default" :
+                      project.status === "in_progress" ? "secondary" :
+                      project.status === "completed" ? "outline" : "destructive"
+                    } className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                      {project.status.replace("_", " ")}
+                    </Badge>
+                  </button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">

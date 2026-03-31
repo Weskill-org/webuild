@@ -195,11 +195,31 @@ const ProjectDetails = () => {
             <div>
               <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
               <div className="flex items-center gap-3 flex-wrap">
-                <Badge variant={project.status === "open" ? "default" : "secondary"}>
-                  {project.status}
-                </Badge>
-                {project.category && <Badge variant="outline">{project.category}</Badge>}
-                <Badge variant="outline" className="capitalize">{project.pricing_type}</Badge>
+                <button 
+                  onClick={() => document.getElementById("status-section")?.scrollIntoView({ behavior: "smooth" })}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  title="View Status Details"
+                >
+                  <Badge variant={project.status === "open" ? "default" : "secondary"}>
+                    {project.status}
+                  </Badge>
+                </button>
+                {project.category && (
+                  <button 
+                    onClick={() => document.getElementById("category-section")?.scrollIntoView({ behavior: "smooth" })}
+                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                    title="View Category Details"
+                  >
+                    <Badge variant="outline">{project.category}</Badge>
+                  </button>
+                )}
+                <button 
+                  onClick={() => document.getElementById("milestone-section")?.scrollIntoView({ behavior: "smooth" })}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  title="View Pricing & Milestones"
+                >
+                  <Badge variant="outline" className="capitalize">{project.pricing_type}</Badge>
+                </button>
               </div>
             </div>
             {isStudent && !myApplication && project.status === "open" && (
@@ -220,7 +240,7 @@ const ProjectDetails = () => {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
-            <Card className="p-6">
+            <Card className="p-6" id="category-section">
               <h2 className="font-semibold mb-3">Description</h2>
               <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                 {project.description || "No description provided."}
@@ -241,7 +261,7 @@ const ProjectDetails = () => {
 
             {/* Milestones */}
             {milestones.length > 0 && (
-              <Card className="p-6">
+              <Card className="p-6" id="milestone-section">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold">Milestones</h2>
                   <span className="text-sm text-muted-foreground">{completedMs}/{milestones.length} done</span>
@@ -372,7 +392,7 @@ const ProjectDetails = () => {
           </div>
 
           {/* Sidebar info */}
-          <div className="space-y-4">
+          <div className="space-y-4" id="status-section">
             <Card className="p-5 space-y-4">
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="w-4 h-4 text-muted-foreground" />
