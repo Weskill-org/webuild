@@ -56,7 +56,12 @@ export default function Partnerships() {
       setPartnerships(items);
 
       if (isCompany) {
-        const { data: campusProfiles } = await supabase.from("profiles").select("id, university").eq("role", "campus");
+        const { data: campusProfiles } = await supabase
+          .from("profiles")
+          .select("id, university")
+          .eq("role", "campus")
+          .eq("verified", true);
+          
         setCampuses((campusProfiles ?? []).map((c: any) => ({ id: c.id, name: c.university || "Campus" })));
       }
 
