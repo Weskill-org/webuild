@@ -11,7 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, Loader2, Flag } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { AlertTriangle, Loader2, Flag, User, Briefcase, Calendar, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +33,7 @@ interface Dispute {
   status: string;
   resolution: string | null;
   created_at: string;
+  project?: { title: string };
 }
 
 export default function Disputes() {
@@ -38,13 +46,20 @@ export default function Disputes() {
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   const [myProjects, setMyProjects] = useState<{ id: string; title: string }[]>([]);
 
   useEffect(() => {
     if (!profile?.id) return;
     (async () => {
-      const { data } = await supabase.from("disputes").select("*").order("created_at", { ascending: false });
-      setDisputes((data as unknown as Dispute[]) ?? []);
+      const { data: disputesData } = await supabase
+        .from("disputes")
+        .select("*, project:projects(title)")
+        .order("created_at", { ascending: false });
+
+      if (disputesData) {
+        setDisputes(disputesData as any);
+      }
 
       // Get projects user is involved in
       const { data: projData } = await supabase
@@ -69,7 +84,16 @@ export default function Disputes() {
         description: description || null,
       }).select().single();
       if (error) throw error;
-      setDisputes((prev) => [data as unknown as Dispute, ...prev]);
+      
+      // Re-fetch disputes to get the newly added one with enriched data
+      const { data: disputesData } = await supabase
+        .from("disputes")
+        .select("*, project:projects(title)")
+        .order("created_at", { ascending: false });
+
+      if (disputesData) {
+        setDisputes(disputesData as any);
+      }
       setShowForm(false);
       setReason("");
       setDescription("");
@@ -142,18 +166,92 @@ export default function Disputes() {
                     <p className="font-medium capitalize">{d.reason.replace("-", " ")}</p>
                     <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</p>
                   </div>
-                  <Badge variant={statusColor(d.status) as any} className="capitalize">{d.status}</Badge>
+                  <Badge 
+                    variant={statusColor(d.status) as any} 
+                    className="capitalize cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setSelectedDispute(d)}
+                  >
+                    {d.status}
+                  </Badge>
                 </div>
-                {d.description && <p className="text-sm text-muted-foreground">{d.description}</p>}
+                {d.description && <p className="text-sm text-muted-foreground line-clamp-1">{d.description}</p>}
                 {d.resolution && (
-                  <div className="mt-2 p-2 bg-secondary rounded text-sm">
-                    <strong>Resolution:</strong> {d.resolution}
+                  <div className="mt-2 p-2 bg-secondary/50 rounded text-sm italic">
+                    Resolved
                   </div>
                 )}
               </Card>
             ))}
           </div>
         )}
+
+        <Dialog open={!!selectedDispute} onOpenChange={(open) => !open && setSelectedDispute(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                Dispute Details
+              </DialogTitle>
+              <DialogDescription>
+                Detailed information about the raised conflict.
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedDispute && (
+              <div className="space-y-6 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                      <Info className="w-3 h-3" /> Reason
+                    </p>
+                    <p className="font-medium capitalize">{selectedDispute.reason.replace("-", " ")}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                      <Info className="w-3 h-3" /> Status
+                    </p>
+                    <Badge variant={statusColor(selectedDispute.status) as any} className="capitalize">
+                      {selectedDispute.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                    <Briefcase className="w-3 h-3" /> Project
+                  </p>
+                  <p className="font-medium">{selectedDispute.project?.title || "Unknown Project"}</p>
+                </div>
+
+
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Description
+                  </p>
+                  <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+                    {selectedDispute.description || "No description provided."}
+                  </div>
+                </div>
+
+                {selectedDispute.resolution && (
+                  <div className="space-y-2 p-4 bg-primary/5 rounded-md border border-primary/20">
+                    <p className="text-xs font-bold text-primary uppercase">Resolution</p>
+                    <p className="text-sm">{selectedDispute.resolution}</p>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    Raised on {new Date(selectedDispute.created_at).toLocaleDateString()}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setSelectedDispute(null)}>Close</Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
