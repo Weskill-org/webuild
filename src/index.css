@@ -196,3 +196,309 @@ All colors MUST be HSL.
   opacity: 1;
 }
 
+/* ============================================
+   MOBILE APP STYLES
+   Only affects screens below md (768px).
+   Desktop remains completely untouched.
+   ============================================ */
+
+/* ---------- Bottom Navigation Bar ---------- */
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid hsl(var(--border) / 0.5);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 20px hsl(var(--foreground) / 0.05);
+}
+
+.mobile-bottom-bar-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 60px;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 4px;
+}
+
+/* ---------- Tab Buttons ---------- */
+.mobile-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 2px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  color: hsl(var(--muted-foreground));
+  transition: color 0.2s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-tab-btn:active {
+  transform: scale(0.90);
+}
+
+.mobile-tab-active {
+  color: hsl(var(--primary));
+}
+
+/* Tab icon container */
+.mobile-tab-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.mobile-tab-icon {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.2s ease;
+}
+
+.mobile-tab-active .mobile-tab-icon {
+  transform: scale(1.1);
+}
+
+/* Tab label */
+.mobile-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 64px;
+  letter-spacing: 0.01em;
+}
+
+.mobile-tab-active .mobile-tab-label {
+  font-weight: 600;
+}
+
+/* Active indicator dot */
+.mobile-tab-indicator {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  animation: mobileIndicatorPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Notification badge on tab icon */
+.mobile-tab-badge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  border: 2px solid hsl(var(--background));
+}
+
+/* ---------- "More" Drawer Overlay ---------- */
+.mobile-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: hsl(var(--foreground) / 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: mobileOverlayIn 0.25s ease-out;
+}
+
+/* ---------- Drawer Sheet ---------- */
+.mobile-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 85vh;
+  background: hsl(var(--background));
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: mobileDrawerUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -8px 40px hsl(var(--foreground) / 0.12);
+}
+
+.mobile-drawer-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+}
+
+.mobile-drawer-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: hsl(var(--muted-foreground) / 0.25);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.mobile-drawer-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  overscroll-behavior: contain;
+}
+
+.mobile-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  transition: background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  animation: mobileDrawerItemIn 0.3s ease-out both;
+}
+
+.mobile-drawer-item:active {
+  background: hsl(var(--muted) / 0.7);
+}
+
+.mobile-drawer-item-active {
+  background: hsl(var(--primary) / 0.08);
+}
+
+.mobile-drawer-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--muted) / 0.5);
+  color: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.mobile-drawer-item-icon-active {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
+.mobile-drawer-footer {
+  padding: 8px 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid hsl(var(--border) / 0.5);
+}
+
+.mobile-drawer-signout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+
+.mobile-drawer-signout:active {
+  background: hsl(var(--destructive) / 0.08);
+}
+
+/* ---------- Animations ---------- */
+@keyframes mobileIndicatorPop {
+  0% {
+    transform: translateX(-50%) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes mobileOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobileDrawerUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobileDrawerItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Mobile content spacing ---------- */
+@media (max-width: 767.98px) {
+  /* Give extra scrollbar space for mobile */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* Cards on mobile get touch-friendly sizing */
+  .mobile-drawer-nav::-webkit-scrollbar {
+    width: 3px;
+  }
+}
+

@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import useRealtime from "@/hooks/use-realtime";
@@ -25,9 +25,11 @@ import {
   BarChart3,
   FileSpreadsheet,
   GraduationCap,
-  BadgeCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  MoreHorizontal,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -49,6 +51,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut } = useAuth();
   const { unreadMessages } = useRealtime();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
 
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -77,14 +98,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     (item) => !item.roles || item.roles.includes(profile?.role ?? "")
   );
 
+  // Primary bottom bar items (first 4 items + "More")
+  const mobileBottomItems = filteredNav.slice(0, 4);
+  // Remaining items go in the "More" drawer
+  const mobileMoreItems = filteredNav.slice(4);
+
+  // Check if any "more" item is active
+  const isMoreItemActive = mobileMoreItems.some(
+    (item) => location.pathname === item.path
+  );
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
+  const handleMobileNav = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
+      {/* ==================== DESKTOP SIDEBAR (unchanged) ==================== */}
       <aside
         className={`hidden md:flex flex-col border-r border-border bg-sidebar h-screen sticky top-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "w-20" : "w-64"
           }`}
@@ -178,59 +214,177 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ==================== MAIN CONTENT ==================== */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Mobile top bar */}
-        <header className="md:hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+        {/* ==================== MOBILE TOP BAR ==================== */}
+        <header className="md:hidden border-b border-border bg-background/95 backdrop-blur-md sticky top-0 z-50">
           <div className="h-14 flex items-center justify-between px-4">
+            {/* Left: Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">W</span>
               </div>
-              <span className="font-bold">Webuild</span>
+              <span className="font-bold text-foreground">Webuild</span>
             </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={() => navigate("/messages")}>
-                <MessageSquare className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/notifications")}>
-                <Bell className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
-                <Settings className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
 
-          {/* Mobile nav scroll */}
-          <div className="flex overflow-x-auto gap-1 px-3 pb-2">
-            {filteredNav.slice(0, 8).map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                    }`}
-                >
-                  <item.icon className="w-3.5 h-3.5" />
-                  {item.label}
-                </button>
-              );
-            })}
+            {/* Right: Quick actions */}
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative w-9 h-9"
+                onClick={() => navigate("/notifications")}
+              >
+                <Bell className="w-5 h-5" />
+                {/* Notification dot */}
+              </Button>
+              <button
+                onClick={() => navigate("/settings")}
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0"
+              >
+                {profile?.logo_url ? (
+                  <img src={profile.logo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <span className="text-primary-foreground font-medium text-xs">
+                    {profile?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("") ||
+                      profile?.company_name?.[0] || "?"}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto relative">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto relative pb-20 md:pb-8">
           <div className="hidden md:block fixed top-4 right-4 md:right-8 z-50">
             <ThemeToggle />
           </div>
           {children}
         </main>
+
+        {/* ==================== MOBILE BOTTOM NAV BAR ==================== */}
+        <nav className="md:hidden mobile-bottom-bar" id="mobile-bottom-nav">
+          <div className="mobile-bottom-bar-inner">
+            {mobileBottomItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => handleMobileNav(item.path)}
+                  className={`mobile-tab-btn ${isActive ? "mobile-tab-active" : ""}`}
+                  id={`mobile-tab-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <div className="mobile-tab-icon-wrap">
+                    <item.icon className="mobile-tab-icon" />
+                    {item.badge && item.badge > 0 && (
+                      <span className="mobile-tab-badge">{item.badge > 9 ? "9+" : item.badge}</span>
+                    )}
+                  </div>
+                  <span className="mobile-tab-label">{item.label}</span>
+                  {isActive && <div className="mobile-tab-indicator" />}
+                </button>
+              );
+            })}
+
+            {/* More button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className={`mobile-tab-btn ${isMoreItemActive ? "mobile-tab-active" : ""}`}
+              id="mobile-tab-more"
+            >
+              <div className="mobile-tab-icon-wrap">
+                <MoreHorizontal className="mobile-tab-icon" />
+              </div>
+              <span className="mobile-tab-label">More</span>
+              {isMoreItemActive && <div className="mobile-tab-indicator" />}
+            </button>
+          </div>
+        </nav>
+
+        {/* ==================== MOBILE "MORE" DRAWER ==================== */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)}>
+            <div
+              ref={menuRef}
+              className="mobile-drawer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drawer handle */}
+              <div className="mobile-drawer-handle-wrap">
+                <div className="mobile-drawer-handle" />
+              </div>
+
+              {/* Drawer header */}
+              <div className="mobile-drawer-header">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
+                    {profile?.logo_url ? (
+                      <img src={profile.logo_url} alt="" className="w-11 h-11 rounded-full object-cover" />
+                    ) : (
+                      <span className="text-primary-foreground font-medium text-sm">
+                        {profile?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("") ||
+                          profile?.company_name?.[0] || "?"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {profile?.full_name || profile?.company_name || profile?.university || "User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">{profile?.role ?? "—"}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-muted-foreground transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer nav items */}
+              <div className="mobile-drawer-nav">
+                {mobileMoreItems.map((item, index) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => handleMobileNav(item.path)}
+                      className={`mobile-drawer-item ${isActive ? "mobile-drawer-item-active" : ""}`}
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <div className={`mobile-drawer-item-icon ${isActive ? "mobile-drawer-item-icon-active" : ""}`}>
+                        <item.icon className="w-5 h-5" />
+                      </div>
+                      <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <Badge variant="destructive" className="text-xs px-2 py-0.5 min-w-[1.5rem] h-5">
+                          {item.badge}
+                        </Badge>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sign out at bottom */}
+              <div className="mobile-drawer-footer">
+                <button
+                  onClick={handleSignOut}
+                  className="mobile-drawer-signout"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                    <LogOut className="w-5 h-5 text-destructive" />
+                  </div>
+                  <span className="text-sm font-medium text-destructive">Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

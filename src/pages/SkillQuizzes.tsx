@@ -27,10 +27,11 @@ export default function SkillQuizzes() {
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null);
 
   useEffect(() => {
+    if (!profile?.id) return;
     (async () => {
       const [quizRes, badgeRes] = await Promise.all([
         supabase.from("skill_quizzes").select("*"),
-        supabase.from("skill_badges").select("quiz_id, passed, score").eq("user_id", profile?.id ?? ""),
+        supabase.from("skill_badges").select("quiz_id, passed, score").eq("user_id", profile.id),
       ]);
       setQuizzes((quizRes.data as unknown as Quiz[]) ?? []);
       const bMap: Record<string, { passed: boolean; score: number }> = {};
@@ -38,7 +39,7 @@ export default function SkillQuizzes() {
       setBadges(bMap);
       setLoading(false);
     })();
-  }, [profile]);
+  }, [profile?.id]);
 
   const startQuiz = (quiz: Quiz) => {
     setActiveQuiz(quiz);

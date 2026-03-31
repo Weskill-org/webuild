@@ -41,7 +41,7 @@ export default function Disputes() {
   const [myProjects, setMyProjects] = useState<{ id: string; title: string }[]>([]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile?.id) return;
     (async () => {
       const { data } = await supabase.from("disputes").select("*").order("created_at", { ascending: false });
       setDisputes((data as unknown as Dispute[]) ?? []);
@@ -50,7 +50,7 @@ export default function Disputes() {
       const { data: projData } = await supabase
         .from("projects")
         .select("id, title")
-        .or(`owner_id.eq.${profile.id}`);
+        .eq("owner_id", profile.id);
       setMyProjects((projData ?? []) as any[]);
 
       setLoading(false);

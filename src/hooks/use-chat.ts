@@ -24,7 +24,7 @@ export function useChat() {
 
   // Fetch conversations
   useEffect(() => {
-    if (!profile) return;
+    if (!profile?.id) return;
     (async () => {
       setLoading(true);
       const { data: msgs } = await supabase
@@ -70,7 +70,7 @@ export function useChat() {
 
   // Load thread when partner selected
   useEffect(() => {
-    if (!profile || !selectedPartner) return;
+    if (!profile?.id || !selectedPartner) return;
     (async () => {
       const { data } = await supabase
         .from("messages")

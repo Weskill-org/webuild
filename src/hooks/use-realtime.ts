@@ -66,7 +66,7 @@ export default function useRealtime() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
 
     const channel = supabase.channel('public-realtime');
 
@@ -152,25 +152,29 @@ export default function useRealtime() {
         const { data: msgData } = await supabase
           .from('messages')
           .select('*')
-          .or(`recipient_id.eq.${profile?.id},sender_id.eq.${profile?.id}`);
+          .or(`recipient_id.eq.${profile.id},sender_id.eq.${profile.id}`);
         setMessages((msgData as Message[]) ?? []);
 
         const { data: walletData } = await supabase
           .from('wallets')
           .select('*')
-          .eq('owner_id', profile?.id ?? '');
-        setWallets((walletData as Wallet[]) ?? []);
+          .eq('owner_id', profile.id);
+        
+        const fetchedWallets = (walletData as Wallet[]) ?? [];
+        setWallets(fetchedWallets);
 
-        const { data: txData } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('wallet_id', wallets[0]?.id ?? '');
-        setTransactions((txData as Transaction[]) ?? []);
+        if (fetchedWallets.length > 0) {
+          const { data: txData } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('wallet_id', fetchedWallets[0].id);
+          setTransactions((txData as Transaction[]) ?? []);
+        }
 
         const { data: certData } = await supabase
           .from('certificates')
           .select('*')
-          .eq('student_id', profile?.id ?? '');
+          .eq('student_id', profile.id);
         setCertificates((certData as Certificate[]) ?? []);
       } catch (err) {
         console.error('Realtime initial fetch error', err);
