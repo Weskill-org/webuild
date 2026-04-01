@@ -117,10 +117,31 @@ const Notifications = () => {
                     size="sm"
                     className="flex-1 sm:flex-none"
                     onClick={() => {
-                      if (n.type === "message") navigate("/messages");
-                      else if (n.type.includes("project")) navigate("/dashboard");
-                      else if (n.type === "payment_received") navigate("/wallet");
-                      else if (n.type.includes("partnership")) navigate("/partnerships");
+                      if (n.type === "message") {
+                        navigate("/messages");
+                      } else if (
+                        n.type === "new_application" ||
+                        n.type === "application_accepted" ||
+                        n.type === "application_rejected" ||
+                        n.type === "project_completed" ||
+                        n.type === "milestone_completed" ||
+                        n.type === "new_project" ||
+                        n.type.includes("project")
+                      ) {
+                        navigate("/dashboard");
+                      } else if (n.type === "payment_received") {
+                        navigate("/wallet");
+                      } else if (
+                        n.type === "partnership_requested" ||
+                        n.type === "partnership_accepted" ||
+                        n.type === "partnership_rejected" ||
+                        n.type.includes("partnership")
+                      ) {
+                        navigate("/partnerships");
+                      } else {
+                        // Fallback to dashboard if type is unknown but we want it clickable
+                        navigate("/dashboard");
+                      }
                     }}
                   >
                     View
