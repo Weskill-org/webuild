@@ -2,8 +2,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { UserCircle2, Building, GraduationCap, ChevronRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const HowItWorks = () => {
+  const navigate = useNavigate();
   const steps = [
     {
       group: "For Students",
@@ -87,8 +89,21 @@ const HowItWorks = () => {
             <div className="container mx-auto text-center max-w-3xl">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8">Ready to take the first step?</h2>
                 <div className="flex gap-4 justify-center">
-                    <Button size="lg" className="rounded-full px-8">Get Started Now</Button>
-                    <Button size="lg" variant="outline" className="rounded-full px-8">Learn More</Button>
+                    <Button 
+                      size="lg" 
+                      className="rounded-full px-8"
+                      onClick={() => navigate("/role-selection")}
+                    >
+                      Get Started Now
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="rounded-full px-8"
+                      onClick={() => navigate("/features")}
+                    >
+                      Learn More
+                    </Button>
                 </div>
             </div>
         </section>
@@ -100,3 +115,4 @@ const HowItWorks = () => {
 };
 
 export default HowItWorks;
+
