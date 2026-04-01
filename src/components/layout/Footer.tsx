@@ -1,4 +1,4 @@
-import { Github, Twitter, Linkedin } from "lucide-react";
+import { Instagram, Twitter, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -42,7 +42,7 @@ const Footer = () => {
             <h4 className="font-semibold mb-4 text-foreground">Connect</h4>
             <div className="flex gap-4">
               <a href="#" className="p-2 rounded-full bg-secondary/50 hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:-translate-y-1">
-                <Github className="w-5 h-5" />
+                <Instagram className="w-5 h-5" />
               </a>
               <a href="#" className="p-2 rounded-full bg-secondary/50 hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:-translate-y-1">
                 <Twitter className="w-5 h-5" />

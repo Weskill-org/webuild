@@ -41,7 +41,7 @@ const PrivacyPolicy = () => {
 
               <h2 className="text-foreground text-2xl font-bold mt-10 mb-4">5. Contact Us</h2>
               <p className="mb-6 leading-relaxed">
-                If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@webuild.app" className="text-primary hover:underline">privacy@webuild.app</a>.
+                If you have any questions about this Privacy Policy, please contact us at <a href="mailto:support@weskill.org" className="text-primary hover:underline">support@weskill.org</a>.
               </p>
             </div>
           </div>

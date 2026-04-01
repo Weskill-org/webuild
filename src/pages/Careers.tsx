@@ -6,7 +6,7 @@ import { ArrowRight, Users, Zap, Heart, Globe } from "lucide-react";
 const Careers = () => {
   const jobs = [
     { title: "Senior Frontend Engineer", department: "Engineering", location: "Remote", type: "Full-time" },
-    { title: "Product Manager", department: "Product", location: "San Francisco, CA", type: "Full-time" },
+    { title: "Product Manager", department: "Product", location: "Bengaluru, KA", type: "Full-time" },
     { title: "Developer Advocate", department: "DevRel", location: "Remote", type: "Full-time" },
     { title: "UX/UI Designer", department: "Design", location: "New York, NY", type: "Contract" },
   ];

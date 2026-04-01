@@ -1,7 +1,7 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Phone, MessageSquare } from "lucide-react";
+import { MapPin, Phone, MessageSquare } from "lucide-react";
 
 const Contact = () => {
   return (
@@ -21,25 +21,48 @@ const Contact = () => {
                 </p>
 
                 <div className="space-y-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-                      <Mail className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-lg">Email us</h4>
-                      <p className="text-muted-foreground mb-1">For general inquiries</p>
-                      <a href="mailto:hello@webuild.app" className="text-primary hover:underline font-medium">hello@webuild.app</a>
-                    </div>
-                  </div>
+
 
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
                       <MessageSquare className="w-5 h-5" />
                     </div>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-lg">Support</h4>
+                        <p className="text-muted-foreground mb-1 text-sm">General inquiries & support</p>
+                        <a href="mailto:webuild@weskill.org" className="text-primary hover:underline font-medium">webuild@weskill.org</a>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/50">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Media</p>
+                          <a href="mailto:media@weskill.org" className="text-sm text-primary hover:underline">media@weskill.org</a>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Partnerships</p>
+                          <a href="mailto:partner@weskill.org" className="text-sm text-primary hover:underline">partner@weskill.org</a>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hiring</p>
+                          <a href="mailto:career@weskill.org" className="text-sm text-primary hover:underline">career@weskill.org</a>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Queries</p>
+                          <a href="mailto:support@weskill.org" className="text-sm text-primary hover:underline">support@weskill.org</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                      <Phone className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h4 className="font-semibold text-lg">Support</h4>
-                      <p className="text-muted-foreground mb-1">Need technical help?</p>
-                      <a href="mailto:support@webuild.app" className="text-primary hover:underline font-medium">support@webuild.app</a>
+                      <h4 className="font-semibold text-lg">Call us</h4>
+                      <p className="text-muted-foreground mb-1">Mon-Sat from 9am to 6:30pm</p>
+                      <a href="tel:+919996996668" className="text-primary hover:underline font-medium">099969 96668</a>
                     </div>
                   </div>
 
@@ -50,8 +73,9 @@ const Contact = () => {
                     <div>
                       <h4 className="font-semibold text-lg">Office</h4>
                       <p className="text-muted-foreground">
-                        123 Builder Lane, Suite 400<br />
-                        San Francisco, CA 94107
+                        4th Floor, Weskill, 9/A, 9th Main Rd,<br />
+                        7th Sector, HSR Layout, Bengaluru,<br />
+                        Karnataka 560102
                       </p>
                     </div>
                   </div>
