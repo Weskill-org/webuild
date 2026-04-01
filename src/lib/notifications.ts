@@ -6,7 +6,11 @@ type NotificationEvent =
   | "application_rejected"
   | "project_completed"
   | "payment_received"
-  | "milestone_completed";
+  | "milestone_completed"
+  | "new_project"
+  | "partnership_requested"
+  | "partnership_accepted"
+  | "partnership_rejected";
 
 export async function sendNotification(
   event: NotificationEvent,

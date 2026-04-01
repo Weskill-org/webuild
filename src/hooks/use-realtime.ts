@@ -3,9 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from '@/hooks/use-toast';
-import type { Project, Message, Wallet, Transaction, Certificate } from '@/types/database';
+import { Project, Message, Wallet, Transaction, Certificate, Notification } from '@/types/database';
 
-type TableName = 'projects' | 'wallets' | 'transactions' | 'messages' | 'certificates';
+type TableName = 'projects' | 'wallets' | 'transactions' | 'messages' | 'certificates' | 'notifications';
 
 interface RealtimeRow {
   id: string;
@@ -26,6 +26,7 @@ export default function useRealtime() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const applyChange = useCallback((
     table: TableName, 
@@ -38,7 +39,7 @@ export default function useRealtime() {
         if (eventType === 'INSERT' && newRow) {
           return [newRow as unknown as T, ...prev];
         } else if (eventType === 'UPDATE' && newRow) {
-          return prev.map((r) => (r.id === newRow.id ? newRow as unknown as T : r));
+          return prev.map((r) => (r.id === newRow.id ? { ...r, ...newRow as unknown as T } : r));
         } else if (eventType === 'DELETE' && oldRow) {
           return prev.filter((r) => r.id !== oldRow.id);
         }
@@ -62,6 +63,9 @@ export default function useRealtime() {
       case 'certificates':
         updater(setCertificates);
         break;
+      case 'notifications':
+        updater(setNotifications);
+        break;
     }
   }, []);
 
@@ -70,7 +74,7 @@ export default function useRealtime() {
 
     const channel = supabase.channel('public-realtime');
 
-    const tables: TableName[] = ['projects', 'wallets', 'transactions', 'messages', 'certificates'];
+    const tables: TableName[] = ['projects', 'wallets', 'transactions', 'messages', 'certificates', 'notifications'];
 
     tables.forEach((table) => {
       channel.on(
@@ -129,6 +133,16 @@ export default function useRealtime() {
               if (studentId !== profile?.id) return;
             }
 
+            // Notifications: only if user_id matches
+            if (table === 'notifications') {
+              const userId = newRow?.user_id ?? oldRow?.user_id;
+              if (userId !== profile?.id) return;
+
+              if (payload.eventType === 'INSERT' && newRow) {
+                toast({ title: newRow.title, description: newRow.body });
+              }
+            }
+
             applyChange(table, payload);
           } catch (err) {
             // swallow
@@ -176,6 +190,13 @@ export default function useRealtime() {
           .select('*')
           .eq('student_id', profile.id);
         setCertificates((certData as Certificate[]) ?? []);
+
+        const { data: notifData } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', profile.id)
+          .order('created_at', { ascending: false });
+        setNotifications((notifData as Notification[]) ?? []);
       } catch (err) {
         console.error('Realtime initial fetch error', err);
       }
@@ -190,6 +211,7 @@ export default function useRealtime() {
   const completedCount = projects.filter((p) => p.completed).length;
   const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);
   const unreadMessages = messages.filter((m) => !m.read && m.recipient_id === profile?.id).length;
+  const unreadNotifications = notifications.length;
 
   return {
     projects,
@@ -197,9 +219,11 @@ export default function useRealtime() {
     wallets,
     transactions,
     certificates,
+    notifications,
     activeProjectsCount,
     completedCount,
     walletBalance,
     unreadMessages,
+    unreadNotifications,
   } as const;
 }

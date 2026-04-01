@@ -15,6 +15,7 @@ import { Handshake, Loader2, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "@/hooks/use-toast";
+import { sendNotification } from "@/lib/notifications";
 
 interface Partnership {
   id: string;
@@ -82,6 +83,9 @@ export default function Partnerships() {
       setPartnerships((prev) => [data as unknown as Partnership, ...prev]);
       setSelectedCampus("");
       setMessage("");
+      
+      await sendNotification("partnership_requested", { user_id: selectedCampus });
+
       toast({ title: "Partnership request sent!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -94,6 +98,14 @@ export default function Partnerships() {
     await supabase.from("partnership_requests").update({ status }).eq("id", id);
     setPartnerships((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
     toast({ title: `Partnership ${status}` });
+
+    const p = partnerships.find(x => x.id === id);
+    if (p) {
+      await sendNotification(
+        status === "accepted" ? "partnership_accepted" : "partnership_rejected", 
+        { user_id: p.company_id }
+      );
+    }
   };
 
   return (

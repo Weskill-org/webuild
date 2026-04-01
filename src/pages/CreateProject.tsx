@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { sendNotification } from "@/lib/notifications";
 import DashboardLayout from "@/components/DashboardLayout";
 
 interface Milestone {
@@ -95,6 +96,11 @@ const CreateProject = () => {
         }));
         const { error: msError } = await supabase.from("project_milestones").insert(milestonesData);
         if (msError) console.error("Milestones error:", msError);
+      }
+
+      // Notify students and campuses
+      if (project) {
+        await sendNotification("new_project", { project_id: project.id });
       }
 
       toast({ title: "Project created!", description: "Your project is now live." });

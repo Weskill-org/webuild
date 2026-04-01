@@ -3,59 +3,104 @@ import { Button } from "@/components/ui/button";
 import useRealtime from "@/hooks/use-realtime";
 import { useAuth } from "@/providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { Bell, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Bell } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Notifications = () => {
-  const { projects, messages, transactions } = useRealtime();
+  const { notifications } = useRealtime();
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const events: { type: string; title: string; id: string; created_at: string }[] = [];
-  projects.slice(0, 10).forEach((p) =>
-    events.push({ type: "project", title: p.title, id: p.id, created_at: p.created_at })
-  );
-  messages.slice(0, 10).forEach((m) =>
-    events.push({ type: "message", title: m.subject ?? m.body.slice(0, 80), id: m.id, created_at: m.created_at })
-  );
-  transactions.slice(0, 10).forEach((t) =>
-    events.push({ type: "transaction", title: `Transaction $${t.amount}`, id: t.id, created_at: t.created_at })
-  );
+  const deleteAll = async () => {
+    if (!profile) return;
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", profile.id);
+      
+      if (error) throw error;
+      toast({ title: "Notifications cleared", description: "All notifications have been deleted." });
+    } catch (err) {
+      console.error("Error deleting all:", err);
+      toast({ variant: "destructive", title: "Error", description: "Could not delete notifications." });
+    }
+  };
 
-  events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const deleteNotification = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!profile) return;
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", profile.id);
+      
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete notification." });
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Notifications</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Notifications</h1>
+          {notifications.length > 0 && (
+            <Button variant="outline" size="sm" onClick={deleteAll}>
+              Clear all
+            </Button>
+          )}
+        </div>
 
         <div className="grid gap-3">
-          {events.length === 0 ? (
+          {notifications.length === 0 ? (
             <Card className="p-8 text-center">
               <Bell className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
               <p className="text-muted-foreground">No notifications yet</p>
             </Card>
           ) : (
-            events.map((e) => (
-              <Card key={`${e.type}-${e.id}`} className="p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-medium capitalize">{e.type}</p>
-                  <p className="text-muted-foreground text-sm">{e.title}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(e.created_at).toLocaleDateString()}
+            notifications.map((n) => (
+              <Card 
+                key={n.id} 
+                className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center transition-colors hover:bg-muted/50"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">{n.title}</p>
+                  </div>
+                  <p className="text-muted-foreground text-sm mt-1">{n.body}</p>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    {new Date(n.created_at).toLocaleString()}
                   </p>
+                </div>
+                <div className="flex items-center gap-2 mt-4 sm:mt-0 ml-0 sm:ml-4 w-full sm:w-auto">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
-                    className="mt-1"
+                    className="flex-1 sm:flex-none"
                     onClick={() => {
-                      if (e.type === "message") navigate("/messages");
-                      if (e.type === "project") navigate("/dashboard");
+                      if (n.type === "message") navigate("/messages");
+                      else if (n.type.includes("project")) navigate("/dashboard");
+                      else if (n.type === "payment_received") navigate("/wallet");
+                      else if (n.type.includes("partnership")) navigate("/partnerships");
                     }}
                   >
                     View
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={(e) => deleteNotification(n.id, e)}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </Card>

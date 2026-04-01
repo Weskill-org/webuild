@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
-  const { unreadMessages } = useRealtime();
+  const { unreadMessages, unreadNotifications } = useRealtime();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Messages", icon: MessageSquare, path: "/messages", badge: unreadMessages },
     { label: "Wallet", icon: Wallet, path: "/wallet" },
     { label: "Certificates", icon: Award, path: "/certificates" },
-    { label: "Notifications", icon: Bell, path: "/notifications" },
+    { label: "Notifications", icon: Bell, path: "/notifications", badge: unreadNotifications },
     { label: "Settings", icon: Settings, path: "/settings" },
     { label: "Admin", icon: Shield, path: "/admin" },
   ];
@@ -236,7 +236,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 onClick={() => navigate("/notifications")}
               >
                 <Bell className="w-5 h-5" />
-                {/* Notification dot */}
+                {unreadNotifications > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+                )}
               </Button>
               <button
                 onClick={() => navigate("/settings")}

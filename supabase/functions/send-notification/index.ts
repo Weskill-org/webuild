@@ -98,6 +98,57 @@ serve(async (req) => {
         break;
       }
 
+      case "new_project": {
+        const { data: project } = await supabaseAdmin
+          .from("projects")
+          .select("title")
+          .eq("id", project_id)
+          .single();
+        
+        const { data: users } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .or("role.eq.student,role.eq.campus");
+        
+        const recipients = (users ?? []).map((u: any) => u.id);
+        notification = {
+          title: "New Project Posted! 🚀",
+          body: `A new project "${project?.title || 'Untitled Project'}" has been posted. Check it out!`,
+          recipients: recipients,
+        };
+        break;
+      }
+
+      case "partnership_requested": {
+        // notify campus
+        notification = {
+          title: "Partnership Request Received",
+          body: `A company wants to partner with your campus!`,
+          recipients: [user_id],
+        };
+        break;
+      }
+
+      case "partnership_accepted": {
+        // notify company
+        notification = {
+          title: "Partnership Accepted! 🤝",
+          body: `Your partnership request has been accepted by the campus.`,
+          recipients: [user_id],
+        };
+        break;
+      }
+
+      case "partnership_rejected": {
+        // notify company
+        notification = {
+          title: "Partnership Update",
+          body: `Your partnership request was declined.`,
+          recipients: [user_id],
+        };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown event type" }),

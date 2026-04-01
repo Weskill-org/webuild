@@ -29,6 +29,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
 import ReviewDialog from "@/components/ReviewDialog";
+import { sendNotification } from "@/lib/notifications";
 import ReviewsSection from "@/components/ReviewsSection";
 import FileDeliverables from "@/components/FileDeliverables";
 import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
@@ -133,6 +134,9 @@ const ProjectDetails = () => {
       setApplications((prev) => [data as unknown as ProjectApplication, ...prev]);
       setApplyOpen(false);
       setCoverLetter("");
+      
+      await sendNotification("new_application", { project_id: project.id });
+
       toast({ title: "Application submitted!", description: "The company will review your application." });
     } catch (err: any) {
       toast({ variant: "destructive", title: "Failed to apply", description: err.message });
@@ -147,14 +151,30 @@ const ProjectDetails = () => {
       toast({ variant: "destructive", title: "Error", description: error.message });
       return;
     }
+    
     setApplications((prev) => prev.map((a) => (a.id === appId ? { ...a, status: status as ProjectApplication["status"] } : a)));
     toast({ title: `Application ${status}` });
+
+    const app = applications.find(a => a.id === appId);
+    if (app) {
+      await sendNotification(
+        status === "accepted" ? "application_accepted" : "application_rejected",
+        { project_id: project!.id, user_id: app.applicant_id }
+      );
+    }
   };
 
   const handleToggleMilestone = async (msId: string, completed: boolean) => {
     const { error } = await supabase.from("project_milestones").update({ completed }).eq("id", msId);
     if (!error) {
       setMilestones((prev) => prev.map((m) => (m.id === msId ? { ...m, completed } : m)));
+      
+      if (completed && acceptedApplicant && project) {
+        await sendNotification("milestone_completed", { 
+          project_id: project.id, 
+          user_id: acceptedApplicant.id 
+        });
+      }
     }
   };
 
