@@ -211,7 +211,7 @@ export default function useRealtime() {
   const completedCount = projects.filter((p) => p.completed).length;
   const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);
   const unreadMessages = messages.filter((m) => !m.read && m.recipient_id === profile?.id).length;
-  const unreadNotifications = notifications.length;
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
 
   return {
     projects,

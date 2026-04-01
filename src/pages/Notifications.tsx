@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import useRealtime from "@/hooks/use-realtime";
@@ -13,6 +14,36 @@ const Notifications = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
+
+  useEffect(() => {
+    const markAllAsRead = async () => {
+      if (!profile || isMarkingRead) return;
+      
+      const unreadIds = notifications
+        .filter(n => !n.read)
+        .map(n => n.id);
+
+      if (unreadIds.length === 0) return;
+
+      setIsMarkingRead(true);
+      try {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read: true })
+          .in("id", unreadIds)
+          .eq("user_id", profile.id);
+        
+        if (error) throw error;
+      } catch (err) {
+        console.error("Error marking as read:", err);
+      } finally {
+        setIsMarkingRead(false);
+      }
+    };
+
+    markAllAsRead();
+  }, [profile, notifications, isMarkingRead]);
 
   const deleteAll = async () => {
     if (!profile) return;
