@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, BookOpen, Briefcase, Building2, Award, MessageSquare, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -42,39 +43,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Webuild
-            </span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Features
-            </a>
-            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              How it Works
-            </a>
-            <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              About
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate("/login")}>
-              Login
-            </Button>
-            <Button onClick={() => navigate("/role-selection")} className="gap-2">
-              Get Started <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 pt-20 pb-32">
@@ -170,27 +139,7 @@ const Landing = () => {
         </Card>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <span className="text-white font-bold">W</span>
-              </div>
-              <span className="font-bold">Webuild</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 Webuild. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

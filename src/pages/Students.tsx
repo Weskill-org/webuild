@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
+import { BulkImportDialog } from "@/components/BulkImportDialog";
+import { FileSpreadsheet } from "lucide-react";
 import type { Profile } from "@/types/database";
 
 interface Batch {
@@ -46,6 +48,7 @@ const Students = () => {
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -188,10 +191,21 @@ const Students = () => {
             <h1 className="text-2xl font-bold">Students</h1>
             <p className="text-muted-foreground">Manage students enrolled in your batches</p>
           </div>
-          <Button onClick={() => setAddOpen(true)} className="gap-2" disabled={batches.length === 0}>
-            <PlusCircle className="w-4 h-4" />
-            Add Student
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setBulkImportOpen(true)}
+              className="gap-2"
+              disabled={batches.length === 0}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Bulk Import
+            </Button>
+            <Button onClick={() => setAddOpen(true)} className="gap-2" disabled={batches.length === 0}>
+              <PlusCircle className="w-4 h-4" />
+              Add Student
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -377,6 +391,16 @@ const Students = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        batches={batches}
+        onSuccess={() => {
+          fetchStudents();
+        }}
+      />
     </DashboardLayout>
   );
 };

@@ -35,8 +35,16 @@ import ActivityFeed from "./pages/ActivityFeed";
 import Disputes from "./pages/Disputes";
 import Partnerships from "./pages/Partnerships";
 import CampusAnalytics from "./pages/CampusAnalytics";
-import BulkImport from "./pages/BulkImport";
 import NotFound from "./pages/NotFound";
+import Careers from "./pages/Careers";
+import Partners from "./pages/Partners";
+import Blog from "./pages/Blog";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import Contact from "./pages/Contact";
+import Features from "./pages/Features";
+import HowItWorks from "./pages/HowItWorks";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +66,17 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
             </Route>
+
+            {/* Public Footer Pages */}
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/about" element={<AboutUs />} />
 
             <Route path="/verify/:uid" element={<VerifyCertificate />} />
             
@@ -85,7 +104,6 @@ const App = () => (
               <Route path="/disputes" element={<Disputes />} />
               <Route path="/partnerships" element={<Partnerships />} />
               <Route path="/campus-analytics" element={<CampusAnalytics />} />
-              <Route path="/bulk-import" element={<BulkImport />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

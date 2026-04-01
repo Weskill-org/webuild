@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Loader2, CheckCircle, XCircle, FileSpreadsheet, Link2, UserPlus, AlertTriangle, Download } from "lucide-react";
+import { Upload, Loader2, Link2, UserPlus, AlertTriangle, Download, XCircle, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "@/hooks/use-toast";
@@ -14,7 +12,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+interface Batch {
+  id: string;
+  name: string;
+}
 
 interface StudentResult {
   email: string;
@@ -31,21 +41,20 @@ interface ImportResult {
   results: StudentResult[];
 }
 
-export default function BulkStudentImport() {
+interface BulkImportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  batches: Batch[];
+  onSuccess?: () => void;
+}
+
+export function BulkImportDialog({ open, onOpenChange, batches, onSuccess }: BulkImportDialogProps) {
   const { profile } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
   const [selectedBatch, setSelectedBatch] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [progress, setProgress] = useState("");
-
-  useEffect(() => {
-    if (!profile) return;
-    supabase.from("batches").select("id, name").eq("campus_id", profile.id).then(({ data }) => {
-      setBatches((data ?? []) as any[]);
-    });
-  }, [profile]);
 
   const downloadTemplate = () => {
     const csvContent = "email,name,phone\nstudent1@example.com,John Doe,+919876543210\nstudent2@example.com,Jane Smith,+919876543211\n";
@@ -70,7 +79,6 @@ export default function BulkStudentImport() {
       const text = await file.text();
       const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
 
-      // Skip header if present
       const startIndex = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
       const dataLines = lines.slice(startIndex);
 
@@ -90,7 +98,6 @@ export default function BulkStudentImport() {
         return;
       }
 
-      // Parse CSV rows
       const students: { email: string; full_name: string; phone?: string }[] = [];
       const parseErrors: string[] = [];
 
@@ -137,7 +144,6 @@ export default function BulkStudentImport() {
 
       setProgress(`Processing ${students.length} students...`);
 
-      // Call the edge function in bulk mode
       const { data, error } = await supabase.functions.invoke("invite-student", {
         body: {
           mode: "bulk",
@@ -152,7 +158,6 @@ export default function BulkStudentImport() {
       const summary = data?.summary;
       const results: StudentResult[] = data?.results ?? [];
 
-      // Add parse errors to results
       const allResults = [
         ...results,
         ...parseErrors.map((err) => ({ email: "", status: "error" as const, message: err })),
@@ -172,6 +177,10 @@ export default function BulkStudentImport() {
         title: "Import Complete",
         description: `${importResult.invited} invited, ${importResult.linked} linked, ${importResult.errors} errors`,
       });
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err: any) {
       toast({ title: "Import failed", description: err.message, variant: "destructive" });
     } finally {
@@ -207,20 +216,34 @@ export default function BulkStudentImport() {
     }
   };
 
-  return (
-    <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <FileSpreadsheet className="w-7 h-7 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Bulk Student Import</h1>
-            <p className="text-sm text-muted-foreground">
-              Upload a CSV to invite and add students to a batch
-            </p>
-          </div>
-        </div>
+  const resetState = () => {
+    setResult(null);
+    setSelectedBatch("");
+    setProgress("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
-        <Card className="p-6 space-y-4">
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetState();
+    }
+    onOpenChange(newOpen);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-primary" />
+            Bulk Student Import
+          </DialogTitle>
+          <DialogDescription>
+            Upload a CSV to invite and add students to a batch.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
           <div>
             <label className="text-sm font-medium mb-2 block">Select Batch</label>
             <Select value={selectedBatch} onValueChange={setSelectedBatch}>
@@ -231,14 +254,13 @@ export default function BulkStudentImport() {
             </Select>
           </div>
 
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-            <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+            <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
             <p className="text-sm text-muted-foreground mb-1">
               Upload a CSV file with columns: <strong>email, name, phone</strong>
             </p>
             <p className="text-xs text-muted-foreground mb-4">
-              New students will receive an email invite to join the platform.
-              Existing students will be linked to your batch.
+              New students will receive an email invite to join the platform. Existing students will be linked to your batch.
             </p>
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
             <div className="flex gap-2 justify-center">
@@ -255,71 +277,74 @@ export default function BulkStudentImport() {
 
           <div className="text-xs text-muted-foreground">
             <p className="font-medium mb-1">CSV Format:</p>
-            <pre className="bg-secondary p-2 rounded text-xs">email,name,phone{"\n"}student@example.com,John Doe,+919876543210{"\n"}another@example.com,Jane Smith,+919876543211</pre>
-            <p className="mt-2 text-xs">
+            <pre className="bg-secondary p-2 rounded text-xs">email,name,phone{"\n"}student@example.com,John Doe,+919876543210</pre>
+            <p className="mt-1">
               <strong>Note:</strong> Phone number is optional. Maximum 200 students per import.
             </p>
           </div>
-        </Card>
 
-        {result && (
-          <Card className="p-5 mt-4">
-            <h3 className="font-semibold mb-3">Import Results</h3>
+          {result && (
+            <div className="p-4 bg-muted/30 rounded-lg border mt-4">
+              <h3 className="font-semibold mb-3 text-sm">Import Results</h3>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Badge variant="secondary">Total: {result.total}</Badge>
+                {result.invited > 0 && (
+                  <Badge className="gap-1 bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-500/25">
+                    <UserPlus className="w-3 h-3" /> {result.invited} Invited
+                  </Badge>
+                )}
+                {result.linked > 0 && (
+                  <Badge className="gap-1 bg-blue-500/15 text-blue-700 dark:text-blue-400 hover:bg-blue-500/25">
+                    <Link2 className="w-3 h-3" /> {result.linked} Linked
+                  </Badge>
+                )}
+                {result.already_enrolled > 0 && (
+                  <Badge className="gap-1 bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/25">
+                    <AlertTriangle className="w-3 h-3" /> {result.already_enrolled} Already Enrolled
+                  </Badge>
+                )}
+                {result.errors > 0 && (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="w-3 h-3" /> {result.errors} Errors
+                  </Badge>
+                )}
+              </div>
 
-            {/* Summary badges */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="secondary">Total: {result.total}</Badge>
-              {result.invited > 0 && (
-                <Badge className="gap-1 bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-500/25">
-                  <UserPlus className="w-3 h-3" /> {result.invited} Invited
-                </Badge>
-              )}
-              {result.linked > 0 && (
-                <Badge className="gap-1 bg-blue-500/15 text-blue-700 dark:text-blue-400 hover:bg-blue-500/25">
-                  <Link2 className="w-3 h-3" /> {result.linked} Linked
-                </Badge>
-              )}
-              {result.already_enrolled > 0 && (
-                <Badge className="gap-1 bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/25">
-                  <AlertTriangle className="w-3 h-3" /> {result.already_enrolled} Already Enrolled
-                </Badge>
-              )}
-              {result.errors > 0 && (
-                <Badge variant="destructive" className="gap-1">
-                  <XCircle className="w-3 h-3" /> {result.errors} Errors
-                </Badge>
+              {result.results.length > 0 && (
+                <div className="max-h-[150px] overflow-y-auto space-y-1.5 border rounded-md p-2 bg-background">
+                  {result.results.map((r, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-2 text-xs p-1.5 rounded ${
+                        r.status === "invited"
+                          ? "bg-green-500/5 text-green-700 dark:text-green-400"
+                          : r.status === "linked"
+                          ? "bg-blue-500/5 text-blue-700 dark:text-blue-400"
+                          : r.status === "already_enrolled"
+                          ? "bg-yellow-500/5 text-yellow-700 dark:text-yellow-400"
+                          : "bg-destructive/5 text-destructive"
+                      }`}
+                    >
+                      {getStatusIcon(r.status)}
+                      <span className="font-medium min-w-[60px]">{getStatusLabel(r.status)}</span>
+                      <span className="truncate">
+                        {r.email ? `${r.email} — ` : ""}
+                        {r.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
+          )}
+        </div>
 
-            {/* Detailed results */}
-            {result.results.length > 0 && (
-              <div className="max-h-60 overflow-y-auto space-y-1.5">
-                {result.results.map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 text-xs p-2 rounded ${
-                      r.status === "invited"
-                        ? "bg-green-500/5"
-                        : r.status === "linked"
-                        ? "bg-blue-500/5"
-                        : r.status === "already_enrolled"
-                        ? "bg-yellow-500/5"
-                        : "bg-destructive/5"
-                    }`}
-                  >
-                    {getStatusIcon(r.status)}
-                    <span className="font-medium min-w-[60px]">{getStatusLabel(r.status)}</span>
-                    <span className="text-muted-foreground truncate">
-                      {r.email ? `${r.email} — ` : ""}
-                      {r.message}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )}
-      </div>
-    </DashboardLayout>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -82,7 +82,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Resources", icon: BookOpen, path: "/resources" },
     { label: "Batches", icon: BookOpen, path: "/batches", roles: ["campus"] },
     { label: "Students", icon: Users, path: "/students", roles: ["campus"] },
-    { label: "Bulk Import", icon: FileSpreadsheet, path: "/bulk-import", roles: ["campus"] },
     { label: "Analytics", icon: BarChart3, path: "/campus-analytics", roles: ["campus"] },
     { label: "Partnerships", icon: Handshake, path: "/partnerships", roles: ["company", "campus"] },
     { label: "Disputes", icon: AlertTriangle, path: "/disputes" },
