@@ -122,17 +122,26 @@ export default function Partnerships() {
         {isCompany && (
           <Card className="p-5 mb-6 space-y-4">
             <h3 className="font-semibold">Request Partnership</h3>
-            <Select value={selectedCampus} onValueChange={setSelectedCampus}>
-              <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
-              <SelectContent>
-                {campuses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Textarea placeholder="Message (optional)" value={message} onChange={(e) => setMessage(e.target.value)} rows={3} />
-            <Button onClick={handleRequest} disabled={submitting || !selectedCampus}>
-              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Send Request
-            </Button>
+            {campuses.length === 0 && !loading ? (
+              <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 border border-border">
+                <p className="font-medium text-foreground mb-1">No verified campuses available yet</p>
+                <p>Campuses need to verify their email address before they appear here. Once a campus confirms their email, they will be listed for partnership requests.</p>
+              </div>
+            ) : (
+              <>
+                <Select value={selectedCampus} onValueChange={setSelectedCampus}>
+                  <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Textarea placeholder="Message (optional)" value={message} onChange={(e) => setMessage(e.target.value)} rows={3} />
+                <Button onClick={handleRequest} disabled={submitting || !selectedCampus}>
+                  {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send Request
+                </Button>
+              </>
+            )}
           </Card>
         )}
 

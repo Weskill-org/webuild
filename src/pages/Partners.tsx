@@ -1,9 +1,11 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Building2, Handshake, Network, ShieldCheck } from "lucide-react";
+import { Building2, Handshake, Network, ShieldCheck, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Partners = () => {
+  const navigate = useNavigate();
   const benefits = [
     { icon: Network, title: "Unmatched Reach", desc: "Connect with thousands of students and companies actively building and learning." },
     { icon: ShieldCheck, title: "Verified Network", desc: "Partner with a trusted ecosystem where identities and skills are verified." },
@@ -32,8 +34,8 @@ const Partners = () => {
               Join our network of industry leaders, educational institutions, and innovators reshaping the tech ecosystem.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" className="rounded-full px-8">Become a Partner</Button>
-              <Button size="lg" variant="outline" className="rounded-full px-8">Talk to Sales</Button>
+              <Button size="lg" className="rounded-full px-8" onClick={() => navigate("/role-selection")}>Become a Partner</Button>
+              <Button size="lg" variant="outline" className="rounded-full px-8" onClick={() => navigate("/contact?subject=Partnership%20Inquiry")}>Talk to Sales</Button>
             </div>
           </div>
         </section>
@@ -65,6 +67,39 @@ const Partners = () => {
                 <p className="text-muted-foreground leading-relaxed">{b.desc}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="py-24 px-4">
+          <div className="container mx-auto max-w-4xl bg-primary rounded-[3rem] p-12 md:p-20 text-center text-primary-foreground relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+            
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Ready to grow with us?</h2>
+              <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
+                Join our ecosystem and start building the future of tech. Whether you're a campus or a company, we have a place for you.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  variant="secondary" 
+                  className="rounded-full px-10 h-14 text-lg font-semibold group"
+                  onClick={() => navigate("/role-selection")}
+                >
+                  Get Started <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="rounded-full px-10 h-14 text-lg font-semibold bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                  onClick={() => navigate("/contact?subject=Partnership%20Inquiry")}
+                >
+                  Contact Sales
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
       </main>

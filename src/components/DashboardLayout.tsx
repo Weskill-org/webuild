@@ -30,6 +30,7 @@ import {
   MoreHorizontal,
   X,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -43,6 +44,7 @@ interface NavItem {
   path: string;
   roles?: string[];
   badge?: number;
+  subItems?: { label: string; path: string }[];
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -52,7 +54,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { unreadMessages, unreadNotifications } = useRealtime();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggleSubMenu = (label: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -73,7 +80,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    { label: "Projects", icon: Briefcase, path: "/projects" },
+    { label: "Projects", icon: Briefcase, path: "/projects", roles: ["company", "campus"] },
+    { 
+      label: "My Projects", icon: Briefcase, path: "/student-projects", roles: ["student"],
+      subItems: [
+        { label: "Applied", path: "/student-projects?tab=applied" },
+        { label: "Accepted", path: "/student-projects?tab=accepted" },
+        { label: "Completed", path: "/student-projects?tab=completed" }
+      ]
+    },
     { label: "Post Project", icon: PlusCircle, path: "/projects/new", roles: ["company"] },
     { label: "Browse Projects", icon: Search, path: "/marketplace", roles: ["student"] },
     { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
@@ -172,28 +187,65 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <nav className={`flex-1 py-4 space-y-1 overflow-y-auto transition-all duration-300 ${isSidebarCollapsed ? "px-2" : "px-3"
           }`}>
           {filteredNav.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.subItems && item.subItems.some(sub => location.pathname === sub.path.split('?')[0]));
+            const isExpanded = expandedMenus[item.label];
+
             return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center transition-colors px-3 py-2.5 rounded-lg text-sm ${isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  } ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}
-                title={isSidebarCollapsed ? item.label : ""}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                {!isSidebarCollapsed && <span className="truncate animate-fade-in">{item.label}</span>}
-                {item.badge && item.badge > 0 && !isSidebarCollapsed ? (
-                  <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5 animate-fade-in">
-                    {item.badge}
-                  </Badge>
-                ) : null}
-                {item.badge && item.badge > 0 && isSidebarCollapsed && (
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              <div key={item.path} className="space-y-1">
+                <button
+                  onClick={() => {
+                    if (item.subItems && !isSidebarCollapsed) {
+                      toggleSubMenu(item.label);
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
+                  className={`w-full flex items-center transition-colors px-3 py-2.5 rounded-lg text-sm ${isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    } ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}
+                  title={isSidebarCollapsed ? item.label : ""}
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  {!isSidebarCollapsed && <span className="truncate flex-1 text-left animate-fade-in">{item.label}</span>}
+                  
+                  {item.badge && item.badge > 0 && !isSidebarCollapsed ? (
+                    <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5 animate-fade-in">
+                      {item.badge}
+                    </Badge>
+                  ) : null}
+                  {item.badge && item.badge > 0 && isSidebarCollapsed && (
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+                  )}
+                  
+                  {!isSidebarCollapsed && item.subItems && (
+                    isExpanded ? <ChevronDown className="w-4 h-4 shrink-0 text-sidebar-foreground/50" /> : <ChevronRight className="w-4 h-4 shrink-0 text-sidebar-foreground/50" />
+                  )}
+                </button>
+                
+                {!isSidebarCollapsed && item.subItems && isExpanded && (
+                  <div className="pl-9 pr-3 py-1 space-y-1 animate-fade-in">
+                    {item.subItems.map((sub, idx) => {
+                      const isSubActive = location.pathname + location.search === sub.path 
+                        || (location.pathname === sub.path.split('?')[0] && location.search === '' && idx === 0);
+                      
+                      return (
+                        <button
+                          key={sub.path}
+                          onClick={() => navigate(sub.path)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isSubActive
+                              ? "text-sidebar-accent-foreground bg-sidebar-accent/50 font-medium"
+                              : "text-sidebar-foreground/60 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
+                          }`}
+                        >
+                          {sub.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </nav>
@@ -348,25 +400,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* Drawer nav items */}
               <div className="mobile-drawer-nav">
                 {mobileMoreItems.map((item, index) => {
-                  const isActive = location.pathname === item.path;
+                  const isActive = location.pathname === item.path || (item.subItems && item.subItems.some(sub => location.pathname === sub.path.split('?')[0]));
+                  const isExpanded = expandedMenus[item.label];
+
                   return (
-                    <button
-                      key={item.path}
-                      onClick={() => handleMobileNav(item.path)}
-                      className={`mobile-drawer-item ${isActive ? "mobile-drawer-item-active" : ""}`}
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <div className={`mobile-drawer-item-icon ${isActive ? "mobile-drawer-item-icon-active" : ""}`}>
-                        <item.icon className="w-5 h-5" />
-                      </div>
-                      <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
-                      {item.badge && item.badge > 0 && (
-                        <Badge variant="destructive" className="text-xs px-2 py-0.5 min-w-[1.5rem] h-5">
-                          {item.badge}
-                        </Badge>
+                    <div key={item.path} className="w-full">
+                      <button
+                        onClick={() => {
+                          if (item.subItems) {
+                            toggleSubMenu(item.label);
+                          } else {
+                            handleMobileNav(item.path);
+                          }
+                        }}
+                        className={`mobile-drawer-item ${isActive ? "mobile-drawer-item-active" : ""}`}
+                        style={{ animationDelay: `${index * 30}ms` }}
+                      >
+                        <div className={`mobile-drawer-item-icon ${isActive ? "mobile-drawer-item-icon-active" : ""}`}>
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+                        {item.badge && item.badge > 0 && (
+                          <Badge variant="destructive" className="text-xs px-2 py-0.5 min-w-[1.5rem] h-5">
+                            {item.badge}
+                          </Badge>
+                        )}
+                        {item.subItems ? (
+                          isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground/50 shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+                        )}
+                      </button>
+
+                      {item.subItems && isExpanded && (
+                        <div className="pl-12 pr-4 py-1 space-y-1 mb-2 animate-fade-in">
+                          {item.subItems.map((sub, idx) => {
+                            const isSubActive = location.pathname + location.search === sub.path 
+                              || (location.pathname === sub.path.split('?')[0] && location.search === '' && idx === 0);
+                            
+                            return (
+                              <button
+                                key={sub.path}
+                                onClick={() => handleMobileNav(sub.path)}
+                                className={`w-full text-left py-2 text-sm transition-colors ${
+                                  isSubActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                {sub.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
-                    </button>
+                    </div>
                   );
                 })}
               </div>

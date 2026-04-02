@@ -2,8 +2,17 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Zap, Heart, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Careers = () => {
+  const navigate = useNavigate();
+
+  const scrollToOpenings = () => {
+    const element = document.getElementById("openings");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   const jobs = [
     { title: "Senior Frontend Engineer", department: "Engineering", location: "Remote", type: "Full-time" },
     { title: "Product Manager", department: "Product", location: "Bengaluru, KA", type: "Full-time" },
@@ -32,7 +41,7 @@ const Careers = () => {
             <p className="text-xl text-muted-foreground mb-10">
               Help us reshape the future of collaborative learning and bridge the gap between education and industry.
             </p>
-            <Button size="lg" className="rounded-full px-8 gap-2">
+            <Button size="lg" className="rounded-full px-8 gap-2" onClick={scrollToOpenings}>
               View Openings <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
@@ -57,7 +66,7 @@ const Careers = () => {
         </section>
 
         {/* Open Positions Section */}
-        <section className="py-24 px-4 container mx-auto max-w-4xl">
+        <section id="openings" className="py-24 px-4 container mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold mb-10">Open Positions</h2>
           <div className="flex flex-col gap-4">
             {jobs.map((job, index) => (
@@ -72,7 +81,11 @@ const Careers = () => {
                     <span>{job.type}</span>
                   </div>
                 </div>
-                <Button variant="outline" className="shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Button 
+                  variant="outline" 
+                  className="shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                  onClick={() => navigate("/role-selection")}
+                >
                   Apply Now
                 </Button>
               </div>

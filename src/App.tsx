@@ -25,6 +25,7 @@ import Wallet from "./pages/Wallet";
 import Certificates from "./pages/Certificates";
 import Batches from "./pages/Batches";
 import Students from "./pages/Students";
+import StudentProjects from "./pages/StudentProjects";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import AdminDashboard from "./pages/AdminDashboard";
 import Leaderboard from "./pages/Leaderboard";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/batches" element={<Batches />} />
               <Route path="/students" element={<Students />} />
+              <Route path="/student-projects" element={<StudentProjects />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/resources" element={<LearningResources />} />
