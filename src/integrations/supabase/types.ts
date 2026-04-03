@@ -355,6 +355,39 @@ export type Database = {
           },
         ]
       }
+      gift_cards: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          redeemed: boolean
+          redeemed_at: string | null
+          redeemed_by: string | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Relationships: []
+      }
       learning_resources: {
         Row: {
           created_at: string | null
