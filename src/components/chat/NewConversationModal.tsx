@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Search, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,9 +41,10 @@ export default function NewConversationModal({
       const { data } = await supabase
         .from("profiles")
         .select("id, full_name, company_name, university, role, logo_url")
-        .or(`full_name.ilike.%${search}%,company_name.ilike.%${search}%,university.ilike.%${search}%`)
+        // @ts-ignore: email is not in the generated types for profiles but it exists in the database
+        .eq("email", search.trim())
         .neq("id", currentUser?.id)
-        .limit(10);
+        .limit(1);
       setResults(data ?? []);
       setLoading(false);
     }, 300);
@@ -67,7 +68,8 @@ export default function NewConversationModal({
           <div className="relative mb-4">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, company, or university..."
+              type="email"
+              placeholder="Search by full email address..."
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -103,10 +105,10 @@ export default function NewConversationModal({
                   </div>
                 </button>
               ))
-            ) : search.length >= 2 ? (
+            ) : search.length > 0 ? (
               <div className="text-center py-8 text-muted-foreground">No users found</div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">Type at least 2 characters to search</div>
+              <div className="text-center py-8 text-muted-foreground">Enter a full email address to search</div>
             )}
           </div>
         </div>
