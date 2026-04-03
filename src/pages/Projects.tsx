@@ -280,11 +280,7 @@ const Projects = () => {
                 )}
 
                 <div className="flex gap-2 flex-wrap">
-                  {(!isCompany || project.status !== "submitted") && (
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}`)}>
-                      View Details
-                    </Button>
-                  )}
+
                   {isCompany && project.status === "submitted" && (
                     <Button 
                       size="sm" 

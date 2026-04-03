@@ -209,7 +209,6 @@ const ProjectMarketplace = () => {
 
                   <div className="flex gap-2">
                     <Button size="sm" className="flex-1" onClick={() => navigate(`/projects/${project.id}`)}>View & Apply</Button>
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}`)}>View Details</Button>
                   </div>
                 </Card>
               );
