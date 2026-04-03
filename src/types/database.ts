@@ -29,8 +29,10 @@ export interface Project {
   duration: string | null;
   start_date: string | null;
   end_date: string | null;
-  status: 'draft' | 'open' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'draft' | 'open' | 'in_progress' | 'submitted' | 'completed' | 'cancelled';
   completed: boolean;
+  payout_released: boolean;
+  certificate_issued: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -90,8 +92,11 @@ export interface Certificate {
   student_id: string;
   company_name: string | null;
   project_title: string | null;
+  course_name: string | null;
+  payout_amount: number | null;
   issued_at: string;
   certificate_uid: string;
+  display_id: string | null;
   qr_data: string | null;
 }
 

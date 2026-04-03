@@ -10,13 +10,20 @@ const AboutUs = () => {
         { icon: Heart, title: "Our Passion", desc: "We love creating intuitive and impactful experiences." },
     ];
 
+  const scrollToVision = () => {
+    const element = document.getElementById('vision');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
       <main className="flex-1">
         <section className="pt-24 pb-20 px-4">
-          <div className="container mx-auto text-center max-w-4xl mb-24">
+          <div className="container mx-auto text-center max-w-4xl mb-24 animate-in fade-in slide-in-from-top-4 duration-1000">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
               Building the <span className="text-primary italic">Bridge</span> to the Future
             </h1>
@@ -28,10 +35,13 @@ const AboutUs = () => {
 
           <div className="container mx-auto max-w-7xl px-4">
               <div className="grid lg:grid-cols-2 gap-16 items-center mb-32">
-                <div className="space-y-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-sm">
-                        <Sparkles className="w-4 h-4" /> Our Story
-                    </div>
+                <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-1000">
+                    <button 
+                        onClick={scrollToVision}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-sm hover:bg-primary/20 transition-all duration-300 transform hover:scale-105 active:scale-95 group"
+                    >
+                        <Sparkles className="w-4 h-4 group-hover:animate-pulse" /> Our Story
+                    </button>
                     <h2 className="text-4xl font-bold leading-tight">Empowering students and companies to collaborate effortlessly.</h2>
                     <p className="text-xl text-muted-foreground leading-relaxed">
                         Webuild was founded with a simple idea: that real-world experience is the best teacher. 
@@ -41,7 +51,7 @@ const AboutUs = () => {
                         "Our goal is to make industry experience accessible to every student, regardless of their location or background."
                     </p>
                 </div>
-                <div className="bg-card border border-border/50 rounded-3xl p-12 shadow-sm relative overflow-hidden group">
+                <div id="vision" className="bg-card border border-border/50 rounded-3xl p-12 shadow-sm relative overflow-hidden group animate-in fade-in slide-in-from-right-4 duration-1000">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/10 rounded-full -ml-16 -mb-16 group-hover:scale-150 transition-transform duration-500"></div>
                     <h3 className="text-2xl font-bold mb-8">Our Vision</h3>

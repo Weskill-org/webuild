@@ -10,7 +10,8 @@ type NotificationEvent =
   | "new_project"
   | "partnership_requested"
   | "partnership_accepted"
-  | "partnership_rejected";
+  | "partnership_rejected"
+  | "certificate_issued";
 
 export async function sendNotification(
   event: NotificationEvent,

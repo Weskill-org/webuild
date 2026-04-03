@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Certificates", icon: Award, path: "/certificates" },
     { label: "Notifications", icon: Bell, path: "/notifications", badge: unreadNotifications },
     { label: "Settings", icon: Settings, path: "/settings" },
-    { label: "Admin", icon: Shield, path: "/admin" },
+    { label: "Admin", icon: Shield, path: "/admin", roles: ["admin"] },
   ];
 
   const filteredNav = navItems.filter(

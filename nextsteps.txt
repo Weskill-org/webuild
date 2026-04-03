@@ -1,0 +1,3 @@
+
+On Dashboard > on completed tab, the completed is not updating after making projects, make it work, as professional developer works.
+In new messages person need to

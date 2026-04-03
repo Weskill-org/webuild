@@ -1,9 +1,27 @@
 import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { BookOpen, Calendar, Clock, ChevronRight, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
+import { 
+  BookOpen, 
+  Calendar, 
+  Clock, 
+  ChevronRight, 
+  Share2, 
+  Facebook, 
+  Linkedin, 
+  MessageCircle, 
+  Copy, 
+  Check 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -91,6 +109,51 @@ const Blog = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedPost, setSelectedPost] = useState<null | typeof allPosts[0]>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleShare = (platform: string, post: typeof allPosts[0]) => {
+    const url = window.location.href;
+    const text = `Check out this article: ${post.title}`;
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'x':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + url)}`;
+        break;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      toast({
+        title: "Link Copied!",
+        description: "The article link has been copied to your clipboard.",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Failed to copy",
+        description: "Please try again.",
+      });
+    }
+  };
 
   const handleLoadMore = () => {
     setIsLoading(true);
@@ -231,11 +294,88 @@ const Blog = () => {
                   <div className="mt-10 pt-8 border-t border-border/50 flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <span className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground pr-1">Share:</span>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-all"><Twitter className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-all"><Facebook className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-all"><Linkedin className="w-4 h-4" /></Button>
+                      <TooltipProvider>
+                        <div className="flex items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleShare('x', selectedPost)}
+                                className="w-9 h-9 rounded-full hover:bg-black hover:text-white transition-all duration-300"
+                              >
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                </svg>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share on X</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleShare('facebook', selectedPost)}
+                                className="w-9 h-9 rounded-full hover:bg-[#1877F2] hover:text-white transition-all duration-300"
+                              >
+                                <Facebook className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share on Facebook</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleShare('linkedin', selectedPost)}
+                                className="w-9 h-9 rounded-full hover:bg-[#0A66C2] hover:text-white transition-all duration-300"
+                              >
+                                <Linkedin className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share on LinkedIn</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleShare('whatsapp', selectedPost)}
+                                className="w-9 h-9 rounded-full hover:bg-[#25D366] hover:text-white transition-all duration-300"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share on WhatsApp</TooltipContent>
+                          </Tooltip>
+
+                          <div className="w-px h-6 bg-border mx-1" />
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={copyToClipboard}
+                                className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                              >
+                                {isCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{isCopied ? "Copied!" : "Copy Link"}</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TooltipProvider>
                     </div>
-                    <Button className="rounded-full px-6 py-5 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300" onClick={() => setSelectedPost(null)}>
+                    <Button 
+                      className="rounded-full px-6 py-5 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300" 
+                      onClick={() => setSelectedPost(null)}
+                    >
                       Close
                     </Button>
                   </div>

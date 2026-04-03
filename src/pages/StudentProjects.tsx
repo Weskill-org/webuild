@@ -4,11 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Briefcase, DollarSign, Clock, Search, ChevronRight } from "lucide-react";
+import { Briefcase, DollarSign, Clock, Search, ChevronRight, Send, Loader2 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import type { Project, ProjectApplication } from "@/types/database";
 
 type ApplicationWithProject = ProjectApplication & {
@@ -23,6 +24,7 @@ const StudentProjects = () => {
   const currentTab = searchParams.get("tab") || "applied";
 
   const [loading, setLoading] = useState(true);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [applications, setApplications] = useState<ApplicationWithProject[]>([]);
 
   useEffect(() => {
@@ -48,6 +50,50 @@ const StudentProjects = () => {
     fetchApplications();
   }, [profile?.id]);
 
+  const handleSubmitProject = async (projectId: string) => {
+    if (!profile?.id) return;
+    setSubmittingId(projectId);
+    try {
+      // 1. Update project status to completed
+      const { error: updateErr } = await supabase
+        .from("projects")
+        .update({ status: "completed" })
+        .eq("id", projectId);
+
+      if (updateErr) throw updateErr;
+
+      // 2. Fetch project owner to notify
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("owner_id, title")
+        .eq("id", projectId)
+        .single();
+
+      if (projectData) {
+        // 3. Send notification to owner
+        await supabase.functions.invoke("send-notification", {
+          body: {
+            event: "project_completed",
+            project_id: projectId,
+            user_id: projectData.owner_id,
+            data: { project_title: projectData.title }
+          },
+        });
+      }
+
+      toast.success("Project submitted successfully!");
+      
+      // Update local state to move project to "Completed" tab
+      setApplications(prev => prev.map(app => 
+        app.project_id === projectId ? { ...app, projects: { ...app.projects, status: "completed" as any } } : app
+      ));
+    } catch (err: any) {
+      toast.error(`Submission failed: ${err.message}`);
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
   const handleTabChange = (value: string) => {
     navigate(`/student-projects?tab=${value}`);
   };
@@ -60,10 +106,10 @@ const StudentProjects = () => {
       return app.status === "pending" || app.status === "rejected";
     }
     if (currentTab === "accepted") {
-      return app.status === "accepted" && app.projects.status !== "completed";
+      return app.status === "accepted" && app.projects.status !== "completed" && app.projects.status !== "submitted";
     }
     if (currentTab === "completed") {
-      return app.status === "accepted" && app.projects.status === "completed";
+      return app.status === "accepted" && (app.projects.status === "completed" || app.projects.status === "submitted");
     }
     return false;
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Briefcase, DollarSign, Clock, Pencil, Trash2 } from "lucide-react";
+import { PlusCircle, Briefcase, DollarSign, Clock, Pencil, Trash2, Send, Eye, CheckCircle2, File as FileIcon } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -16,17 +16,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useRealtime from "@/hooks/use-realtime";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
-import type { Project } from "@/types/database";
+import type { Project, Profile } from "@/types/database";
+
+interface Deliverable {
+  id: string;
+  project_id: string;
+  file_name: string;
+  file_url: string;
+  file_size: number | null;
+  description: string | null;
+  created_at: string;
+}
 
 const Projects = () => {
   const { projects } = useRealtime();
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get("tab") || "all";
 
   const isCompany = profile?.role === "company";
   const myProjects = isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
@@ -41,11 +54,36 @@ const Projects = () => {
   const [editSkills, setEditSkills] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(initialTab);
   const [search, setSearch] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deliverables, setDeliverables] = useState<Record<string, Deliverable[]>>({});
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  // Fetch deliverables for my projects
+  useEffect(() => {
+    const fetchDeliverables = async () => {
+      if (myProjects.length === 0) return;
+      const { data, error } = await supabase
+        .from('deliverables')
+        .select('*')
+        .in('project_id', myProjects.map(p => p.id));
+      
+      if (data) {
+        const grouped = data.reduce((acc: Record<string, Deliverable[]>, d: Deliverable) => {
+          if (!acc[d.project_id]) acc[d.project_id] = [];
+          acc[d.project_id].push(d);
+          return acc;
+        }, {});
+        setDeliverables(grouped);
+      }
+    };
+    if (profile?.id) {
+      fetchDeliverables();
+    }
+  }, [profile?.id, projects.length, myProjects.filter(p => p.status === 'submitted').length]); // Refresh when submitted count changes
 
   const openEdit = (project: Project) => {
     setEditProject(project);
@@ -97,6 +135,24 @@ const Projects = () => {
     }
   };
 
+  const handleConfirmProject = async (projectId: string) => {
+    setConfirmingId(projectId);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "completed" })
+        .eq("id", projectId);
+      
+      if (error) throw error;
+
+      toast({ title: "Project Confirmed!", description: "The project has been marked as complete." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -113,12 +169,18 @@ const Projects = () => {
           )}
         </div>
 
-        <Tabs defaultValue="all" className="w-full mb-8" onValueChange={setFilter}>
-          <TabsList className="grid w-full max-w-md grid-cols-4 h-11 p-1 bg-muted/50 rounded-xl">
+        <Tabs value={filter} className="w-full mb-8" onValueChange={setFilter}>
+          <TabsList className="grid w-full max-w-xl grid-cols-5 h-11 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">All</TabsTrigger>
             <TabsTrigger value="open" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Open</TabsTrigger>
             <TabsTrigger value="in_progress" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm truncate">In Progress</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Done</TabsTrigger>
+            <TabsTrigger value="submitted" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm relative">
+              Submitted
+              {myProjects.filter(p => p.status === "submitted").length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -142,8 +204,11 @@ const Projects = () => {
                     <Badge variant={
                       project.status === "open" ? "default" :
                       project.status === "in_progress" ? "secondary" :
+                      project.status === "submitted" ? "outline" :
                       project.status === "completed" ? "outline" : "destructive"
-                    } className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    } className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                      project.status === "submitted" ? "border-orange-500 text-orange-500" : ""
+                    }`}>
                       {project.status.replace("_", " ")}
                     </Badge>
                   </button>
@@ -167,11 +232,70 @@ const Projects = () => {
                   ))}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}`)}>
-                    View Details
-                  </Button>
-                  {isCompany && project.owner_id === profile?.id && (
+                {/* Received Deliverables Section (Only for Submitted status) */}
+                {isCompany && project.status === "submitted" && deliverables[project.id]?.length > 0 && (
+                  <div className="mb-6 p-4 rounded-xl bg-orange-500/5 border border-orange-500/10">
+                    <h4 className="text-sm font-bold text-orange-600 mb-3 flex items-center gap-2">
+                      <FileIcon className="w-4 h-4" />
+                      Deliverables & Files
+                    </h4>
+                    <div className="grid gap-2 mb-4">
+                      {deliverables[project.id].map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50 border border-border/50 text-sm">
+                          <div className="flex items-center gap-2 truncate pr-4">
+                            <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="truncate">{file.file_name}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase whitespace-nowrap">
+                              ({file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : "FILE"})
+                            </span>
+                          </div>
+                          <a 
+                            href={file.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline text-xs font-medium whitespace-nowrap"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-4 pt-3 border-t border-orange-500/10">
+                      <p className="text-xs text-orange-600/70">Review the files. If satisfied, confirm the project as complete.</p>
+                      <Button 
+                        size="sm"
+                        className="gap-1.5 bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20"
+                        onClick={() => handleConfirmProject(project.id)}
+                        disabled={confirmingId === project.id}
+                      >
+                        {confirmingId === project.id ? (
+                          <Clock className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        )}
+                        Confirm & Complete
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 flex-wrap">
+                  {(!isCompany || project.status !== "submitted") && (
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}`)}>
+                      View Details
+                    </Button>
+                  )}
+                  {isCompany && project.status === "submitted" && (
+                    <Button 
+                      size="sm" 
+                      className="gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/20 transition-all duration-300"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Review Submission
+                    </Button>
+                  )}
+                  {isCompany && project.owner_id === profile?.id && project.status !== "submitted" && (
                     <>
                       <Button size="sm" variant="secondary" onClick={() => openEdit(project)} className="gap-1">
                         <Pencil className="w-3.5 h-3.5" /> Edit
@@ -251,6 +375,7 @@ const Projects = () => {
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>

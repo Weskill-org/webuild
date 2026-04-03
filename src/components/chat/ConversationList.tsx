@@ -1,7 +1,9 @@
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Search, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Search, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
+import NewConversationModal from "./NewConversationModal";
 import type { Conversation } from "@/hooks/use-chat";
 
 interface Props {
@@ -13,17 +15,28 @@ interface Props {
 
 export default function ConversationList({ conversations, selectedPartner, onSelect, loading }: Props) {
   const [search, setSearch] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const filtered = conversations.filter(
     (c) => !search || c.partnerName.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <Card className={`w-80 shrink-0 flex flex-col ${selectedPartner ? "hidden md:flex" : "flex"}`}>
-      <div className="p-3 border-b border-border">
-        <div className="relative">
+      <div className="p-3 border-b border-border flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
         </div>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="h-9 w-9 shrink-0" 
+          onClick={() => setIsModalOpen(true)}
+          title="New Message"
+        >
+          <UserPlus className="w-4 h-4" />
+        </Button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
@@ -32,8 +45,14 @@ export default function ConversationList({ conversations, selectedPartner, onSel
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-6 text-center">
-            <MessageSquare className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No conversations</p>
+            <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
+              <MessageSquare className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-sm">No conversations</p>
+            <p className="text-xs text-muted-foreground mb-4">You haven't started any chats yet.</p>
+            <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)}>
+              Start a New Conversation
+            </Button>
           </div>
         ) : (
           filtered.map((c) => (
@@ -70,6 +89,11 @@ export default function ConversationList({ conversations, selectedPartner, onSel
           ))
         )}
       </div>
+      <NewConversationModal 
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen} 
+        onSelect={onSelect} 
+      />
     </Card>
   );
 }

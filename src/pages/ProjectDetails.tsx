@@ -23,6 +23,9 @@ import {
   Users,
   Send,
   Star,
+  MessageSquare,
+  File as FileIcon,
+  Award,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -32,6 +35,8 @@ import ReviewDialog from "@/components/ReviewDialog";
 import { sendNotification } from "@/lib/notifications";
 import ReviewsSection from "@/components/ReviewsSection";
 import FileDeliverables from "@/components/FileDeliverables";
+import IssueCertificateDialog from "@/components/IssueCertificateDialog";
+import ReleasePayoutDialog from "@/components/ReleasePayoutDialog";
 import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
 
 const ProjectDetails = () => {
@@ -54,66 +59,71 @@ const ProjectDetails = () => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<{ id: string; name: string } | null>(null);
   const [acceptedApplicant, setAcceptedApplicant] = useState<Profile | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [issueCertOpen, setIssueCertOpen] = useState(false);
+  const [releasePayoutOpen, setReleasePayoutOpen] = useState(false);
 
   const isOwner = profile?.id === project?.owner_id;
   const isStudent = profile?.role === "student";
 
-  useEffect(() => {
+  const fetchProjectData = async () => {
     if (!id) return;
-    (async () => {
-      setLoading(true);
-      const [projRes, msRes, appRes] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", id).single(),
-        supabase.from("project_milestones").select("*").eq("project_id", id).order("order_index"),
-        supabase.from("project_applications").select("*").eq("project_id", id),
-      ]);
+    setLoading(true);
+    const [projRes, msRes, appRes] = await Promise.all([
+      supabase.from("projects").select("*").eq("id", id).single(),
+      supabase.from("project_milestones").select("*").eq("project_id", id).order("order_index"),
+      supabase.from("project_applications").select("*").eq("project_id", id),
+    ]);
 
-      if (projRes.data) {
-        setProject(projRes.data as unknown as Project);
-        const ownerRes = await supabase.from("profiles").select("*").eq("id", projRes.data.owner_id).single();
-        if (ownerRes.data) setOwner(ownerRes.data as unknown as Profile);
+    if (projRes.data) {
+      setProject(projRes.data as unknown as Project);
+      const ownerRes = await supabase.from("profiles").select("*").eq("id", projRes.data.owner_id).single();
+      if (ownerRes.data) setOwner(ownerRes.data as unknown as Profile);
+    }
+    setMilestones((msRes.data as unknown as ProjectMilestone[]) ?? []);
+    const apps = (appRes.data as unknown as ProjectApplication[]) ?? [];
+    setApplications(apps);
+
+    // Find my application
+    if (profile) {
+      const mine = apps.find((a) => a.applicant_id === profile.id);
+      if (mine) setMyApplication(mine);
+    }
+
+    // Fetch applicant profiles for owner view
+    if (apps.length > 0 && projRes.data?.owner_id === profile?.id) {
+      const ids = apps.map((a) => a.applicant_id);
+      const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
+      if (profiles) {
+        const map: Record<string, Profile> = {};
+        profiles.forEach((p: any) => (map[p.id] = p as Profile));
+        setApplicantProfiles(map);
       }
-      setMilestones((msRes.data as unknown as ProjectMilestone[]) ?? []);
-      const apps = (appRes.data as unknown as ProjectApplication[]) ?? [];
-      setApplications(apps);
+    }
 
-      // Find my application
-      if (profile) {
-        const mine = apps.find((a) => a.applicant_id === profile.id);
-        if (mine) setMyApplication(mine);
+    // Check if user already left a review and find accepted applicant
+    if (profile && projRes.data) {
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("project_id", id)
+        .eq("reviewer_id", profile.id)
+        .maybeSingle();
+      if (existingReview) setMyReview(existingReview as unknown as Review);
+
+      // Find accepted applicant for review targeting
+      const accepted = apps.find((a) => a.status === "accepted");
+      if (accepted) {
+        const { data: accProfile } = await supabase.from("profiles").select("*").eq("id", accepted.applicant_id).single();
+        if (accProfile) setAcceptedApplicant(accProfile as unknown as Profile);
       }
+    }
 
-      // Fetch applicant profiles for owner view
-      if (apps.length > 0 && projRes.data?.owner_id === profile?.id) {
-        const ids = apps.map((a) => a.applicant_id);
-        const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
-        if (profiles) {
-          const map: Record<string, Profile> = {};
-          profiles.forEach((p: any) => (map[p.id] = p as Profile));
-          setApplicantProfiles(map);
-        }
-      }
+    setLoading(false);
+  };
 
-      // Check if user already left a review and find accepted applicant
-      if (profile && projRes.data) {
-        const { data: existingReview } = await supabase
-          .from("reviews")
-          .select("*")
-          .eq("project_id", id)
-          .eq("reviewer_id", profile.id)
-          .maybeSingle();
-        if (existingReview) setMyReview(existingReview as unknown as Review);
-
-        // Find accepted applicant for review targeting
-        const accepted = apps.find((a) => a.status === "accepted");
-        if (accepted) {
-          const { data: accProfile } = await supabase.from("profiles").select("*").eq("id", accepted.applicant_id).single();
-          if (accProfile) setAcceptedApplicant(accProfile as unknown as Profile);
-        }
-      }
-
-      setLoading(false);
-    })();
+  useEffect(() => {
+    fetchProjectData();
   }, [id, profile]);
 
   const handleApply = async () => {
@@ -178,6 +188,79 @@ const ProjectDetails = () => {
     }
   };
 
+  const handleIssueCertificate = async () => {
+    if (!project || !acceptedApplicant || !owner) return undefined;
+    
+    // Generate WB-YYYYMMDD-HHMMSS-RAND ID
+    const date = new Date();
+    const ds = date.toISOString().replace(/[-T:]/g, "").slice(0, 14); // YYYYMMDDHHMMSS
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const displayId = `WB-${ds.slice(0,8)}-${ds.slice(8)}-${rand}`;
+
+    const { data, error } = await supabase.from("certificates").insert({
+      project_id: project.id,
+      student_id: acceptedApplicant.id,
+      company_name: owner.company_name || owner.full_name,
+      project_title: project.title,
+      course_name: project.category || "Project",
+      display_id: displayId,
+      payout_amount: project.budget_max, 
+    }).select().single();
+
+    if (error) {
+      toast({ variant: "destructive", title: "Failed to issue certificate", description: error.message });
+      return undefined;
+    }
+
+    await supabase.from("projects").update({ certificate_issued: true }).eq("id", project.id);
+    
+    await sendNotification("certificate_issued", {
+      project_id: project.id,
+      user_id: acceptedApplicant.id,
+    });
+    
+    setProject({ ...project, certificate_issued: true });
+    toast({ title: "Certificate issued!" });
+    
+    return data.certificate_uid;
+  };
+
+  const handleReleasePayout = async (amount: number) => {
+    if (!project || !acceptedApplicant || !profile) return;
+
+    // Get student's wallet
+    const { data: wallets } = await supabase.from("wallets").select("*").eq("owner_id", acceptedApplicant.id);
+    if (!wallets || wallets.length === 0) {
+      toast({ variant: "destructive", title: "Error", description: "Student wallet not found." });
+      return;
+    }
+    const wallet = wallets[0];
+
+    // Create transaction & update project & wallet balance in a way
+    // For simplicity here, we insert transaction and update project. Wallet trigger handles balance.
+    const { error: txError } = await supabase.from("transactions").insert({
+      wallet_id: wallet.id,
+      type: "credit",
+      amount: amount,
+      description: `Payment for project: ${project.title}`,
+    });
+
+    if (txError) {
+      toast({ variant: "destructive", title: "Failed to release payout", description: txError.message });
+      return;
+    }
+
+    await supabase.from("projects").update({ payout_released: true }).eq("id", project.id);
+    
+    await sendNotification("payment_received", {
+      project_id: project.id,
+      user_id: acceptedApplicant.id,
+    });
+
+    setProject({ ...project, payout_released: true });
+    toast({ title: "Payout released successfully!" });
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -220,8 +303,11 @@ const ProjectDetails = () => {
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                   title="View Status Details"
                 >
-                  <Badge variant={project.status === "open" ? "default" : "secondary"}>
-                    {project.status}
+                  <Badge 
+                    variant={project.status === "open" ? "default" : project.status === "submitted" ? "outline" : "secondary"}
+                    className={project.status === "submitted" ? "border-orange-500 text-orange-500" : ""}
+                  >
+                    {project.status === "submitted" ? "Submitted – Awaiting Review" : project.status}
                   </Badge>
                 </button>
                 {project.category && (
@@ -242,17 +328,25 @@ const ProjectDetails = () => {
                 </button>
               </div>
             </div>
-            {isStudent && !myApplication && project.status === "open" && (
-              <Button onClick={() => setApplyOpen(true)} className="gap-2 shrink-0">
-                <Send className="w-4 h-4" />
-                Apply Now
-              </Button>
-            )}
-            {myApplication && (
-              <Badge variant="secondary" className="text-sm capitalize shrink-0">
-                Applied: {myApplication.status}
-              </Badge>
-            )}
+            <div className="flex flex-col gap-2 shrink-0">
+              {isStudent && !myApplication && project.status === "open" && (
+                <Button onClick={() => setApplyOpen(true)} className="gap-2">
+                  <Send className="w-4 h-4" />
+                  Apply Now
+                </Button>
+              )}
+              {myApplication && (
+                <Badge variant="secondary" className="text-sm capitalize self-end">
+                  Applied: {myApplication.status}
+                </Badge>
+              )}
+              {profile && !isOwner && (
+                <Button variant="outline" onClick={() => navigate(`/messages?partner=${project.owner_id}`)} className="gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Message
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -350,6 +444,15 @@ const ProjectDetails = () => {
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => navigate(`/messages?partner=${app.applicant_id}`)}
+                            className="text-muted-foreground hover:text-primary"
+                            title="Message Applicant"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
                           {app.status === "pending" ? (
                             <>
                               <Button size="sm" onClick={() => handleApplicationStatus(app.id, "accepted")}>
@@ -375,7 +478,121 @@ const ProjectDetails = () => {
             {/* File Deliverables */}
             {(isOwner || myApplication?.status === "accepted") && (
               <Card className="p-6">
-                <FileDeliverables projectId={project.id} canUpload={isOwner || myApplication?.status === "accepted"} />
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileIcon className="w-5 h-5 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Deliverables & Files</h3>
+                </div>
+                <FileDeliverables 
+                  projectId={project.id} 
+                  canUpload={myApplication?.status === "accepted" && !isOwner} 
+                  projectStatus={project.status}
+                  onStatusChange={fetchProjectData}
+                />
+
+                {/* Company: Confirm & Complete submission */}
+                {isOwner && project.status === "submitted" && (
+                  <div className="mt-6 pt-6 border-t border-border/50">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <div className="p-3 rounded-full bg-orange-500/10">
+                        <CheckCircle2 className="w-8 h-8 text-orange-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg">Student Has Submitted Their Work</h4>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-md">Review the uploaded deliverables above. If you're satisfied, confirm the submission to mark the project as complete.</p>
+                      </div>
+                      <Button
+                        size="lg"
+                        className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/20 transition-all duration-300 scale-100 hover:scale-[1.02] active:scale-[0.98] px-8"
+                        onClick={async () => {
+                          setConfirming(true);
+                          try {
+                            const { error } = await supabase
+                              .from("projects")
+                              .update({ status: "completed", completed: true })
+                              .eq("id", project.id);
+                            if (error) throw error;
+
+                            // Notify the student
+                            if (acceptedApplicant) {
+                              await sendNotification("project_completed", {
+                                project_id: project.id,
+                                user_id: acceptedApplicant.id,
+                              });
+                            }
+
+                            toast({ title: "Project Confirmed!", description: "The project has been marked as complete. Great collaboration!" });
+                            fetchProjectData();
+                          } catch (err: any) {
+                            toast({ variant: "destructive", title: "Error", description: err.message });
+                          } finally {
+                            setConfirming(false);
+                          }
+                        }}
+                        disabled={confirming}
+                      >
+                        {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                        Confirm & Complete Project
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Company: Release Panel */}
+                {isOwner && project.status === "completed" && (
+                  <div className="mt-6 pt-6 border-t border-border/50">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 rounded-lg bg-green-500/10">
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg">Project Completed</h4>
+                          <p className="text-sm text-muted-foreground">Release the final deliverables to the student.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <Card className="p-4 border-primary/20 bg-primary/5 flex flex-col justify-between">
+                          <div>
+                            <h5 className="font-semibold flex items-center gap-2 mb-1">
+                              <Award className="w-4 h-4 text-primary" /> Certificate
+                            </h5>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Issue a verified professional certificate of completion.
+                            </p>
+                          </div>
+                          <Button 
+                            className="w-full" 
+                            disabled={project.certificate_issued}
+                            onClick={() => setIssueCertOpen(true)}
+                          >
+                            {project.certificate_issued ? "Certificate Issued ✓" : "Issue Certificate"}
+                          </Button>
+                        </Card>
+                        
+                        <Card className="p-4 border-green-500/20 bg-green-500/5 flex flex-col justify-between">
+                          <div>
+                            <h5 className="font-semibold flex items-center gap-2 mb-1">
+                              <DollarSign className="w-4 h-4 text-green-600" /> Payout
+                            </h5>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Release the final payment to the student's wallet.
+                            </p>
+                          </div>
+                          <Button 
+                            className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                            disabled={project.payout_released}
+                            onClick={() => setReleasePayoutOpen(true)}
+                          >
+                            {project.payout_released ? "Payout Released ✓" : "Release Payout"}
+                          </Button>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
 
@@ -513,6 +730,29 @@ const ProjectDetails = () => {
           revieweeId={reviewTarget.id}
           revieweeName={reviewTarget.name}
           onReviewSubmitted={(review) => setMyReview(review)}
+        />
+      )}
+
+      {/* Issue Certificate Dialog */}
+      {isOwner && acceptedApplicant && owner && (
+        <IssueCertificateDialog
+          open={issueCertOpen}
+          onOpenChange={setIssueCertOpen}
+          studentName={acceptedApplicant.full_name || "Student"}
+          projectName={project.title}
+          companyName={owner.company_name || owner.full_name || "Company"}
+          onConfirm={handleIssueCertificate}
+        />
+      )}
+
+      {/* Release Payout Dialog */}
+      {isOwner && (
+        <ReleasePayoutDialog
+          open={releasePayoutOpen}
+          onOpenChange={setReleasePayoutOpen}
+          projectMinBudget={project.budget_min}
+          projectMaxBudget={project.budget_max}
+          onConfirm={handleReleasePayout}
         />
       )}
     </DashboardLayout>

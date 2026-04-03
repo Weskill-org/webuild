@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Globe, Linkedin, Loader2, Star } from "lucide-react";
+import { ArrowLeft, Globe, Linkedin, Loader2, Star, MessageSquare } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import ReviewsSection from "@/components/ReviewsSection";
@@ -12,6 +13,7 @@ import type { Profile } from "@/types/database";
 const PublicProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { profile: currentUser } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
@@ -76,7 +78,15 @@ const PublicProfile = () => {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold">{profile.company_name || profile.full_name}</h1>
+              <div className="flex items-center justify-between gap-4">
+                <h1 className="text-2xl font-bold">{profile.company_name || profile.full_name}</h1>
+                {currentUser && currentUser.id !== id && (
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/messages?partner=${id}`)} className="gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    Message
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 {profile.role && <Badge variant="secondary" className="capitalize">{profile.role}</Badge>}
                 {profile.university && <span className="text-sm text-muted-foreground">{profile.university}</span>}

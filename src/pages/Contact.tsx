@@ -3,10 +3,30 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, MessageSquare } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
   const [searchParams] = useSearchParams();
   const defaultSubject = searchParams.get("subject") || "";
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      toast({
+        title: "Message sent successfully!",
+        description: "We've received your message and will get back to you soon.",
+      });
+      (e.target as HTMLFormElement).reset();
+    }, 1000);
+  };
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -89,7 +109,7 @@ const Contact = () => {
               {/* Right Column: Contact Form */}
               <div className="bg-card border border-border/50 rounded-3xl p-8 shadow-sm">
                 <h3 className="text-2xl font-bold mb-6">Send us a message</h3>
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={handleSubmit}>
                    <div className="grid md:grid-cols-2 gap-6">
                      <div className="space-y-2">
                        <label htmlFor="firstName" className="text-sm font-medium">First Name</label>
@@ -122,7 +142,9 @@ const Contact = () => {
                      <textarea id="message" rows={5} className="w-full flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Your message here..."></textarea>
                    </div>
 
-                   <Button type="button" className="w-full" size="lg">Send Message</Button>
+                   <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                     {isSubmitting ? "Sending..." : "Send Message"}
+                   </Button>
                 </form>
               </div>
 

@@ -1,4 +1,4 @@
-import { Instagram, Twitter, Linkedin } from "lucide-react";
+import { Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -45,7 +45,9 @@ const Footer = () => {
                 <Instagram className="w-5 h-5" />
               </a>
               <a href="#" className="p-2 rounded-full bg-secondary/50 hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:-translate-y-1">
-                <Twitter className="w-5 h-5" />
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
               </a>
               <a href="#" className="p-2 rounded-full bg-secondary/50 hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:-translate-y-1">
                 <Linkedin className="w-5 h-5" />

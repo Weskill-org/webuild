@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import type { Message, Profile } from "@/types/database";
@@ -14,6 +15,9 @@ export interface Conversation {
 
 export function useChat() {
   const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialPartnerId = searchParams.get("partner");
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [thread, setThread] = useState<Message[]>([]);
@@ -21,6 +25,13 @@ export function useChat() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Sync selectedPartner with URL param
+  useEffect(() => {
+    if (initialPartnerId) {
+      setSelectedPartner(initialPartnerId);
+    }
+  }, [initialPartnerId]);
 
   // Fetch conversations
   useEffect(() => {
@@ -42,6 +53,12 @@ export function useChat() {
       });
 
       const partnerIds = [...convMap.keys()];
+      
+      // If we have an initial partner from URL that we haven't talked to yet, add them to the fetch
+      if (initialPartnerId && !partnerIds.includes(initialPartnerId)) {
+        partnerIds.push(initialPartnerId);
+      }
+
       let profileMap: Record<string, Profile> = {};
       if (partnerIds.length > 0) {
         const { data: profiles } = await supabase.from("profiles").select("*").in("id", partnerIds);
@@ -49,7 +66,7 @@ export function useChat() {
       }
 
       const convList: Conversation[] = partnerIds.map((pid) => {
-        const msgs = convMap.get(pid)!;
+        const msgs = convMap.get(pid) || [];
         const unread = msgs.filter((m) => m.recipient_id === profile.id && !m.read).length;
         const p = profileMap[pid];
         return {
@@ -62,11 +79,16 @@ export function useChat() {
         };
       });
 
-      convList.sort((a, b) => new Date(b.lastDate).getTime() - new Date(a.lastDate).getTime());
+      convList.sort((a, b) => {
+        if (!a.lastDate) return 1;
+        if (!b.lastDate) return -1;
+        return new Date(b.lastDate).getTime() - new Date(a.lastDate).getTime();
+      });
+      
       setConversations(convList);
       setLoading(false);
     })();
-  }, [profile]);
+  }, [profile, initialPartnerId]);
 
   // Load thread when partner selected
   useEffect(() => {
@@ -82,16 +104,18 @@ export function useChat() {
       setThread((data as unknown as Message[]) ?? []);
 
       // Mark unread as read
-      await supabase
-        .from("messages")
-        .update({ read: true })
-        .eq("recipient_id", profile.id)
-        .eq("sender_id", selectedPartner)
-        .eq("read", false);
+      if (data && data.length > 0) {
+        await supabase
+          .from("messages")
+          .update({ read: true })
+          .eq("recipient_id", profile.id)
+          .eq("sender_id", selectedPartner)
+          .eq("read", false);
 
-      setConversations((prev) =>
-        prev.map((c) => (c.partnerId === selectedPartner ? { ...c, unread: 0 } : c))
-      );
+        setConversations((prev) =>
+          prev.map((c) => (c.partnerId === selectedPartner ? { ...c, unread: 0 } : c))
+        );
+      }
     })();
   }, [profile, selectedPartner]);
 
@@ -106,10 +130,22 @@ export function useChat() {
 
         const partnerId = msg.sender_id === profile.id ? msg.recipient_id : msg.sender_id;
         if (partnerId === selectedPartner) {
-          setThread((prev) => [...prev, msg]);
-          // Auto mark as read
+          setThread((prev) => {
+            if (prev.find(m => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+          // Auto mark as read if conversation is open
           if (msg.recipient_id === profile.id) {
-            supabase.from("messages").update({ read: true }).eq("id", msg.id).then();
+            supabase
+              .from("messages")
+              .update({ read: true })
+              .eq("id", msg.id)
+              .then();
+            
+            // Also update local unread state
+            setConversations((prev) =>
+              prev.map((c) => (c.partnerId === selectedPartner ? { ...c, unread: 0 } : c))
+            );
           }
         }
 
@@ -191,20 +227,47 @@ export function useChat() {
 
   const sendMessage = useCallback(async (body: string) => {
     if (!body.trim() || !profile || !selectedPartner) return;
-    await supabase.from("messages").insert({
+    const { data: msg, error } = await supabase.from("messages").insert({
       sender_id: profile.id,
       recipient_id: selectedPartner,
       body: body.trim(),
-    });
+    }).select().single();
+    
+    if (!error && msg) {
+      setThread(prev => {
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg as unknown as Message];
+      });
+      setConversations(prev => {
+        const existing = prev.find(c => c.partnerId === selectedPartner);
+        if (existing) {
+          return prev.map(c => 
+            c.partnerId === selectedPartner 
+              ? { ...c, lastMessage: body.trim().slice(0, 80), lastDate: new Date().toISOString() }
+              : c
+          ).sort((a, b) => new Date(b.lastDate).getTime() - new Date(a.lastDate).getTime());
+        }
+        return prev;
+      });
+    }
     setTyping(false);
   }, [profile, selectedPartner, setTyping]);
 
   const isPartnerTyping = selectedPartner ? typingUsers.has(selectedPartner) : false;
 
+  const handleSelectPartner = (id: string | null) => {
+    setSelectedPartner(id);
+    if (id) {
+      setSearchParams({ partner: id });
+    } else {
+      setSearchParams({});
+    }
+  };
+
   return {
     conversations,
     selectedPartner,
-    setSelectedPartner,
+    setSelectedPartner: handleSelectPartner,
     thread,
     loading,
     sendMessage,

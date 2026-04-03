@@ -119,11 +119,17 @@ const Notifications = () => {
                     onClick={() => {
                       if (n.type === "message") {
                         navigate("/messages");
+                      } else if (n.type === "project_completed") {
+                        // For company: go to submitted tab; for student: go to completed
+                        if (profile?.role === "company") {
+                          navigate("/projects?tab=submitted");
+                        } else {
+                          navigate("/student-projects?tab=completed");
+                        }
                       } else if (
                         n.type === "new_application" ||
                         n.type === "application_accepted" ||
                         n.type === "application_rejected" ||
-                        n.type === "project_completed" ||
                         n.type === "milestone_completed" ||
                         n.type === "new_project" ||
                         n.type.includes("project")
@@ -139,7 +145,6 @@ const Notifications = () => {
                       ) {
                         navigate("/partnerships");
                       } else {
-                        // Fallback to dashboard if type is unknown but we want it clickable
                         navigate("/dashboard");
                       }
                     }}

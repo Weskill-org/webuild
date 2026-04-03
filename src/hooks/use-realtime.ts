@@ -27,6 +27,10 @@ export default function useRealtime() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [acceptedProjectIds, setAcceptedProjectIds] = useState<string[]>([]);
+  const [appliedProjectIds, setAppliedProjectIds] = useState<string[]>([]);
+  const [campusStudentIds, setCampusStudentIds] = useState<string[]>([]);
+  const [campusProjectIds, setCampusProjectIds] = useState<string[]>([]);
 
   const applyChange = useCallback((
     table: TableName, 
@@ -156,12 +160,74 @@ export default function useRealtime() {
     // Initial fetch
     (async () => {
       try {
-        let projQuery = supabase.from('projects').select('*');
+        // --- Role-aware project fetching ---
         if (profile?.role === 'company') {
-          projQuery = projQuery.eq('owner_id', profile.id);
+          // Company: only their own projects
+          const { data: projData } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('owner_id', profile.id);
+          setProjects((projData as Project[]) ?? []);
+        } else if (profile?.role === 'student') {
+          // Student: fetch their applications first for state
+          const { data: allApps } = await supabase
+            .from('project_applications')
+            .select('project_id, status')
+            .eq('applicant_id', profile.id);
+
+          const apps = allApps ?? [];
+          const accepted = apps.filter(a => a.status === 'accepted').map(a => a.project_id);
+          const applied = apps.filter(a => a.status === 'pending').map(a => a.project_id);
+          setAcceptedProjectIds(accepted);
+          setAppliedProjectIds(applied);
+
+          // Fetch ALL projects for student (Marketplace needs this)
+          const { data: projData } = await supabase.from('projects').select('*');
+          setProjects((projData as Project[]) ?? []);
+        } else if (profile?.role === 'campus') {
+          // Campus: get batches → students → their accepted applications → projects
+          const { data: batches } = await supabase
+            .from('batches')
+            .select('id')
+            .eq('campus_id', profile.id);
+          const batchIds = (batches ?? []).map((b: any) => b.id);
+
+          let studentIds: string[] = [];
+          if (batchIds.length > 0) {
+            const { data: batchStudents } = await supabase
+              .from('batch_students')
+              .select('student_id')
+              .in('batch_id', batchIds);
+            studentIds = [...new Set((batchStudents ?? []).map((bs: any) => bs.student_id))];
+          }
+          setCampusStudentIds(studentIds);
+
+          if (studentIds.length > 0) {
+            const { data: campusApps } = await supabase
+              .from('project_applications')
+              .select('project_id')
+              .in('applicant_id', studentIds)
+              .eq('status', 'accepted');
+            const projIds = [...new Set((campusApps ?? []).map((a: any) => a.project_id))];
+            setCampusProjectIds(projIds);
+
+            if (projIds.length > 0) {
+              const { data: projData } = await supabase
+                .from('projects')
+                .select('*')
+                .in('id', projIds);
+              setProjects((projData as Project[]) ?? []);
+            } else {
+              setProjects([]);
+            }
+          } else {
+            setProjects([]);
+          }
+        } else {
+          // Fallback: admin or other roles
+          const { data: projData } = await supabase.from('projects').select('*');
+          setProjects((projData as Project[]) ?? []);
         }
-        const { data: projData } = await projQuery;
-        setProjects((projData as Project[]) ?? []);
 
         const { data: msgData } = await supabase
           .from('messages')
@@ -207,8 +273,24 @@ export default function useRealtime() {
     };
   }, [user, profile?.id, profile?.role, applyChange]);
 
-  const activeProjectsCount = projects.filter((p) => !p.completed).length;
-  const completedCount = projects.filter((p) => p.completed).length;
+  // Active Projects: non-completed projects the user is involved in
+  const activeProjectsCount = (() => {
+    if (profile?.role === 'student') {
+      // Student: projects they have an accepted application for, not yet completed
+      return projects.filter((p) => acceptedProjectIds.includes(p.id) && p.status !== 'completed' && p.status !== 'submitted').length;
+    }
+    // Company & Campus: all fetched projects are already scoped to the user
+    return projects.filter((p) => p.status !== 'completed').length;
+  })();
+
+  // Completed: finished projects the user is involved in
+  const completedCount = (() => {
+    if (profile?.role === 'student') {
+      // Student: only count THEIR completed projects
+      return projects.filter((p) => acceptedProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
+    }
+    return projects.filter((p) => p.status === 'completed').length;
+  })();
   const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);
   const unreadMessages = messages.filter((m) => !m.read && m.recipient_id === profile?.id).length;
   const unreadNotifications = notifications.filter((n) => !n.read).length;

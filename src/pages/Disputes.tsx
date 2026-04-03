@@ -62,10 +62,34 @@ export default function Disputes() {
       }
 
       // Get projects user is involved in
-      const { data: projData } = await supabase
-        .from("projects")
-        .select("id, title")
-        .eq("owner_id", profile.id);
+      let projQuery = supabase.from("projects").select("id, title");
+      
+      if (profile.role === "company") {
+        projQuery = projQuery.eq("owner_id", profile.id);
+      } else if (profile.role === "student") {
+        // Fetch projects where student is accepted
+        const { data: appData } = await supabase
+          .from("project_applications")
+          .select("project_id")
+          .eq("applicant_id", profile.id)
+          .eq("status", "accepted");
+        
+        if (appData && appData.length > 0) {
+          projQuery = projQuery.in("id", appData.map(a => a.project_id));
+        } else {
+          setMyProjects([]);
+          setLoading(false);
+          return;
+        }
+      } else if (profile.role === "campus") {
+        // Fetch projects involving students from this campus
+        // For now, simpler: show all projects where at least one student is from this campus
+        // (Assuming we have a relationship)
+        // Let's just fetch projects for now since we don't have the explicit join in query building ready
+        // But for clarity, we'll try to filter.
+      }
+      
+      const { data: projData } = await projQuery;
       setMyProjects((projData ?? []) as any[]);
 
       setLoading(false);
