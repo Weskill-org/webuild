@@ -4,7 +4,7 @@
 export interface Profile {
   id: string;
   full_name: string | null;
-  role: 'company' | 'student' | 'campus' | null;
+  role: 'company' | 'student' | 'campus' | 'admin' | null;
   university: string | null;
   company_name: string | null;
   website: string | null;

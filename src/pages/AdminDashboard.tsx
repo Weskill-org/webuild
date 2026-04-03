@@ -75,17 +75,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
+      const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin")
         .maybeSingle();
-      if (!data) {
+        
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (roleData || profileData?.role === "admin") {
+        setIsAdmin(true);
+      } else {
         setIsAdmin(false);
-        return;
       }
-      setIsAdmin(true);
     })();
   }, [user]);
 
@@ -152,12 +159,30 @@ export default function AdminDashboard() {
   });
 
   const handleGrantAdmin = async (userId: string) => {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Admin role granted" });
+    const { error: roleError } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+    if (roleError) {
+      toast({ title: "Error granting role", description: roleError.message, variant: "destructive" });
+      return;
     }
+    
+    // Sync the profile.role
+    const { error: profileError } = await supabase.from("profiles").update({ role: "admin" }).eq("id", userId);
+    if (profileError) {
+      toast({ title: "Warning", description: "Role granted but profile update failed.", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Admin role granted" });
+    // Update local state to reflect change instantly
+    setUsers(users.map(u => u.id === userId ? { ...u, role: 'admin' } : u));
+    setStats(prev => ({
+      ...prev,
+      usersByRole: {
+        ...prev.usersByRole,
+        [users.find(u => u.id === userId)?.role || "unknown"]: Math.max(0, (prev.usersByRole[users.find(u => u.id === userId)?.role || "unknown"] || 1) - 1),
+        admin: (prev.usersByRole.admin || 0) + 1
+      }
+    }));
   };
 
   return (
