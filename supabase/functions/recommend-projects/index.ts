@@ -119,7 +119,7 @@ serve(async (req) => {
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message, recommended_ids: [] }),
+      JSON.stringify({ error: (err as Error).message, recommended_ids: [] }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

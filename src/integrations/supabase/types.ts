@@ -151,8 +151,11 @@ export type Database = {
         Row: {
           certificate_uid: string | null
           company_name: string | null
+          course_name: string | null
+          display_id: string | null
           id: string
           issued_at: string | null
+          payout_amount: number | null
           project_id: string | null
           project_title: string | null
           qr_data: string | null
@@ -161,8 +164,11 @@ export type Database = {
         Insert: {
           certificate_uid?: string | null
           company_name?: string | null
+          course_name?: string | null
+          display_id?: string | null
           id?: string
           issued_at?: string | null
+          payout_amount?: number | null
           project_id?: string | null
           project_title?: string | null
           qr_data?: string | null
@@ -171,8 +177,11 @@ export type Database = {
         Update: {
           certificate_uid?: string | null
           company_name?: string | null
+          course_name?: string | null
+          display_id?: string | null
           id?: string
           issued_at?: string | null
+          payout_amount?: number | null
           project_id?: string | null
           project_title?: string | null
           qr_data?: string | null
@@ -427,6 +436,7 @@ export type Database = {
           created_at: string | null
           id: string
           read: boolean | null
+          reference_id: string | null
           title: string
           type: string
           user_id: string
@@ -436,6 +446,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           read?: boolean | null
+          reference_id?: string | null
           title: string
           type?: string
           user_id: string
@@ -445,6 +456,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           read?: boolean | null
+          reference_id?: string | null
           title?: string
           type?: string
           user_id?: string
@@ -486,10 +498,12 @@ export type Database = {
           bio: string | null
           company_name: string | null
           created_at: string | null
+          email: string | null
           full_name: string | null
           id: string
           linkedin: string | null
           logo_url: string | null
+          phone: string | null
           role: string | null
           skills: string[] | null
           university: string | null
@@ -501,10 +515,12 @@ export type Database = {
           bio?: string | null
           company_name?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string | null
           id: string
           linkedin?: string | null
           logo_url?: string | null
+          phone?: string | null
           role?: string | null
           skills?: string[] | null
           university?: string | null
@@ -516,10 +532,12 @@ export type Database = {
           bio?: string | null
           company_name?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           linkedin?: string | null
           logo_url?: string | null
+          phone?: string | null
           role?: string | null
           skills?: string[] | null
           university?: string | null
@@ -537,6 +555,7 @@ export type Database = {
           id: string
           project_id: string
           status: string | null
+          work_submitted: boolean | null
         }
         Insert: {
           applicant_id: string
@@ -545,6 +564,7 @@ export type Database = {
           id?: string
           project_id: string
           status?: string | null
+          work_submitted?: boolean | null
         }
         Update: {
           applicant_id?: string
@@ -553,6 +573,7 @@ export type Database = {
           id?: string
           project_id?: string
           status?: string | null
+          work_submitted?: boolean | null
         }
         Relationships: [
           {
@@ -617,6 +638,7 @@ export type Database = {
           budget_max: number | null
           budget_min: number | null
           category: string | null
+          certificate_issued: boolean | null
           completed: boolean | null
           created_at: string | null
           description: string | null
@@ -624,6 +646,7 @@ export type Database = {
           end_date: string | null
           id: string
           owner_id: string
+          payout_released: boolean | null
           pricing_type: string | null
           required_skills: string[] | null
           start_date: string | null
@@ -635,6 +658,7 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           category?: string | null
+          certificate_issued?: boolean | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
@@ -642,6 +666,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           owner_id: string
+          payout_released?: boolean | null
           pricing_type?: string | null
           required_skills?: string[] | null
           start_date?: string | null
@@ -653,6 +678,7 @@ export type Database = {
           budget_max?: number | null
           budget_min?: number | null
           category?: string | null
+          certificate_issued?: boolean | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
@@ -660,6 +686,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           owner_id?: string
+          payout_released?: boolean | null
           pricing_type?: string | null
           required_skills?: string[] | null
           start_date?: string | null
@@ -938,6 +965,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      record_activity: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_metadata?: Json
+          p_target_id: string
+          p_target_type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

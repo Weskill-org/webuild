@@ -212,7 +212,7 @@ const ProjectDetails = () => {
       return undefined;
     }
 
-    await supabase.from("projects").update({ certificate_issued: true }).eq("id", project.id);
+    await supabase.from("projects").update({ certificate_issued: true } as any).eq("id", project.id);
     
     await sendNotification("certificate_issued", {
       project_id: project.id,
@@ -250,7 +250,7 @@ const ProjectDetails = () => {
       return;
     }
 
-    await supabase.from("projects").update({ payout_released: true }).eq("id", project.id);
+    await supabase.from("projects").update({ payout_released: true } as any).eq("id", project.id);
     
     await sendNotification("payment_received", {
       project_id: project.id,

@@ -22,8 +22,8 @@ export default function useSupabaseAuth() {
       return null;
     }
 
-    setProfile(data as Profile);
-    return data as Profile;
+    setProfile(data as unknown as Profile);
+    return data as unknown as Profile;
   }, []);
 
   useEffect(() => {
@@ -147,8 +147,8 @@ export default function useSupabaseAuth() {
       .single();
 
     if (error) throw error;
-    setProfile(data as Profile);
-    return data as Profile;
+    setProfile(data as unknown as Profile);
+    return data as unknown as Profile;
   }, [user]);
 
   const uploadAvatar = useCallback(async (file: File) => {
