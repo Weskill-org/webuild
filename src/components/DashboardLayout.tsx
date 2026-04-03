@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       ]
     },
     { label: "Post Project", icon: PlusCircle, path: "/projects/new", roles: ["company"] },
-    { label: "Browse Projects", icon: Search, path: "/marketplace", roles: ["student"] },
+    { label: "Browse Projects", icon: Search, path: "/marketplace", roles: ["student", "campus"] },
     { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
     { label: "Activity Feed", icon: Activity, path: "/activity" },
     { label: "Quizzes", icon: GraduationCap, path: "/quizzes", roles: ["student"] },

@@ -210,19 +210,11 @@ export default function useRealtime() {
               .eq('status', 'accepted');
             const projIds = [...new Set((campusApps ?? []).map((a: any) => a.project_id))];
             setCampusProjectIds(projIds);
-
-            if (projIds.length > 0) {
-              const { data: projData } = await supabase
-                .from('projects')
-                .select('*')
-                .in('id', projIds);
-              setProjects((projData as Project[]) ?? []);
-            } else {
-              setProjects([]);
-            }
-          } else {
-            setProjects([]);
           }
+
+          // Fetch ALL projects for campus (Marketplace needs this)
+          const { data: projData } = await supabase.from('projects').select('*');
+          setProjects((projData as Project[]) ?? []);
         } else {
           // Fallback: admin or other roles
           const { data: projData } = await supabase.from('projects').select('*');
@@ -279,7 +271,11 @@ export default function useRealtime() {
       // Student: projects they have an accepted application for, not yet completed
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && p.status !== 'completed' && p.status !== 'submitted').length;
     }
-    // Company & Campus: all fetched projects are already scoped to the user
+    if (profile?.role === 'campus') {
+      // Campus: projects their students are working on (accepted), not yet completed
+      return projects.filter((p) => campusProjectIds.includes(p.id) && p.status !== 'completed' && p.status !== 'submitted').length;
+    }
+    // Company: projects they own, not yet completed
     return projects.filter((p) => p.status !== 'completed').length;
   })();
 
@@ -288,6 +284,10 @@ export default function useRealtime() {
     if (profile?.role === 'student') {
       // Student: only count THEIR completed projects
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
+    }
+    if (profile?.role === 'campus') {
+      // Campus: only count THEIR students' completed projects
+      return projects.filter((p) => campusProjectIds.includes(p.id) && p.status === 'completed').length;
     }
     return projects.filter((p) => p.status === 'completed').length;
   })();
