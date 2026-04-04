@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, Briefcase, DollarSign, Medal, Loader2 } from "lucide-react";
+import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LeaderboardEntry {
   id: string;
@@ -19,10 +19,14 @@ interface LeaderboardEntry {
   score: number;
 }
 
+const TOP_N = 10;
+
 export default function Leaderboard() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState<LeaderboardEntry[]>([]);
-  const [companies, setCompanies] = useState<LeaderboardEntry[]>([]);
+  const { profile } = useAuth();
+
+  const [allStudents, setAllStudents] = useState<LeaderboardEntry[]>([]);
+  const [allCompanies, setAllCompanies] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,70 +74,194 @@ export default function Leaderboard() {
         };
       };
 
-      const studentEntries = profiles.filter((p: any) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score);
-      const companyEntries = profiles.filter((p: any) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score);
-
-      setStudents(studentEntries.slice(0, 50));
-      setCompanies(companyEntries.slice(0, 50));
+      setAllStudents(profiles.filter((p: any) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter((p: any) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);
 
-  const RankCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: number }) => (
-    <Card className={`p-4 flex items-center gap-4 ${rank <= 3 ? "border-primary/30" : ""}`}>
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 ${
-        rank === 1 ? "bg-yellow-400/20 text-yellow-600" :
-        rank === 2 ? "bg-gray-300/30 text-gray-600" :
-        rank === 3 ? "bg-orange-300/20 text-orange-600" :
-        "bg-secondary text-muted-foreground"
-      }`}>
-        {rank <= 3 ? <Medal className="w-5 h-5" /> : rank}
+  /** Find the logged-in user's position in a full sorted list */
+  const findMyRank = (list: LeaderboardEntry[]): { entry: LeaderboardEntry; rank: number } | null => {
+    if (!profile) return null;
+    const idx = list.findIndex((e) => e.id === profile.id);
+    if (idx === -1) return null;
+    return { entry: list[idx], rank: idx + 1 };
+  };
+
+  /* ── Rank badge colours ── */
+  const rankStyle = (rank: number) => {
+    if (rank === 1) return { bg: "bg-gradient-to-br from-yellow-300 to-amber-500", text: "text-amber-900", ring: "ring-2 ring-yellow-400/60" };
+    if (rank === 2) return { bg: "bg-gradient-to-br from-slate-300 to-slate-400", text: "text-slate-800", ring: "ring-2 ring-slate-300/60" };
+    if (rank === 3) return { bg: "bg-gradient-to-br from-orange-300 to-orange-500", text: "text-orange-900", ring: "ring-2 ring-orange-300/60" };
+    return { bg: "bg-secondary", text: "text-muted-foreground", ring: "" };
+  };
+
+  /* ── Row component ── */
+  const RankRow = ({ entry, rank, isMe, animDelay = 0 }: { entry: LeaderboardEntry; rank: number; isMe: boolean; animDelay?: number }) => {
+    const rs = rankStyle(rank);
+    return (
+      <div
+        className={`group relative flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-300 ${
+          isMe
+            ? "bg-primary/[0.07] ring-1 ring-primary/30"
+            : rank <= 3
+            ? "bg-card border border-border/60 shadow-sm hover:shadow-md"
+            : "bg-card/60 hover:bg-card border border-transparent hover:border-border/40"
+        }`}
+        style={{ animationDelay: `${animDelay}ms` }}
+      >
+        {/* Rank */}
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${rs.bg} ${rs.text} ${rs.ring}`}>
+          {rank <= 3 ? <Crown className="w-4 h-4" /> : rank}
+        </div>
+
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shrink-0 shadow-sm">
+          {entry.logo_url ? (
+            <img src={entry.logo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <span className="text-primary-foreground font-semibold text-sm">{entry.name[0]?.toUpperCase()}</span>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(`/profile/${entry.id}`)}
+              className="font-semibold text-sm hover:text-primary transition-colors truncate"
+            >
+              {entry.name}
+            </button>
+            {isMe && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium bg-primary/10 text-primary border-0">
+                You
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+            <span className="flex items-center gap-1">
+              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+              {entry.avgRating}
+            </span>
+            <span className="flex items-center gap-1">
+              <Briefcase className="w-3 h-3" />
+              {entry.completedProjects} done
+            </span>
+          </div>
+        </div>
+
+        {/* Score */}
+        <div className="text-right shrink-0">
+          <span className={`text-base font-bold ${rank <= 3 ? "text-foreground" : "text-muted-foreground"}`}>
+            {Math.round(entry.score)}
+          </span>
+          <span className="text-[10px] text-muted-foreground ml-0.5">pts</span>
+        </div>
       </div>
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
+    );
+  };
+
+  /* ── "Your rank" banner shown when user is outside top 10 ── */
+  const MyRankBanner = ({ entry, rank }: { entry: LeaderboardEntry; rank: number }) => (
+    <div className="mb-4 rounded-xl bg-primary/[0.06] border border-primary/20 px-4 py-3 flex items-center gap-4">
+      <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+        <ChevronUp className="w-4 h-4 text-primary" />
+      </div>
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shrink-0 shadow-sm">
         {entry.logo_url ? (
           <img src={entry.logo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
         ) : (
-          <span className="text-primary-foreground font-medium text-sm">{entry.name[0]?.toUpperCase()}</span>
+          <span className="text-primary-foreground font-semibold text-sm">{entry.name[0]?.toUpperCase()}</span>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <button onClick={() => navigate(`/profile/${entry.id}`)} className="font-medium text-sm hover:text-primary transition-colors truncate block">
-          {entry.name}
-        </button>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-          <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-400" />{entry.avgRating}</span>
-          <span className="flex items-center gap-1"><Briefcase className="w-3 h-3" />{entry.completedProjects}</span>
-          <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${entry.totalEarnings}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm truncate">{entry.name}</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium bg-primary/10 text-primary border-0">
+            You
+          </Badge>
         </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Your rank: <span className="font-semibold text-foreground">#{rank}</span> · {Math.round(entry.score)} pts
+        </p>
       </div>
-      <Badge variant="outline" className="shrink-0">{Math.round(entry.score)} pts</Badge>
-    </Card>
+    </div>
   );
+
+  /* ── Section renderer ── */
+  const LeaderboardList = ({ list }: { list: LeaderboardEntry[] }) => {
+    const top10 = list.slice(0, TOP_N);
+    const myRank = findMyRank(list);
+    const meInTop10 = myRank ? myRank.rank <= TOP_N : false;
+
+    if (list.length === 0) {
+      return <p className="text-center text-muted-foreground py-12 text-sm">No entries yet</p>;
+    }
+
+    return (
+      <div>
+        {/* Show user's rank banner if they are outside top 10 */}
+        {myRank && !meInTop10 && <MyRankBanner entry={myRank.entry} rank={myRank.rank} />}
+
+        {/* Top 10 list */}
+        <div className="space-y-2">
+          {top10.map((entry, i) => (
+            <RankRow
+              key={entry.id}
+              entry={entry}
+              rank={i + 1}
+              isMe={profile?.id === entry.id}
+              animDelay={i * 40}
+            />
+          ))}
+        </div>
+
+        {/* Footer note */}
+        <p className="text-center text-[11px] text-muted-foreground mt-6">
+          Showing top {Math.min(TOP_N, list.length)} of {list.length} participants
+        </p>
+      </div>
+    );
+  };
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Trophy className="w-7 h-7 text-yellow-500" />
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-md">
+            <Trophy className="w-6 h-6 text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">Leaderboard</h1>
-            <p className="text-sm text-muted-foreground">Top performers ranked by ratings, completions & earnings</p>
+            <h1 className="text-2xl font-bold tracking-tight">Leaderboard</h1>
+            <p className="text-sm text-muted-foreground">Top performers by ratings & project completions</p>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading rankings…</p>
+          </div>
         ) : (
           <Tabs defaultValue="students">
-            <TabsList className="mb-4">
-              <TabsTrigger value="students">Students</TabsTrigger>
-              <TabsTrigger value="companies">Companies</TabsTrigger>
+            <TabsList className="mb-6 w-full grid grid-cols-2">
+              <TabsTrigger value="students" className="text-sm">
+                <Medal className="w-4 h-4 mr-1.5" />
+                Students
+              </TabsTrigger>
+              <TabsTrigger value="companies" className="text-sm">
+                <Briefcase className="w-4 h-4 mr-1.5" />
+                Companies
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="students" className="space-y-3">
-              {students.length === 0 ? <p className="text-center text-muted-foreground py-8">No students yet</p> : students.map((e, i) => <RankCard key={e.id} entry={e} rank={i + 1} />)}
+
+            <TabsContent value="students">
+              <LeaderboardList list={allStudents} />
             </TabsContent>
-            <TabsContent value="companies" className="space-y-3">
-              {companies.length === 0 ? <p className="text-center text-muted-foreground py-8">No companies yet</p> : companies.map((e, i) => <RankCard key={e.id} entry={e} rank={i + 1} />)}
+            <TabsContent value="companies">
+              <LeaderboardList list={allCompanies} />
             </TabsContent>
           </Tabs>
         )}
