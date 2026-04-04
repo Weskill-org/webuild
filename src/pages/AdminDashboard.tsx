@@ -177,7 +177,7 @@ function OverviewTab() {
     })();
   }, []);
 
-  if (loading || !stats) return <Loader className />;
+  if (loading || !stats) return <LoaderBlock />;
 
   const cards = [
     { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary" },
