@@ -286,8 +286,8 @@ export default function useRealtime() {
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
     }
     if (profile?.role === 'campus') {
-      // Campus: only count THEIR students' completed projects
-      return projects.filter((p) => campusProjectIds.includes(p.id) && p.status === 'completed').length;
+      // Campus: count projects their students finished (completed or submitted)
+      return projects.filter((p) => campusProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
     }
     return projects.filter((p) => p.status === 'completed').length;
   })();

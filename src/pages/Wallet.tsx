@@ -283,7 +283,7 @@ const Wallet = () => {
                             ) : tx.type === "debit" ? (
                               <ArrowUpRight className="w-5 h-5" />
                             ) : (
-                              <DollarSign className="w-5 h-5" />
+                              <IndianRupee className="w-5 h-5" />
                             )}
                           </div>
                           <div>

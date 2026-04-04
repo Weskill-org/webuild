@@ -194,7 +194,7 @@ const CreateProject = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="budget_min">Budget Min ($)</Label>
+                <Label htmlFor="budget_min">Budget Min (₹)</Label>
                 <Input
                   id="budget_min"
                   type="number"
@@ -204,7 +204,7 @@ const CreateProject = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="budget_max">Budget Max ($)</Label>
+                <Label htmlFor="budget_max">Budget Max (₹)</Label>
                 <Input
                   id="budget_max"
                   type="number"

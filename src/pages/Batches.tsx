@@ -36,6 +36,11 @@ const Batches = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", department: "", start_date: "", end_date: "" });
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [batchStudents, setBatchStudents] = useState<any[]>([]);
+  const [viewStudentsOpen, setViewStudentsOpen] = useState(false);
+  const [fetchingStudents, setFetchingStudents] = useState(false);
+
 
   const fetchBatches = async () => {
     if (!profile) return;
@@ -55,6 +60,34 @@ const Batches = () => {
     }
     setLoading(false);
   };
+
+  const fetchBatchStudents = async (batch: Batch) => {
+    setSelectedBatch(batch);
+    setViewStudentsOpen(true);
+    setFetchingStudents(true);
+    try {
+      const { data, error } = await supabase
+        .from("batch_students")
+        .select(`
+          student_id,
+          profiles:student_id (
+            id,
+            full_name,
+            email,
+            university
+          )
+        `)
+        .eq("batch_id", batch.id);
+
+      if (error) throw error;
+      setBatchStudents(data?.map(item => item.profiles) || []);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error fetching students", description: err.message });
+    } finally {
+      setFetchingStudents(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchBatches();
@@ -123,7 +156,13 @@ const Batches = () => {
               <Card key={batch.id} className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold">{batch.name}</h3>
+                    <h3 
+                      className="text-lg font-semibold cursor-pointer hover:text-primary hover:underline transition-all"
+                      onClick={() => fetchBatchStudents(batch)}
+                    >
+                      {batch.name}
+                    </h3>
+
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                       {batch.department && <span>{batch.department}</span>}
                       <span className="flex items-center gap-1">
@@ -183,7 +222,52 @@ const Batches = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={viewStudentsOpen} onOpenChange={setViewStudentsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedBatch?.name} - Assigned Students</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {fetchingStudents ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : batchStudents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                <p>No students assigned to this batch yet.</p>
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="text-left p-3 font-medium">Name</th>
+                      <th className="text-left p-3 font-medium">Email</th>
+                      <th className="text-left p-3 font-medium">University</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {batchStudents.map((student) => (
+                      <tr key={student.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-medium">{student.full_name || "N/A"}</td>
+                        <td className="p-3 text-muted-foreground">{student.email || "N/A"}</td>
+                        <td className="p-3 text-muted-foreground">{student.university || "N/A"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewStudentsOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+
   );
 };
 

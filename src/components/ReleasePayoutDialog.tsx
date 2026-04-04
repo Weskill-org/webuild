@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, DollarSign, ArrowUpRight } from "lucide-react";
+import { Loader2, IndianRupee, ArrowUpRight } from "lucide-react";
 
 interface ReleasePayoutDialogProps {
   open: boolean;
@@ -41,20 +41,20 @@ const ReleasePayoutDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-500" />
+            <IndianRupee className="w-5 h-5 text-green-500" />
             Release Payout
           </DialogTitle>
           <DialogDescription>
-            The project's budget range was ${projectMinBudget} - ${projectMaxBudget}.
+            The project's budget range was ₹{projectMinBudget} - ₹{projectMaxBudget}.
             Enter the final agreed amount to release to the student's wallet.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Payout Amount (USD)</Label>
+            <Label>Payout Amount (₹)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="number"
                 value={amount}

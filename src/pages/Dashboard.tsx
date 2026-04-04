@@ -7,7 +7,7 @@ import {
   Search,
   TrendingUp,
   Clock,
-  DollarSign,
+  IndianRupee,
   Award,
   MessageSquare,
   Briefcase,
@@ -55,7 +55,7 @@ const Dashboard = () => {
         {[
           { label: "Active Projects", value: activeProjectsCount, icon: TrendingUp, color: "text-primary", path: "/projects" },
           { label: "Completed", value: completedCount, icon: Award, color: "text-primary", path: "/projects" },
-          { label: "Wallet Balance", value: `$${walletBalance}`, icon: DollarSign, color: "text-primary", path: "/wallet" },
+          { label: "Wallet Balance", value: `₹${walletBalance}`, icon: IndianRupee, color: "text-primary", path: "/wallet" },
           { label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-primary", path: "/messages" },
         ].map((stat, i) => (
           <Card 
@@ -151,8 +151,8 @@ const Dashboard = () => {
 
                   <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <DollarSign className="w-3.5 h-3.5" />
-                      ${project.budget_min}–${project.budget_max}
+                      <IndianRupee className="w-3.5 h-3.5" />
+                      ₹{project.budget_min}–₹{project.budget_max}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />

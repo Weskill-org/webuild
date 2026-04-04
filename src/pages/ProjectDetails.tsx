@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft,
-  DollarSign,
+  IndianRupee,
   Clock,
   Calendar,
   CheckCircle2,
@@ -575,7 +575,7 @@ const ProjectDetails = () => {
                         <Card className="p-4 border-green-500/20 bg-green-500/5 flex flex-col justify-between">
                           <div>
                             <h5 className="font-semibold flex items-center gap-2 mb-1">
-                              <DollarSign className="w-4 h-4 text-green-600" /> Payout
+                              <IndianRupee className="w-4 h-4 text-green-600" /> Payout
                             </h5>
                             <p className="text-sm text-muted-foreground mb-4">
                               Release the final payment to the student's wallet.
@@ -632,9 +632,9 @@ const ProjectDetails = () => {
           <div className="space-y-4" id="status-section">
             <Card className="p-5 space-y-4">
               <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <IndianRupee className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Budget:</span>
-                <span className="font-medium">${project.budget_min}–${project.budget_max}</span>
+                <span className="font-medium">₹{project.budget_min}–₹{project.budget_max}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />

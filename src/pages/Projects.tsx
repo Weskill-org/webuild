@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Briefcase, DollarSign, Clock, Pencil, Trash2, Send, Eye, CheckCircle2, File as FileIcon } from "lucide-react";
+import { PlusCircle, Briefcase, IndianRupee, Clock, Pencil, Trash2, Send, Eye, CheckCircle2, File as FileIcon } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -216,8 +216,8 @@ const Projects = () => {
 
                 <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5" />
-                    ${project.budget_min}–${project.budget_max}
+                    <IndianRupee className="w-3.5 h-3.5" />
+                    ₹{project.budget_min}–₹{project.budget_max}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -339,11 +339,11 @@ const Projects = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Budget Min ($)</Label>
+                <Label>Budget Min (₹)</Label>
                 <Input type="number" value={editBudgetMin} onChange={(e) => setEditBudgetMin(Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Budget Max ($)</Label>
+                <Label>Budget Max (₹)</Label>
                 <Input type="number" value={editBudgetMax} onChange={(e) => setEditBudgetMax(Number(e.target.value))} />
               </div>
             </div>
