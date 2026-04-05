@@ -22,7 +22,9 @@ import {
   Users, Briefcase, DollarSign, Activity, Search, Shield, ShieldAlert,
   Loader2, AlertTriangle, Flag, Gift, Award, Wallet,
   Plus, Trash2, Eye, CheckCircle, XCircle,
+  Settings, Megaphone, Percent, Save,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -57,29 +59,26 @@ const PAGE_SIZE = 50;
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
   // Auth / admin gate
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      setIsAdmin(!!data);
-    })();
-  }, [user]);
+  const isAdmin = profile?.role === "admin";
 
   // ── Active tab ──────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("overview");
 
-  if (isAdmin === null) {
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
     return (
       <DashboardLayout>
         <div className="flex justify-center py-20">
@@ -113,6 +112,7 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="platform">Platform Settings</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="disputes">Disputes</TabsTrigger>
@@ -130,6 +130,7 @@ export default function AdminDashboard() {
           <TabsContent value="giftcards"><GiftCardsTab /></TabsContent>
           <TabsContent value="certificates"><CertificatesTab /></TabsContent>
           <TabsContent value="wallets"><WalletsTab /></TabsContent>
+          <TabsContent value="platform"><PlatformTab /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
@@ -267,20 +268,17 @@ function UsersTab() {
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
-  const handleRoleAction = async (userId: string, role: "admin" | "moderator", action: "grant" | "revoke") => {
-    if (action === "grant") {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-        return;
-      }
-    } else {
-      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-        return;
-      }
+  const handleRoleAction = async (userId: string, role: "admin" | "moderator" | "user", action: "grant" | "revoke") => {
+    const finalRole = action === "grant" ? role : "user";
+    const { error } = await supabase.from("profiles").update({ role: finalRole }).eq("id", userId);
+    
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
     }
+    
+    // Update local state if needed
+    setUsers(users.map(u => u.id === userId ? { ...u, role: finalRole } : u));
     toast({ title: `${action === "grant" ? "Granted" : "Revoked"} ${role} role` });
   };
 
@@ -869,6 +867,200 @@ function WalletsTab() {
             </Table>
           </div>
         )}
+      </Card>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. PLATFORM SETTINGS TAB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function PlatformTab() {
+  const [loading, setLoading] = useState(true);
+
+  // General Settings
+  const [siteConfig, setSiteConfig] = useState({
+    name: "Webuild",
+    email: "support@webuild.com",
+    phone: "",
+    logo: "",
+  });
+
+  // Banner
+  const [banner, setBanner] = useState({
+    active: false,
+    message: "",
+    type: "info" as "info" | "warning" | "destructive",
+    link: "",
+    linkText: "",
+  });
+
+  // Commission
+  const [commission, setCommission] = useState({
+    rate: 10,
+  });
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from("platform_settings").select("*");
+      if (error) {
+        console.error("Error fetching platform settings:", error);
+      } else if (data) {
+        const config = data.find((s: any) => s.key === "site_config")?.value;
+        if (config) setSiteConfig((prev) => ({ ...prev, ...config }));
+
+        const b = data.find((s: any) => s.key === "banner")?.value;
+        if (b) setBanner((prev) => ({ ...prev, ...b }));
+
+        const c = data.find((s: any) => s.key === "commission")?.value;
+        if (c) setCommission((prev) => ({ ...prev, ...c }));
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleSave = async (key: string, value: any) => {
+    const { error } = await supabase
+      .from("platform_settings")
+      .upsert({ key, value, updated_at: new Date().toISOString() });
+    
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `${key.replace("_", " ")} updated successfully` });
+    }
+  };
+
+  if (loading) return <LoaderBlock />;
+
+  return (
+    <div className="space-y-6 mt-4 pb-10">
+      {/* General Settings */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Settings className="w-5 h-5 text-primary" />
+          <h2 className="text-xl font-bold">General Configuration</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Site Name</label>
+            <Input 
+              value={siteConfig.name} 
+              onChange={(e) => setSiteConfig({ ...siteConfig, name: e.target.value })} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Support Email</label>
+            <Input 
+              value={siteConfig.email} 
+              onChange={(e) => setSiteConfig({ ...siteConfig, email: e.target.value })} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Support Phone</label>
+            <Input 
+              value={siteConfig.phone} 
+              onChange={(e) => setSiteConfig({ ...siteConfig, phone: e.target.value })} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Logo URL</label>
+            <Input 
+              value={siteConfig.logo} 
+              onChange={(e) => setSiteConfig({ ...siteConfig, logo: e.target.value })} 
+            />
+          </div>
+        </div>
+        <Button className="mt-6" onClick={() => handleSave("site_config", siteConfig)}>
+          <Save className="w-4 h-4 mr-2" /> Save General Settings
+        </Button>
+      </Card>
+
+      {/* Announcement Banner */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Megaphone className="w-5 h-5 text-orange-500" />
+            <h2 className="text-xl font-bold">Announcement Banner</h2>
+          </div>
+          <div className="flex items-center gap-2">
+             <span className="text-sm font-medium text-muted-foreground">Active</span>
+             <Switch 
+               checked={banner.active} 
+               onCheckedChange={(v) => setBanner({ ...banner, active: v })} 
+             />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Banner Message</label>
+            <Textarea 
+              value={banner.message} 
+              onChange={(e) => setBanner({ ...banner, message: e.target.value })}
+              placeholder="E.g. We are undergoing maintenance on Sunday..."
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Banner Type</label>
+              <Select value={banner.type} onValueChange={(v) => setBanner({ ...banner, type: v as any })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Information (Blue)</SelectItem>
+                  <SelectItem value="warning">Warning (Amber)</SelectItem>
+                  <SelectItem value="destructive">Critical (Red)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Action Text (Optional)</label>
+              <Input 
+                value={banner.linkText} 
+                onChange={(e) => setBanner({ ...banner, linkText: e.target.value })}
+                placeholder="E.g. Learn More"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Action Link (Optional)</label>
+              <Input 
+                value={banner.link} 
+                onChange={(e) => setBanner({ ...banner, link: e.target.value })}
+                placeholder="E.g. /blog/maintenance"
+              />
+            </div>
+          </div>
+        </div>
+        <Button className="mt-6" onClick={() => handleSave("banner", banner)}>
+          <Save className="w-4 h-4 mr-2" /> Save Banner Settings
+        </Button>
+      </Card>
+
+      {/* Finance Settings */}
+      <Card className="p-6 border-primary/20 bg-primary/5">
+        <div className="flex items-center gap-2 mb-6">
+          <Percent className="w-5 h-5 text-primary" />
+          <h2 className="text-xl font-bold">Finance & Commission</h2>
+        </div>
+        <div className="max-w-xs space-y-2">
+          <label className="text-sm font-medium">Platform Commission Rate (%)</label>
+          <div className="flex items-center gap-3">
+            <Input 
+              type="number" 
+              value={commission.rate} 
+              onChange={(e) => setCommission({ rate: Number(e.target.value) })} 
+              className="font-bold text-lg"
+            />
+            <span className="text-xl font-bold text-muted-foreground">%</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            This rate is applied automatically to all project payouts.
+          </p>
+        </div>
+        <Button className="mt-6" onClick={() => handleSave("commission", commission)}>
+          <Save className="w-4 h-4 mr-2" /> Update Commission Rate
+        </Button>
       </Card>
     </div>
   );
