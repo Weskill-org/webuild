@@ -26,6 +26,8 @@ import {
   MessageSquare,
   File as FileIcon,
   Award,
+  Layers,
+  Tag,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -34,6 +36,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ReviewDialog from "@/components/ReviewDialog";
 import { sendNotification } from "@/lib/notifications";
 import ReviewsSection from "@/components/ReviewsSection";
+import { getCategoryColor } from "@/lib/projectCategories";
 import FileDeliverables from "@/components/FileDeliverables";
 import IssueCertificateDialog from "@/components/IssueCertificateDialog";
 import ReleasePayoutDialog from "@/components/ReleasePayoutDialog";
@@ -310,14 +313,23 @@ const ProjectDetails = () => {
                     {project.status === "submitted" ? "Submitted – Awaiting Review" : project.status}
                   </Badge>
                 </button>
-                {project.category && (
+                {project.project_type && (
                   <button 
                     onClick={() => document.getElementById("category-section")?.scrollIntoView({ behavior: "smooth" })}
                     className="cursor-pointer hover:opacity-80 transition-opacity"
                     title="View Category Details"
                   >
-                    <Badge variant="outline">{project.category}</Badge>
+                    <Badge variant="outline" className={`font-medium ${getCategoryColor(project.project_type)}`}>
+                      <Layers className="w-3 h-3 mr-1" />
+                      {project.project_type}
+                    </Badge>
                   </button>
+                )}
+                {project.sub_category && (
+                  <Badge variant="outline" className="text-xs">
+                    <Tag className="w-3 h-3 mr-1" />
+                    {project.sub_category}
+                  </Badge>
                 )}
                 <button 
                   onClick={() => document.getElementById("milestone-section")?.scrollIntoView({ behavior: "smooth" })}

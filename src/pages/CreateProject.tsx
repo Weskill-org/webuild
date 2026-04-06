@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft, PlusCircle, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, Trash2, Layers, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { sendNotification } from "@/lib/notifications";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 
 interface Milestone {
   title: string;
@@ -33,7 +34,8 @@ const CreateProject = () => {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "",
+    project_type: "",
+    sub_category: "",
     required_skills: "",
     budget_min: "",
     budget_max: "",
@@ -58,9 +60,20 @@ const CreateProject = () => {
     setMilestones(milestones.filter((_, i) => i !== idx));
   };
 
+  const availableSubCategories = form.project_type ? getSubCategories(form.project_type) : [];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+
+    if (!form.project_type) {
+      toast({
+        variant: "destructive",
+        title: "Project Type Required",
+        description: "Please select a project type before publishing.",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -70,7 +83,9 @@ const CreateProject = () => {
           owner_id: profile.id,
           title: form.title,
           description: form.description,
-          category: form.category || null,
+          project_type: form.project_type || null,
+          sub_category: form.sub_category || null,
+          category: form.project_type || null,
           required_skills: form.required_skills.split(",").map(s => s.trim()).filter(Boolean),
           budget_min: parseFloat(form.budget_min) || 0,
           budget_max: parseFloat(form.budget_max) || 0,
@@ -117,8 +132,6 @@ const CreateProject = () => {
     }
   };
 
-  const categories = ["Web Development", "Mobile App", "Design", "Data Science", "Marketing", "Other"];
-
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
@@ -153,20 +166,73 @@ const CreateProject = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Project Type & Sub-Category — Dependent Dropdowns */}
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <Layers className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-sm font-semibold">Project Classification</span>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                    Project Type *
+                  </Label>
+                  <Select
+                    value={form.project_type}
+                    onValueChange={(v) =>
+                      setForm({ ...form, project_type: v, sub_category: "" })
+                    }
+                  >
+                    <SelectTrigger id="project-type" className={form.project_type ? getCategoryColor(form.project_type) + " border font-medium" : ""}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROJECT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    Sub-Category
+                    {!form.project_type && (
+                      <span className="text-[10px] text-muted-foreground ml-1">(select type first)</span>
+                    )}
+                  </Label>
+                  <Select
+                    value={form.sub_category}
+                    onValueChange={(v) => setForm({ ...form, sub_category: v })}
+                    disabled={!form.project_type}
+                  >
+                    <SelectTrigger
+                      id="sub-category"
+                      className={`transition-all duration-300 ${
+                        !form.project_type ? "opacity-50" : ""
+                      }`}
+                    >
+                      <SelectValue placeholder={form.project_type ? "Select sub-category" : "—"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSubCategories.map((sub) => (
+                        <SelectItem key={sub} value={sub}>
+                          {sub}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Pricing Type</Label>
                 <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}>
@@ -179,6 +245,15 @@ const CreateProject = () => {
                     <SelectItem value="milestone">Milestone</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration</Label>
+                <Input
+                  id="duration"
+                  value={form.duration}
+                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                  placeholder="e.g., 2 weeks, 1 month"
+                />
               </div>
             </div>
 
@@ -213,16 +288,6 @@ const CreateProject = () => {
                   placeholder="2000"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration</Label>
-              <Input
-                id="duration"
-                value={form.duration}
-                onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                placeholder="e.g., 2 weeks, 1 month"
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

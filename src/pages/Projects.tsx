@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Briefcase, IndianRupee, Clock, Pencil, Trash2, Send, Eye, CheckCircle2, File as FileIcon } from "lucide-react";
+import { PlusCircle, Briefcase, IndianRupee, Clock, Pencil, Trash2, Send, Eye, CheckCircle2, File as FileIcon, Filter, X, Layers, Tag, Search } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 import type { Project, Profile } from "@/types/database";
 
 interface Deliverable {
@@ -50,12 +51,19 @@ const Projects = () => {
   const [editBudgetMin, setEditBudgetMin] = useState(0);
   const [editBudgetMax, setEditBudgetMax] = useState(0);
   const [editDuration, setEditDuration] = useState("");
-  const [editCategory, setEditCategory] = useState("");
+  const [editProjectType, setEditProjectType] = useState("");
+  const [editSubCategory, setEditSubCategory] = useState("");
   const [editSkills, setEditSkills] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState(initialTab);
   const [search, setSearch] = useState("");
+
+  // Category filters
+  const [filterType, setFilterType] = useState("all");
+  const [filterSubCategory, setFilterSubCategory] = useState("all");
+  const filterSubCategories = filterType !== "all" ? getSubCategories(filterType) : [];
+  const hasActiveFilters = filterType !== "all" || filterSubCategory !== "all" || search !== "";
 
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -83,7 +91,7 @@ const Projects = () => {
     if (profile?.id) {
       fetchDeliverables();
     }
-  }, [profile?.id, projects.length, myProjects.filter(p => p.status === 'submitted').length]); // Refresh when submitted count changes
+  }, [profile?.id, projects.length, myProjects.filter(p => p.status === 'submitted').length]);
 
   const openEdit = (project: Project) => {
     setEditProject(project);
@@ -92,7 +100,8 @@ const Projects = () => {
     setEditBudgetMin(project.budget_min);
     setEditBudgetMax(project.budget_max);
     setEditDuration(project.duration ?? "");
-    setEditCategory(project.category ?? "");
+    setEditProjectType(project.project_type ?? "");
+    setEditSubCategory(project.sub_category ?? "");
     setEditSkills((project.required_skills ?? []).join(", "));
     setEditStatus(project.status);
   };
@@ -108,7 +117,9 @@ const Projects = () => {
         budget_min: editBudgetMin,
         budget_max: editBudgetMax,
         duration: editDuration || null,
-        category: editCategory || null,
+        project_type: editProjectType || null,
+        sub_category: editSubCategory || null,
+        category: editProjectType || null,
         required_skills: editSkills.split(",").map(s => s.trim()).filter(Boolean),
         status: editStatus,
       })
@@ -153,6 +164,28 @@ const Projects = () => {
     }
   };
 
+  const clearFilters = () => {
+    setFilterType("all");
+    setFilterSubCategory("all");
+    setSearch("");
+  };
+
+  // Filtered projects
+  const filteredProjects = myProjects
+    .filter(p => filter === "all" || p.status === filter)
+    .filter(p => {
+      if (filterType !== "all" && p.project_type !== filterType) return false;
+      if (filterSubCategory !== "all" && p.sub_category !== filterSubCategory) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const matchesTitle = p.title.toLowerCase().includes(q);
+        const matchesDesc = p.description?.toLowerCase().includes(q);
+        const matchesSkills = (p.required_skills ?? []).some(s => s.toLowerCase().includes(q));
+        if (!matchesTitle && !matchesDesc && !matchesSkills) return false;
+      }
+      return true;
+    });
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -169,7 +202,7 @@ const Projects = () => {
           )}
         </div>
 
-        <Tabs value={filter} className="w-full mb-8" onValueChange={setFilter}>
+        <Tabs value={filter} className="w-full mb-4" onValueChange={setFilter}>
           <TabsList className="grid w-full max-w-xl grid-cols-5 h-11 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">All</TabsTrigger>
             <TabsTrigger value="open" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Open</TabsTrigger>
@@ -184,13 +217,111 @@ const Projects = () => {
           </TabsList>
         </Tabs>
 
+        {/* Category Filter Bar — LinkedIn-style */}
+        <Card className="p-3 mb-6 border-border/40 bg-card/50 backdrop-blur-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
+              <Filter className="w-4 h-4" />
+              <span className="text-xs font-medium hidden sm:inline">Filters</span>
+            </div>
+
+            {/* Search */}
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search projects..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-9 text-sm bg-background/50"
+              />
+            </div>
+
+            {/* Project Type */}
+            <Select value={filterType} onValueChange={(v) => { setFilterType(v); setFilterSubCategory("all"); }}>
+              <SelectTrigger className={`w-auto min-w-[140px] h-9 text-sm ${filterType !== "all" ? getCategoryColor(filterType) + " border font-medium" : "bg-background/50"}`}>
+                <div className="flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  <SelectValue placeholder="All Types" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {PROJECT_TYPES.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sub-Category — only visible when type selected */}
+            {filterType !== "all" && (
+              <Select value={filterSubCategory} onValueChange={setFilterSubCategory}>
+                <SelectTrigger className={`w-auto min-w-[160px] h-9 text-sm animate-in fade-in slide-in-from-left-2 duration-200 ${filterSubCategory !== "all" ? "border-primary/30 bg-primary/5 font-medium" : "bg-background/50"}`}>
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" />
+                    <SelectValue placeholder="All Sub-Categories" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sub-Categories</SelectItem>
+                  {filterSubCategories.map(sub => (
+                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-9 text-xs text-muted-foreground hover:text-foreground gap-1 animate-in fade-in duration-200"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {/* Active filter pills */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Active:</span>
+              {filterType !== "all" && (
+                <Badge variant="secondary" className={`text-xs gap-1 ${getCategoryColor(filterType)}`}>
+                  {filterType}
+                  <button onClick={() => { setFilterType("all"); setFilterSubCategory("all"); }} className="ml-0.5 hover:opacity-70">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </Badge>
+              )}
+              {filterSubCategory !== "all" && (
+                <Badge variant="secondary" className="text-xs gap-1 border-primary/20 bg-primary/5">
+                  {filterSubCategory}
+                  <button onClick={() => setFilterSubCategory("all")} className="ml-0.5 hover:opacity-70">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </Badge>
+              )}
+              {search && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  "{search}"
+                  <button onClick={() => setSearch("")} className="ml-0.5 hover:opacity-70">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground ml-auto">
+                {filteredProjects.length} result{filteredProjects.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+        </Card>
+
         <div className="grid gap-6">
-          {myProjects
-            .filter(p => filter === "all" || p.status === filter)
-            .length > 0 ? (
-            myProjects
-              .filter(p => filter === "all" || p.status === filter)
-              .map((project) => (
+          {filteredProjects.length > 0 ? (
+            filteredProjects.map((project) => (
               <Card key={project.id} className="p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-border/50 group">
                 <div className="flex justify-between items-start mb-4">
                   <div className="min-w-0 flex-1">
@@ -213,6 +344,24 @@ const Projects = () => {
                     </Badge>
                   </button>
                 </div>
+
+                {/* Project Type & Sub-Category Badges */}
+                {(project.project_type || project.sub_category) && (
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                    {project.project_type && (
+                      <Badge variant="outline" className={`text-xs font-medium ${getCategoryColor(project.project_type)}`}>
+                        <Layers className="w-3 h-3 mr-1" />
+                        {project.project_type}
+                      </Badge>
+                    )}
+                    {project.sub_category && (
+                      <Badge variant="outline" className="text-xs">
+                        <Tag className="w-3 h-3 mr-1" />
+                        {project.sub_category}
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -311,11 +460,15 @@ const Projects = () => {
             <Card className="p-8 text-center">
               <Briefcase className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
               <p className="text-muted-foreground mb-3">
-                {isCompany ? "You haven't posted any projects yet" : "No projects available"}
+                {hasActiveFilters
+                  ? "No projects match your filters"
+                  : isCompany ? "You haven't posted any projects yet" : "No projects available"}
               </p>
-              {isCompany && (
+              {hasActiveFilters ? (
+                <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+              ) : isCompany ? (
                 <Button onClick={() => navigate("/projects/new")}>Post Your First Project</Button>
-              )}
+              ) : null}
             </Card>
           )}
         </div>
@@ -337,6 +490,42 @@ const Projects = () => {
               <Label>Description</Label>
               <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={3} />
             </div>
+
+            {/* Project Type & Sub-Category */}
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+              <span className="text-xs font-semibold flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-primary" /> Project Classification
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Project Type</Label>
+                  <Select value={editProjectType} onValueChange={(v) => { setEditProjectType(v); setEditSubCategory(""); }}>
+                    <SelectTrigger className={editProjectType ? getCategoryColor(editProjectType) + " border font-medium text-sm" : "text-sm"}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROJECT_TYPES.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Sub-Category</Label>
+                  <Select value={editSubCategory} onValueChange={setEditSubCategory} disabled={!editProjectType}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder={editProjectType ? "Select" : "—"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(editProjectType ? getSubCategories(editProjectType) : []).map(sub => (
+                        <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Budget Min (₹)</Label>
@@ -347,15 +536,9 @@ const Projects = () => {
                 <Input type="number" value={editBudgetMax} onChange={(e) => setEditBudgetMax(Number(e.target.value))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Duration</Label>
-                <Input value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="e.g. 2 weeks" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Category</Label>
-                <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} placeholder="e.g. Web Development" />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Duration</Label>
+              <Input value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="e.g. 2 weeks" />
             </div>
             <div className="space-y-1.5">
               <Label>Required Skills (comma-separated)</Label>

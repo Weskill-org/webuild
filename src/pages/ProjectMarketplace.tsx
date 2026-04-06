@@ -11,15 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, IndianRupee, Clock, Briefcase, Filter, Bookmark, BookmarkCheck, X } from "lucide-react";
+import { Search, IndianRupee, Clock, Briefcase, Filter, Bookmark, BookmarkCheck, X, Layers, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import useRealtime from "@/hooks/use-realtime";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 
-const categories = ["Web Development", "Mobile App", "Design", "Data Science", "Marketing", "Other"];
 const durations = ["1 week", "2 weeks", "1 month", "2 months", "3 months", "6 months"];
 
 const ProjectMarketplace = () => {
@@ -27,7 +27,8 @@ const ProjectMarketplace = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [projectType, setProjectType] = useState("all");
+  const [subCategory, setSubCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [budgetRange, setBudgetRange] = useState([0, 50000]);
   const [duration, setDuration] = useState("all");
@@ -35,6 +36,9 @@ const ProjectMarketplace = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [recommendations, setRecommendations] = useState<string[]>([]);
+
+  const availableSubCategories = projectType !== "all" ? getSubCategories(projectType) : [];
+  const hasActiveFilters = projectType !== "all" || subCategory !== "all" || duration !== "all" || skillFilter !== "" || budgetRange[0] !== 0 || budgetRange[1] !== 50000;
 
   // Load bookmarks
   useEffect(() => {
@@ -71,6 +75,14 @@ const ProjectMarketplace = () => {
 
   const skillFilters = skillFilter.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+  const clearFilters = () => {
+    setProjectType("all");
+    setSubCategory("all");
+    setDuration("all");
+    setSkillFilter("");
+    setBudgetRange([0, 50000]);
+  };
+
   const filtered = openProjects
     .filter((p) => {
       const matchesSearch =
@@ -78,13 +90,14 @@ const ProjectMarketplace = () => {
         p.title.toLowerCase().includes(search.toLowerCase()) ||
         p.description?.toLowerCase().includes(search.toLowerCase()) ||
         (p.required_skills ?? []).some((s) => s.toLowerCase().includes(search.toLowerCase()));
-      const matchesCategory = category === "all" || p.category === category;
+      const matchesType = projectType === "all" || p.project_type === projectType;
+      const matchesSubCategory = subCategory === "all" || p.sub_category === subCategory;
       const matchesBudget = (p.budget_min ?? 0) >= budgetRange[0] && (p.budget_max ?? 0) <= budgetRange[1];
       const matchesDuration = duration === "all" || p.duration === duration;
       const matchesSkills =
         skillFilters.length === 0 ||
         skillFilters.some((sf) => (p.required_skills ?? []).some((rs) => rs.toLowerCase().includes(sf)));
-      return matchesSearch && matchesCategory && matchesBudget && matchesDuration && matchesSkills;
+      return matchesSearch && matchesType && matchesSubCategory && matchesBudget && matchesDuration && matchesSkills;
     })
     .sort((a, b) => {
       if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -115,6 +128,7 @@ const ProjectMarketplace = () => {
           <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2">
             <Filter className="w-4 h-4" />
             Filters {showFilters && <X className="w-3 h-3" />}
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
           </Button>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-44">
@@ -131,20 +145,52 @@ const ProjectMarketplace = () => {
 
         {/* Advanced filters */}
         {showFilters && (
-          <Card className="p-4 mb-4 space-y-4">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-4 mb-4 space-y-4 animate-in slide-in-from-top-2 fade-in duration-200 border-border/40">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Project Type */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Category</label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <label className="text-sm font-medium mb-1.5 flex items-center gap-1.5 text-foreground">
+                  <Layers className="w-3.5 h-3.5 text-primary" />
+                  Project Type
+                </label>
+                <Select value={projectType} onValueChange={(v) => { setProjectType(v); setSubCategory("all"); }}>
+                  <SelectTrigger className={projectType !== "all" ? getCategoryColor(projectType) + " border font-medium" : ""}>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    <SelectItem value="all">All Types</SelectItem>
+                    {PROJECT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Sub-Category — dynamically appears */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Duration</label>
+                <label className="text-sm font-medium mb-1.5 flex items-center gap-1.5 text-foreground">
+                  <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                  Sub-Category
+                  {projectType === "all" && (
+                    <span className="text-[10px] text-muted-foreground">(select type first)</span>
+                  )}
+                </label>
+                <Select value={subCategory} onValueChange={setSubCategory} disabled={projectType === "all"}>
+                  <SelectTrigger className={`transition-all duration-200 ${projectType === "all" ? "opacity-50" : subCategory !== "all" ? "border-primary/30 bg-primary/5 font-medium" : ""}`}>
+                    <SelectValue placeholder={projectType !== "all" ? "All Sub-Categories": "—"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sub-Categories</SelectItem>
+                    {availableSubCategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Duration</label>
                 <Select value={duration} onValueChange={setDuration}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -153,15 +199,55 @@ const ProjectMarketplace = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Skills */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Skills (comma-separated)</label>
+                <label className="text-sm font-medium mb-1.5 block">Skills (comma-separated)</label>
                 <Input placeholder="React, Python..." value={skillFilter} onChange={(e) => setSkillFilter(e.target.value)} />
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Budget: ₹{budgetRange[0]} – ₹{budgetRange[1]}</label>
+
+              {/* Budget */}
+              <div className="sm:col-span-2 lg:col-span-2">
+                <label className="text-sm font-medium mb-1.5 block">Budget: ₹{budgetRange[0]} – ₹{budgetRange[1]}</label>
                 <Slider min={0} max={50000} step={500} value={budgetRange} onValueChange={setBudgetRange} className="mt-3" />
               </div>
             </div>
+
+            {/* Active filter summary & clear */}
+            {hasActiveFilters && (
+              <div className="flex items-center justify-between pt-3 border-t border-border/30">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Active:</span>
+                  {projectType !== "all" && (
+                    <Badge variant="secondary" className={`text-xs gap-1 ${getCategoryColor(projectType)}`}>
+                      {projectType}
+                      <button onClick={() => { setProjectType("all"); setSubCategory("all"); }}><X className="w-2.5 h-2.5" /></button>
+                    </Badge>
+                  )}
+                  {subCategory !== "all" && (
+                    <Badge variant="secondary" className="text-xs gap-1 border-primary/20 bg-primary/5">
+                      {subCategory}
+                      <button onClick={() => setSubCategory("all")}><X className="w-2.5 h-2.5" /></button>
+                    </Badge>
+                  )}
+                  {duration !== "all" && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      {duration}
+                      <button onClick={() => setDuration("all")}><X className="w-2.5 h-2.5" /></button>
+                    </Badge>
+                  )}
+                  {skillFilter && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      Skills: {skillFilter}
+                      <button onClick={() => setSkillFilter("")}><X className="w-2.5 h-2.5" /></button>
+                    </Badge>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs gap-1 text-muted-foreground">
+                  <X className="w-3 h-3" /> Clear all
+                </Button>
+              </div>
+            )}
           </Card>
         )}
 
@@ -188,9 +274,26 @@ const ProjectMarketplace = () => {
                       <Button variant="ghost" size="icon" onClick={() => toggleBookmark(project.id)}>
                         {isBookmarked ? <BookmarkCheck className="w-5 h-5 text-primary" /> : <Bookmark className="w-5 h-5" />}
                       </Button>
-                      {project.category && <Badge variant="secondary">{project.category}</Badge>}
                     </div>
                   </div>
+
+                  {/* Project Type & Sub-Category Badges */}
+                  {(project.project_type || project.sub_category) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      {project.project_type && (
+                        <Badge variant="outline" className={`text-xs font-medium ${getCategoryColor(project.project_type)}`}>
+                          <Layers className="w-3 h-3 mr-1" />
+                          {project.project_type}
+                        </Badge>
+                      )}
+                      {project.sub_category && (
+                        <Badge variant="outline" className="text-xs">
+                          <Tag className="w-3 h-3 mr-1" />
+                          {project.sub_category}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><IndianRupee className="w-3.5 h-3.5" />₹{project.budget_min}–₹{project.budget_max}</span>
@@ -216,7 +319,10 @@ const ProjectMarketplace = () => {
           ) : (
             <Card className="p-8 text-center">
               <Briefcase className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">No projects found matching your criteria</p>
+              <p className="text-muted-foreground mb-3">No projects found matching your criteria</p>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+              )}
             </Card>
           )}
         </div>

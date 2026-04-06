@@ -22,6 +22,8 @@ export interface Project {
   title: string;
   description: string | null;
   category: string | null;
+  project_type: string | null;
+  sub_category: string | null;
   required_skills: string[];
   budget_min: number;
   budget_max: number;
