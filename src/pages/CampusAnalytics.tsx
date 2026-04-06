@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardLayout from "@/components/DashboardLayout";
+import { Loader2, BarChart3, Users, Briefcase, IndianRupee, TrendingUp, ArrowRight, BookOpen } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BarChart3, Users, Briefcase, IndianRupee, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function CampusAnalytics() {
   const { profile } = useAuth();
@@ -18,6 +26,27 @@ export default function CampusAnalytics() {
     totalEarnings: 0,
     departmentBreakdown: {} as Record<string, number>,
   });
+
+  const [selectedDept, setSelectedDept] = useState<string | null>(null);
+  const [deptBatches, setDeptBatches] = useState<any[]>([]);
+  const [fetchingDept, setFetchingDept] = useState(false);
+
+  const fetchDeptDetails = async (dept: string) => {
+    if (!profile) return;
+    setSelectedDept(dept);
+    setFetchingDept(true);
+    
+    let query = supabase.from("batches").select("id, name, created_at").eq("campus_id", profile.id);
+    if (dept === "General") {
+      query = query.is("department", null);
+    } else {
+      query = query.eq("department", dept);
+    }
+    
+    const { data } = await query;
+    setDeptBatches(data || []);
+    setFetchingDept(false);
+  };
 
   useEffect(() => {
     if (!profile || profile.role !== "campus") return;
@@ -107,19 +136,80 @@ export default function CampusAnalytics() {
         </div>
 
         <Card className="p-5">
-          <h2 className="font-semibold mb-3">Departments</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold">Departments</h2>
+            <p className="text-xs text-muted-foreground">Click a department to view batches</p>
+          </div>
           {Object.keys(stats.departmentBreakdown).length === 0 ? (
             <p className="text-sm text-muted-foreground">No department data available</p>
           ) : (
             <div className="flex gap-3 flex-wrap">
               {Object.entries(stats.departmentBreakdown).map(([dept, count]) => (
-                <Badge key={dept} variant="secondary" className="text-sm px-3 py-1.5">
-                  {dept}: {count} batches
+                <Badge 
+                  key={dept} 
+                  variant="secondary" 
+                  className="text-sm px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2 group"
+                  onClick={() => fetchDeptDetails(dept)}
+                >
+                  {dept}
+                  <span className="bg-muted group-hover:bg-primary-foreground/20 px-2 py-0.5 rounded text-xs">
+                    {count}
+                  </span>
                 </Badge>
               ))}
             </div>
           )}
         </Card>
+
+        <Dialog open={!!selectedDept} onOpenChange={(open) => !open && setSelectedDept(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                {selectedDept} - Batches
+              </DialogTitle>
+              <DialogDescription>
+                List of active batches in the {selectedDept} department.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              {fetchingDept ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : deptBatches.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground italic">No batches found for this department.</p>
+              ) : (
+                <div className="grid gap-2">
+                  {deptBatches.map((batch) => (
+                    <div 
+                      key={batch.id} 
+                      className="flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer group"
+                      onClick={() => navigate(`/batches?dept=${selectedDept === "General" ? "" : selectedDept}`)}
+                    >
+                      <div>
+                        <p className="font-medium group-hover:text-primary transition-colors">{batch.name}</p>
+                        <p className="text-xs text-muted-foreground">Created {new Date(batch.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate(`/batches?dept=${selectedDept === "General" ? "" : selectedDept}`)}
+                className="w-full"
+              >
+                View in Management Console
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

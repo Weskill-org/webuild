@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,8 @@ const Batches = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deptParam = searchParams.get("dept");
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,7 +48,13 @@ const Batches = () => {
   const fetchBatches = async () => {
     if (!profile) return;
     setLoading(true);
-    const { data } = await supabase.from("batches").select("*").eq("campus_id", profile.id).order("created_at", { ascending: false });
+    let query = supabase.from("batches").select("*").eq("campus_id", profile.id);
+    
+    if (deptParam) {
+      query = query.eq("department", deptParam);
+    }
+
+    const { data } = await query.order("created_at", { ascending: false });
     const batchList = (data as unknown as Batch[]) ?? [];
     setBatches(batchList);
 
@@ -91,7 +100,7 @@ const Batches = () => {
 
   useEffect(() => {
     fetchBatches();
-  }, [profile]);
+  }, [profile, deptParam]);
 
   const handleCreate = async () => {
     if (!profile || !form.name.trim()) return;
@@ -134,10 +143,17 @@ const Batches = () => {
             <h1 className="text-2xl font-bold">Batches</h1>
             <p className="text-muted-foreground">Manage your campus batches and student groups</p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="gap-2">
-            <PlusCircle className="w-4 h-4" />
-            New Batch
-          </Button>
+          <div className="flex items-center gap-3">
+            {deptParam && (
+              <Button variant="ghost" size="sm" onClick={() => setSearchParams({})} className="text-muted-foreground h-8 px-2">
+                Clear: {deptParam} ×
+              </Button>
+            )}
+            <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <PlusCircle className="w-4 h-4" />
+              New Batch
+            </Button>
+          </div>
         </div>
 
         {loading ? (
