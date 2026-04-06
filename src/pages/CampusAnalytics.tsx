@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BarChart3, Users, Briefcase, DollarSign, TrendingUp } from "lucide-react";
+import { Loader2, BarChart3, Users, Briefcase, IndianRupee, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function CampusAnalytics() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -51,8 +53,8 @@ export default function CampusAnalytics() {
 
         if (apps && apps.length > 0) {
           const projectIds = apps.map((a: any) => a.project_id);
-          const { data: projects } = await supabase.from("projects").select("id, completed").in("id", projectIds);
-          projectsCompleted = (projects ?? []).filter((p: any) => p.completed).length;
+          const { data: projects } = await supabase.from("projects").select("id, status, completed").in("id", projectIds);
+          projectsCompleted = (projects ?? []).filter((p: any) => p.status === 'completed' || p.completed).length;
         }
 
         const { data: wallets } = await supabase.from("wallets").select("balance").in("owner_id", studentIds);
@@ -83,12 +85,16 @@ export default function CampusAnalytics() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
-            { label: "Total Students", value: stats.totalStudents, icon: Users, color: "text-primary" },
-            { label: "Active Students", value: stats.activeStudents, icon: TrendingUp, color: "text-green-500" },
-            { label: "Projects Completed", value: stats.projectsCompleted, icon: Briefcase, color: "text-accent" },
-            { label: "Student Earnings", value: `$${stats.totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-amber-500" },
+            { label: "Total Students", value: stats.totalStudents, icon: Users, color: "text-primary", path: "/students" },
+            { label: "Active Students", value: stats.activeStudents, icon: TrendingUp, color: "text-green-500", path: "/students" },
+            { label: "Projects Completed", value: stats.projectsCompleted, icon: Briefcase, color: "text-accent", path: "/projects" },
+            { label: "Student Earnings", value: `₹${stats.totalEarnings.toFixed(0)}`, icon: IndianRupee, color: "text-amber-500", path: "/wallet" },
           ].map((s) => (
-            <Card key={s.label} className="p-5">
+            <Card 
+              key={s.label} 
+              className="p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/20"
+              onClick={() => navigate(s.path)}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{s.label}</p>
