@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendNotification } from "@/lib/notifications";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
+import AIDescriptionGenerator from "@/components/ai/AIDescriptionGenerator";
 
 interface Milestone {
   title: string;
@@ -156,7 +157,16 @@ const CreateProject = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Description</Label>
+                <AIDescriptionGenerator
+                  projectTitle={form.title}
+                  projectType={form.project_type}
+                  subCategory={form.sub_category}
+                  requiredSkills={form.required_skills}
+                  onDescriptionGenerated={(desc) => setForm({ ...form, description: desc })}
+                />
+              </div>
               <Textarea
                 id="description"
                 rows={4}

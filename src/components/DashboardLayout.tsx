@@ -33,6 +33,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import weskillLogo from "@/assets/weskill logo.avif";
+
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -142,8 +144,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className={`h-16 flex items-center gap-2 border-b border-sidebar-border transition-all duration-300 ${isSidebarCollapsed ? "px-4 justify-center" : "px-6"
           }`}>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-lg">W</span>
+          <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={weskillLogo} alt="Weskill Logo" className="w-full h-full object-contain" />
           </div>
           {!isSidebarCollapsed && (
             <span className="text-lg font-bold text-sidebar-foreground truncate animate-fade-in">Webuild</span>
@@ -272,8 +274,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="h-14 flex items-center justify-between px-4">
             {/* Left: Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">W</span>
+              <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center overflow-hidden">
+                <img src={weskillLogo} alt="Weskill Logo" className="w-full h-full object-contain" />
               </div>
               <span className="font-bold text-foreground">Webuild</span>
             </div>

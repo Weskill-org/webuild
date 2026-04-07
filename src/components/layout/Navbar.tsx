@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import weskillLogo from "@/assets/weskill logo.avif";
+
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -13,8 +15,8 @@ const Navbar = () => {
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">W</span>
+          <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center overflow-hidden">
+            <img src={weskillLogo} alt="Weskill Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
             Webuild

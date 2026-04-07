@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import weskillLogo from "@/assets/weskill logo.avif";
+
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -48,9 +50,9 @@ const ForgotPassword = () => {
 
         <Card className="p-8">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary-foreground font-bold text-xl">W</span>
-            </div>
+             <div className="w-12 h-12 rounded-xl bg-transparent flex items-center justify-center mx-auto mb-4 overflow-hidden">
+               <img src={weskillLogo} alt="Weskill Logo" className="w-full h-full object-contain" />
+             </div>
             <h1 className="text-2xl font-bold mb-2">Reset Password</h1>
             <p className="text-muted-foreground">Enter your email to receive a reset link</p>
           </div>
