@@ -165,7 +165,7 @@ export default function useRealtime() {
           // Company: only their own projects
           const { data: projData } = await supabase
             .from('projects')
-            .select('*')
+            .select('*, profiles:owner_id(company_name, logo_url)')
             .eq('owner_id', profile.id);
           setProjects((projData as Project[]) ?? []);
         } else if (profile?.role === 'student') {
@@ -182,7 +182,7 @@ export default function useRealtime() {
           setAppliedProjectIds(applied);
 
           // Fetch ALL projects for student (Marketplace needs this)
-          const { data: projData } = await supabase.from('projects').select('*');
+          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
           setProjects((projData as Project[]) ?? []);
         } else if (profile?.role === 'campus') {
           // Campus: get batches → students → their accepted applications → projects
@@ -213,11 +213,11 @@ export default function useRealtime() {
           }
 
           // Fetch ALL projects for campus (Marketplace needs this)
-          const { data: projData } = await supabase.from('projects').select('*');
+          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
           setProjects((projData as Project[]) ?? []);
         } else {
           // Fallback: admin or other roles
-          const { data: projData } = await supabase.from('projects').select('*');
+          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
           setProjects((projData as Project[]) ?? []);
         }
 

@@ -264,10 +264,20 @@ const ProjectMarketplace = () => {
                 <Card key={project.id} className={`p-5 hover:shadow-md transition-shadow ${isRecommended ? "border-primary/30 bg-primary/5" : ""}`}>
                   <div className="flex justify-between items-start mb-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold truncate">{project.title}</h3>
-                        {isRecommended && <Badge className="text-xs shrink-0">Recommended</Badge>}
+                      <div className="flex items-center gap-2 mb-2">
+                        {project.profiles?.logo_url ? (
+                          <img src={project.profiles.logo_url} alt="" className="w-5 h-5 rounded-full object-cover border border-border/50" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center border border-border/50">
+                            <Briefcase className="w-2.5 h-2.5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="text-xs font-bold text-foreground uppercase tracking-wide">
+                          {project.profiles?.company_name || "Company"}
+                        </span>
+                        {isRecommended && <Badge className="text-[10px] h-4 px-1.5 shrink-0">Recommended</Badge>}
                       </div>
+                      <h3 className="text-lg font-bold truncate mb-1">{project.title}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
                     </div>
                     <div className="flex items-center gap-2 ml-3 shrink-0">

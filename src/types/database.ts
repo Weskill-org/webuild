@@ -37,6 +37,10 @@ export interface Project {
   certificate_issued: boolean;
   created_at: string;
   updated_at: string;
+  profiles?: {
+    company_name: string | null;
+    logo_url: string | null;
+  } | null;
 }
 
 export interface ProjectMilestone {

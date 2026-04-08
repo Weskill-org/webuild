@@ -32,6 +32,9 @@ const Navbar = () => {
           <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             About
           </Link>
+          <Link to="/explore-projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Projects
+          </Link>
         </nav>
         <div className="flex items-center gap-3">
           <ThemeToggle />

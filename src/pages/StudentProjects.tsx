@@ -36,7 +36,7 @@ const StudentProjects = () => {
         .from("project_applications")
         .select(`
           *,
-          projects (*)
+          projects (*, profiles:owner_id(company_name, logo_url))
         `)
         .eq("applicant_id", profile.id)
         .order("created_at", { ascending: false });
@@ -145,11 +145,23 @@ const StudentProjects = () => {
             {filteredApps.map((app) => (
               <Card key={app.id} className="p-6 transition-all duration-300 hover:shadow-md border-border/50 group">
                 <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold group-hover:text-primary transition-colors truncate">
-                        {app.projects.title}
-                      </h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {app.projects.profiles?.logo_url ? (
+                          <img src={app.projects.profiles.logo_url} alt="" className="w-5 h-5 rounded-full object-cover border border-border/50" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center border border-border/50">
+                            <Briefcase className="w-2.5 h-2.5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="text-xs font-bold text-foreground uppercase tracking-wide">
+                          {app.projects.profiles?.company_name || "Company"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold group-hover:text-primary transition-colors truncate">
+                          {app.projects.title}
+                        </h3>
                       {app.status === "pending" && <Badge variant="secondary">Under Review</Badge>}
                       {app.status === "rejected" && <Badge variant="destructive">Not Selected</Badge>}
                       {app.status === "accepted" && app.projects.status === "in_progress" && <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">In Progress</Badge>}
