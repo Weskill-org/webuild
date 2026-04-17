@@ -10,7 +10,7 @@ export default function useSupabaseAuth() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, retries = 3): Promise<Profile | null> => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -22,8 +22,16 @@ export default function useSupabaseAuth() {
       return null;
     }
 
-    setProfile(data as unknown as Profile);
-    return data as unknown as Profile;
+    const p = data as unknown as Profile;
+
+    // If role is still null and we have retries left, the DB trigger may not have fired yet
+    if (!p.role && retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return fetchProfile(userId, retries - 1);
+    }
+
+    setProfile(p);
+    return p;
   }, []);
 
   useEffect(() => {
@@ -90,6 +98,27 @@ export default function useSupabaseAuth() {
     // If there's no session, email confirmation is required
     if (!authData.session) {
       return { user: authData.user ?? null, requiresConfirmation: true } as const;
+    }
+
+    // Session exists — explicitly upsert the profile so the UI has data immediately
+    // (avoids race conditions where the DB trigger hasn't fired yet)
+    if (authData.user) {
+      const { data: upsertedProfile, error: upsertError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: authData.user.id,
+          email,
+          full_name: profileData.full_name ?? null,
+          role: profileData.role ?? "student",
+          company_name: profileData.company_name ?? null,
+          university: profileData.university ?? null,
+        }, { onConflict: "id" })
+        .select()
+        .single();
+
+      if (!upsertError && upsertedProfile) {
+        setProfile(upsertedProfile as unknown as Profile);
+      }
     }
 
     return { user: authData.user } as const;

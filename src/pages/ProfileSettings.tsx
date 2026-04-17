@@ -82,7 +82,7 @@ const ProfileSettings = () => {
                   <img src={profile.logo_url} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-primary-foreground font-bold text-xl">
-                    {profile?.full_name?.[0] || profile?.company_name?.[0] || "?"}
+                    {profile?.full_name?.[0] || profile?.company_name?.[0] || profile?.university?.[0] || "?"}
                   </span>
                 )}
               </div>
