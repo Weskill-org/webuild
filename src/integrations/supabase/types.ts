@@ -588,6 +588,7 @@ export type Database = {
           id: string
           project_id: string
           status: string | null
+          work_status: string | null
           work_submitted: boolean | null
         }
         Insert: {
@@ -597,6 +598,7 @@ export type Database = {
           id?: string
           project_id: string
           status?: string | null
+          work_status?: string | null
           work_submitted?: boolean | null
         }
         Update: {
@@ -606,6 +608,7 @@ export type Database = {
           id?: string
           project_id?: string
           status?: string | null
+          work_status?: string | null
           work_submitted?: boolean | null
         }
         Relationships: [
@@ -681,9 +684,11 @@ export type Database = {
           owner_id: string
           payout_released: boolean | null
           pricing_type: string | null
+          project_type: string | null
           required_skills: string[] | null
           start_date: string | null
           status: string | null
+          sub_category: string | null
           title: string
           updated_at: string | null
         }
@@ -701,9 +706,11 @@ export type Database = {
           owner_id: string
           payout_released?: boolean | null
           pricing_type?: string | null
+          project_type?: string | null
           required_skills?: string[] | null
           start_date?: string | null
           status?: string | null
+          sub_category?: string | null
           title: string
           updated_at?: string | null
         }
@@ -721,9 +728,11 @@ export type Database = {
           owner_id?: string
           payout_released?: boolean | null
           pricing_type?: string | null
+          project_type?: string | null
           required_skills?: string[] | null
           start_date?: string | null
           status?: string | null
+          sub_category?: string | null
           title?: string
           updated_at?: string | null
         }
