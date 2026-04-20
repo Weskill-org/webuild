@@ -86,7 +86,7 @@ const Contact = () => {
                     <div>
                       <h4 className="font-semibold text-lg">Call us</h4>
                       <p className="text-muted-foreground mb-1">Mon-Sat from 9am to 6:30pm</p>
-                      <a href="tel:+919996996668" className="text-primary hover:underline font-medium">099969 96668</a>
+                      <a href="tel:+919996996668" className="text-primary hover:underline font-medium">+91 99969 96668</a>
                     </div>
                   </div>
 
