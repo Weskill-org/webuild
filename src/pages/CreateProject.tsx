@@ -253,6 +253,8 @@ const CreateProject = () => {
                     <SelectItem value="fixed">Fixed Price</SelectItem>
                     <SelectItem value="hourly">Hourly</SelectItem>
                     <SelectItem value="milestone">Milestone</SelectItem>
+                    <SelectItem value="commission">Commission Based</SelectItem>
+                    <SelectItem value="fixed_plus_commission">Fixed + Commission</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

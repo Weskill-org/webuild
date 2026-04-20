@@ -27,7 +27,7 @@ export interface Project {
   required_skills: string[];
   budget_min: number;
   budget_max: number;
-  pricing_type: 'fixed' | 'hourly' | 'milestone';
+  pricing_type: 'fixed' | 'hourly' | 'milestone' | 'commission' | 'fixed_plus_commission';
   duration: string | null;
   start_date: string | null;
   end_date: string | null;

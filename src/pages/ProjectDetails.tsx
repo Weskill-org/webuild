@@ -336,7 +336,7 @@ const ProjectDetails = () => {
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                   title="View Pricing & Milestones"
                 >
-                  <Badge variant="outline" className="capitalize">{project.pricing_type}</Badge>
+                  <Badge variant="outline" className="capitalize">{project.pricing_type?.replace(/_/g, ' ')}</Badge>
                 </button>
               </div>
             </div>
