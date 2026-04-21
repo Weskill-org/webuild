@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { AuthProvider } from "@/providers/AuthProvider";
 import PrivateRoute from "@/components/PrivateRoute";
 import PublicRoute from "@/components/PublicRoute";
@@ -58,7 +59,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={Capacitor.isNativePlatform() ? <Navigate to="/dashboard" replace /> : <Landing />} />
             
             {/* Public Auth Routes (Redirect to dashboard if logged in) */}
             <Route element={<PublicRoute />}>
