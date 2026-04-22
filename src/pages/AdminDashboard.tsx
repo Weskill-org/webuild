@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { formatProjectBudget } from "@/lib/projectUtils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -457,7 +458,7 @@ function ProjectsTab() {
                   <TableCell className="font-medium text-sm max-w-[200px] truncate">{p.title}</TableCell>
                   <TableCell className="text-sm">{profiles[p.owner_id] || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="capitalize">{p.status}</Badge></TableCell>
-                  <TableCell className="text-sm">{p.budget_min || p.budget_max ? `${inr(p.budget_min ?? 0)} – ${inr(p.budget_max ?? 0)}` : "—"}</TableCell>
+                  <TableCell className="text-sm">{formatProjectBudget(p)}</TableCell>
                   <TableCell className="text-sm">{p.category || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>

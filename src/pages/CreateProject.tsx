@@ -41,6 +41,9 @@ const CreateProject = () => {
     budget_min: "",
     budget_max: "",
     pricing_type: "fixed",
+    commission_type: "percentage",
+    commission_min: "",
+    commission_max: "",
     duration: "",
     start_date: "",
     end_date: "",
@@ -76,6 +79,42 @@ const CreateProject = () => {
       return;
     }
 
+    if (["commission", "fixed_plus_commission"].includes(form.pricing_type)) {
+      const min = parseFloat(form.commission_min) || 0;
+      const max = parseFloat(form.commission_max) || 0;
+      
+      if (min < 0 || max <= 0) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Commission",
+          description: "Commission range must be greater than zero.",
+        });
+        return;
+      }
+      
+      if (max < min) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Commission Range",
+          description: "Maximum commission cannot be less than minimum.",
+        });
+        return;
+      }
+    }
+
+    if (form.pricing_type !== "commission") {
+      const min = parseFloat(form.budget_min) || 0;
+      const max = parseFloat(form.budget_max) || 0;
+      if (max < min) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Budget Range",
+          description: "Maximum budget cannot be less than minimum.",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const { data: project, error: projError } = await supabase
@@ -91,6 +130,9 @@ const CreateProject = () => {
           budget_min: parseFloat(form.budget_min) || 0,
           budget_max: parseFloat(form.budget_max) || 0,
           pricing_type: form.pricing_type,
+          commission_type: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? form.commission_type : null,
+          commission_min: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? (parseFloat(form.commission_min) || 0) : 0,
+          commission_max: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? (parseFloat(form.commission_max) || 0) : 0,
           duration: form.duration || null,
           start_date: form.start_date || null,
           end_date: form.end_date || null,
@@ -269,6 +311,85 @@ const CreateProject = () => {
               </div>
             </div>
 
+            {["commission", "fixed_plus_commission"].includes(form.pricing_type) && (
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 rounded-lg bg-primary/10">
+                    <Tag className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="text-sm font-semibold">Commission Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Commission Type</Label>
+                    <Select 
+                      value={form.commission_type} 
+                      onValueChange={(v) => setForm({ ...form, commission_type: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="comm_min">Min {form.commission_type === 'percentage' ? '%' : '₹'}</Label>
+                      <Input
+                        id="comm_min"
+                        type="number"
+                        value={form.commission_min}
+                        onChange={(e) => setForm({ ...form, commission_min: e.target.value })}
+                        placeholder="5"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="comm_max">Max {form.commission_type === 'percentage' ? '%' : '₹'}</Label>
+                      <Input
+                        id="comm_max"
+                        type="number"
+                        value={form.commission_max}
+                        onChange={(e) => setForm({ ...form, commission_max: e.target.value })}
+                        placeholder="10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {form.pricing_type !== "commission" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budget_min">
+                    {form.pricing_type === "fixed_plus_commission" ? "Fixed Base Pay Min (₹)" : "Budget Min (₹)"}
+                  </Label>
+                  <Input
+                    id="budget_min"
+                    type="number"
+                    value={form.budget_min}
+                    onChange={(e) => setForm({ ...form, budget_min: e.target.value })}
+                    placeholder="500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="budget_max">
+                    {form.pricing_type === "fixed_plus_commission" ? "Fixed Base Pay Max (₹)" : "Budget Max (₹)"}
+                  </Label>
+                  <Input
+                    id="budget_max"
+                    type="number"
+                    value={form.budget_max}
+                    onChange={(e) => setForm({ ...form, budget_max: e.target.value })}
+                    placeholder="2000"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="skills">Required Skills (comma-separated)</Label>
               <Input
@@ -277,29 +398,6 @@ const CreateProject = () => {
                 onChange={(e) => setForm({ ...form, required_skills: e.target.value })}
                 placeholder="React, TypeScript, Node.js..."
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="budget_min">Budget Min (₹)</Label>
-                <Input
-                  id="budget_min"
-                  type="number"
-                  value={form.budget_min}
-                  onChange={(e) => setForm({ ...form, budget_min: e.target.value })}
-                  placeholder="500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="budget_max">Budget Max (₹)</Label>
-                <Input
-                  id="budget_max"
-                  type="number"
-                  value={form.budget_max}
-                  onChange={(e) => setForm({ ...form, budget_max: e.target.value })}
-                  placeholder="2000"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

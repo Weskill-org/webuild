@@ -11,6 +11,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Project, ProjectApplication } from "@/types/database";
+import { formatProjectBudget } from "@/lib/projectUtils";
+import { IndianRupee } from "lucide-react";
 
 type ApplicationWithProject = ProjectApplication & {
   projects: Project;
@@ -174,8 +176,8 @@ const StudentProjects = () => {
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5" />
-                        ${app.projects.budget_min}–${app.projects.budget_max}
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        {formatProjectBudget(app.projects)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />

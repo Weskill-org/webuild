@@ -41,6 +41,7 @@ import FileDeliverables from "@/components/FileDeliverables";
 import IssueCertificateDialog from "@/components/IssueCertificateDialog";
 import ReleasePayoutDialog from "@/components/ReleasePayoutDialog";
 import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
+import { formatProjectBudget } from "@/lib/projectUtils";
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -645,8 +646,8 @@ const ProjectDetails = () => {
             <Card className="p-5 space-y-4">
               <div className="flex items-center gap-2 text-sm">
                 <IndianRupee className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Budget:</span>
-                <span className="font-medium">₹{project.budget_min}–₹{project.budget_max}</span>
+                <span className="text-muted-foreground">Compensation:</span>
+                <span className="font-medium">{formatProjectBudget(project)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />
@@ -762,8 +763,7 @@ const ProjectDetails = () => {
         <ReleasePayoutDialog
           open={releasePayoutOpen}
           onOpenChange={setReleasePayoutOpen}
-          projectMinBudget={project.budget_min}
-          projectMaxBudget={project.budget_max}
+          project={project}
           onConfirm={handleReleasePayout}
         />
       )}

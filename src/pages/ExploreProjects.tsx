@@ -14,6 +14,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 import type { Project } from "@/types/database";
+import { formatProjectBudget } from "@/lib/projectUtils";
 
 const STATUS_STYLES: Record<string, { label: string; class: string }> = {
   open: { label: "Open", class: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
@@ -378,7 +379,7 @@ const ExploreProjects = () => {
                         <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <IndianRupee className="w-3.5 h-3.5" />
-                            ₹{project.budget_min.toLocaleString()}–₹{project.budget_max.toLocaleString()}
+                            {formatProjectBudget(project)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />

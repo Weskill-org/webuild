@@ -5,22 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, IndianRupee, ArrowUpRight } from "lucide-react";
 
+import { formatProjectBudget } from "@/lib/projectUtils";
+import type { Project } from "@/types/database";
+
 interface ReleasePayoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectMinBudget: number;
-  projectMaxBudget: number;
+  project: Project;
   onConfirm: (amount: number) => Promise<void>;
 }
 
 const ReleasePayoutDialog = ({
   open,
   onOpenChange,
-  projectMinBudget,
-  projectMaxBudget,
+  project,
   onConfirm,
 }: ReleasePayoutDialogProps) => {
-  const [amount, setAmount] = useState<string>(projectMaxBudget.toString());
+  const [amount, setAmount] = useState<string>(project.budget_max.toString());
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirm = async () => {
@@ -45,7 +46,7 @@ const ReleasePayoutDialog = ({
             Release Payout
           </DialogTitle>
           <DialogDescription>
-            The project's budget range was ₹{projectMinBudget} - ₹{projectMaxBudget}.
+            The project compensation is {formatProjectBudget(project)}.
             Enter the final agreed amount to release to the student's wallet.
           </DialogDescription>
         </DialogHeader>

@@ -19,6 +19,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
+import { formatProjectBudget } from "@/lib/projectUtils";
 
 const durations = ["1 week", "2 weeks", "1 month", "2 months", "3 months", "6 months"];
 
@@ -306,7 +307,7 @@ const ProjectMarketplace = () => {
                   )}
 
                   <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><IndianRupee className="w-3.5 h-3.5" />₹{project.budget_min}–₹{project.budget_max}</span>
+                    <span className="flex items-center gap-1"><IndianRupee className="w-3.5 h-3.5" />{formatProjectBudget(project)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{project.duration || "Flexible"}</span>
                     <span className="capitalize">{project.pricing_type?.replace(/_/g, ' ')}</span>
                   </div>

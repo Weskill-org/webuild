@@ -23,6 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 import type { Project, Profile } from "@/types/database";
+import { formatProjectBudget } from "@/lib/projectUtils";
 
 interface Deliverable {
   id: string;
@@ -50,6 +51,10 @@ const Projects = () => {
   const [editDescription, setEditDescription] = useState("");
   const [editBudgetMin, setEditBudgetMin] = useState(0);
   const [editBudgetMax, setEditBudgetMax] = useState(0);
+  const [editCommissionType, setEditCommissionType] = useState<"percentage" | "fixed">("percentage");
+  const [editCommissionMin, setEditCommissionMin] = useState(0);
+  const [editCommissionMax, setEditCommissionMax] = useState(0);
+  const [editPricingType, setEditPricingType] = useState("");
   const [editDuration, setEditDuration] = useState("");
   const [editProjectType, setEditProjectType] = useState("");
   const [editSubCategory, setEditSubCategory] = useState("");
@@ -99,6 +104,10 @@ const Projects = () => {
     setEditDescription(project.description ?? "");
     setEditBudgetMin(project.budget_min);
     setEditBudgetMax(project.budget_max);
+    setEditPricingType(project.pricing_type);
+    setEditCommissionType(project.commission_type || "percentage");
+    setEditCommissionMin(project.commission_min || 0);
+    setEditCommissionMax(project.commission_max || 0);
     setEditDuration(project.duration ?? "");
     setEditProjectType(project.project_type ?? "");
     setEditSubCategory(project.sub_category ?? "");
@@ -116,6 +125,10 @@ const Projects = () => {
         description: editDescription,
         budget_min: editBudgetMin,
         budget_max: editBudgetMax,
+        pricing_type: editPricingType,
+        commission_type: ["commission", "fixed_plus_commission"].includes(editPricingType) ? editCommissionType : null,
+        commission_min: ["commission", "fixed_plus_commission"].includes(editPricingType) ? editCommissionMin : 0,
+        commission_max: ["commission", "fixed_plus_commission"].includes(editPricingType) ? editCommissionMax : 0,
         duration: editDuration || null,
         project_type: editProjectType || null,
         sub_category: editSubCategory || null,
@@ -366,7 +379,7 @@ const Projects = () => {
                 <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <IndianRupee className="w-3.5 h-3.5" />
-                    ₹{project.budget_min}–₹{project.budget_max}
+                    {formatProjectBudget(project)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -528,18 +541,87 @@ const Projects = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Budget Min (₹)</Label>
-                <Input type="number" value={editBudgetMin} onChange={(e) => setEditBudgetMin(Number(e.target.value))} />
+                <Label>Pricing Type</Label>
+                <Select value={editPricingType} onValueChange={setEditPricingType}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Fixed Price</SelectItem>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="milestone">Milestone</SelectItem>
+                    <SelectItem value="commission">Commission Based</SelectItem>
+                    <SelectItem value="fixed_plus_commission">Fixed + Commission</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Budget Max (₹)</Label>
-                <Input type="number" value={editBudgetMax} onChange={(e) => setEditBudgetMax(Number(e.target.value))} />
+                <Label>Duration</Label>
+                <Input value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="e.g. 2 weeks" />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Duration</Label>
-              <Input value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="e.g. 2 weeks" />
-            </div>
+
+            {["commission", "fixed_plus_commission"].includes(editPricingType) && (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+                <span className="text-xs font-semibold flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-primary" /> Commission Details
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Commission Type</Label>
+                    <Select 
+                      value={editCommissionType} 
+                      onValueChange={(v: any) => setEditCommissionType(v)}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Min {editCommissionType === 'percentage' ? '%' : '₹'}</Label>
+                      <Input
+                        type="number"
+                        value={editCommissionMin}
+                        onChange={(e) => setEditCommissionMin(Number(e.target.value))}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Max {editCommissionType === 'percentage' ? '%' : '₹'}</Label>
+                      <Input
+                        type="number"
+                        value={editCommissionMax}
+                        onChange={(e) => setEditCommissionMax(Number(e.target.value))}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {editPricingType !== "commission" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>
+                    {editPricingType === "fixed_plus_commission" ? "Fixed Base Min (₹)" : "Budget Min (₹)"}
+                  </Label>
+                  <Input type="number" value={editBudgetMin} onChange={(e) => setEditBudgetMin(Number(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    {editPricingType === "fixed_plus_commission" ? "Fixed Base Max (₹)" : "Budget Max (₹)"}
+                  </Label>
+                  <Input type="number" value={editBudgetMax} onChange={(e) => setEditBudgetMax(Number(e.target.value))} />
+                </div>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Required Skills (comma-separated)</Label>
               <Input value={editSkills} onChange={(e) => setEditSkills(e.target.value)} placeholder="React, TypeScript, Node.js" />
