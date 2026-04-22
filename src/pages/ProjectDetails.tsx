@@ -28,6 +28,8 @@ import {
   Award,
   Layers,
   Tag,
+  GraduationCap,
+  Megaphone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -386,6 +388,54 @@ const ProjectDetails = () => {
               </Card>
             )}
 
+            {/* Eligibility Criteria */}
+            {(project.eligibility_criteria?.length ?? 0) > 0 && (
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <GraduationCap className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <h2 className="font-semibold">Eligibility Criteria</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {project.eligibility_criteria!.map((criteria, i) => (
+                    <Badge key={i} variant="outline" className="bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                      <GraduationCap className="w-3 h-3 mr-1" />
+                      {criteria}
+                    </Badge>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Influencer Marketing Pricing */}
+            {project.sub_category === "Influencer Marketing" && project.influencer_pricing_model && (
+              <Card className="p-6 border-purple-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <Megaphone className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <h2 className="font-semibold">Influencer Pricing</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-muted/40">
+                    <p className="text-xs text-muted-foreground mb-1">Pricing Model</p>
+                    <p className="font-medium capitalize">{project.influencer_pricing_model === 'per_post' ? 'Per Post' : 'Monthly Retainer'}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/40">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      {project.influencer_pricing_model === 'per_post' ? 'Rate per Post' : 'Monthly Rate'}
+                    </p>
+                    <p className="font-medium text-purple-600">₹{(project.influencer_rate || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/40 col-span-2">
+                    <p className="text-xs text-muted-foreground mb-1">Follower Requirement</p>
+                    <p className="font-medium text-purple-600">{project.influencer_min_followers || 100}+ Followers</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Milestones */}
             {milestones.length > 0 && (
               <Card className="p-6" id="milestone-section">
@@ -649,6 +699,22 @@ const ProjectDetails = () => {
                 <span className="text-muted-foreground">Compensation:</span>
                 <span className="font-medium">{formatProjectBudget(project)}</span>
               </div>
+              {project.sub_category === "Influencer Marketing" && project.influencer_pricing_model && (
+                <>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Megaphone className="w-4 h-4 text-purple-500" />
+                    <span className="text-muted-foreground">
+                      {project.influencer_pricing_model === 'per_post' ? 'Per Post:' : 'Monthly:'}
+                    </span>
+                    <span className="font-medium text-purple-600">₹{(project.influencer_rate || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="w-4 h-4 text-purple-500" />
+                    <span className="text-muted-foreground">Min. Followers:</span>
+                    <span className="font-medium text-purple-600">{project.influencer_min_followers || 100}+</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Duration:</span>
@@ -673,6 +739,21 @@ const ProjectDetails = () => {
                 <span className="text-muted-foreground">Applicants:</span>
                 <span className="font-medium">{applications.length}</span>
               </div>
+              {(project.eligibility_criteria?.length ?? 0) > 0 && (
+                <div className="pt-2 border-t border-border/50">
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <GraduationCap className="w-4 h-4 text-emerald-500" />
+                    <span className="text-muted-foreground">Eligibility:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {project.eligibility_criteria!.map((c, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px] bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Company info */}

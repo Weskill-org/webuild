@@ -7,11 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft, PlusCircle, Trash2, Layers, Tag } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, Trash2, Layers, Tag, GraduationCap, Megaphone, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
@@ -26,6 +29,15 @@ interface Milestone {
   description: string;
   due_date: string;
 }
+
+/** Categorized eligibility options for a cleaner UI */
+const ELIGIBILITY_CATEGORIES = {
+  "Education (Schooling)": ["10th Pass", "12th Pass", "Diploma Holder"],
+  "Education (Undergraduate)": ["Undergraduate (Pursuing)", "Graduate (B.A./B.Sc./B.Com)", "B.Tech / B.E.", "BBA / BMS", "BCA"],
+  "Education (Postgraduate)": ["Post Graduate (M.A./M.Sc./M.Com)", "MBA", "MCA", "M.Tech / M.E.", "PhD / Doctorate"],
+  "Experience": ["Fresher (No Experience)", "1+ Year Experience", "2+ Years Experience"],
+  "Others": ["Any Qualification", "Professional Certification"]
+};
 
 const CreateProject = () => {
   const navigate = useNavigate();
@@ -44,11 +56,17 @@ const CreateProject = () => {
     commission_type: "percentage",
     commission_min: "",
     commission_max: "",
+    influencer_pricing_model: "per_post",
+    influencer_rate: "",
+    influencer_min_followers: "100",
     duration: "",
     start_date: "",
     end_date: "",
   });
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [selectedEligibility, setSelectedEligibility] = useState<string[]>([]);
+  const [customCriteria, setCustomCriteria] = useState("");
+  const [eligibilitySelectValue, setEligibilitySelectValue] = useState("");
 
   const addMilestone = () => {
     setMilestones([...milestones, { title: "", description: "", due_date: "" }]);
@@ -64,7 +82,26 @@ const CreateProject = () => {
     setMilestones(milestones.filter((_, i) => i !== idx));
   };
 
+  const toggleEligibility = (option: string) => {
+    setSelectedEligibility((prev) =>
+      prev.includes(option) ? prev.filter((e) => e !== option) : [...prev, option]
+    );
+  };
+
+  const addCustomEligibility = () => {
+    const trimmed = customCriteria.trim();
+    if (trimmed && !selectedEligibility.includes(trimmed)) {
+      setSelectedEligibility((prev) => [...prev, trimmed]);
+      setCustomCriteria("");
+    }
+  };
+
+  const removeEligibility = (option: string) => {
+    setSelectedEligibility((prev) => prev.filter((e) => e !== option));
+  };
+
   const availableSubCategories = form.project_type ? getSubCategories(form.project_type) : [];
+  const isInfluencerMarketing = form.sub_category === "Influencer Marketing";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +152,19 @@ const CreateProject = () => {
       }
     }
 
+    // Validate influencer rate
+    if (isInfluencerMarketing) {
+      const rate = parseFloat(form.influencer_rate) || 0;
+      if (rate <= 0) {
+        toast({
+          variant: "destructive",
+          title: "Influencer Rate Required",
+          description: "Please specify a valid rate for influencer marketing.",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const { data: project, error: projError } = await supabase
@@ -133,6 +183,10 @@ const CreateProject = () => {
           commission_type: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? form.commission_type : null,
           commission_min: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? (parseFloat(form.commission_min) || 0) : 0,
           commission_max: ["commission", "fixed_plus_commission"].includes(form.pricing_type) ? (parseFloat(form.commission_max) || 0) : 0,
+          influencer_pricing_model: isInfluencerMarketing ? form.influencer_pricing_model : null,
+          influencer_rate: isInfluencerMarketing ? (parseFloat(form.influencer_rate) || 0) : 0,
+          influencer_min_followers: isInfluencerMarketing ? (parseInt(form.influencer_min_followers) || 100) : 100,
+          eligibility_criteria: selectedEligibility,
           duration: form.duration || null,
           start_date: form.start_date || null,
           end_date: form.end_date || null,
@@ -284,6 +338,62 @@ const CreateProject = () => {
               </div>
             </div>
 
+            {/* Influencer Marketing Pricing — Only when sub_category is Influencer Marketing */}
+            {isInfluencerMarketing && (
+              <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 rounded-lg bg-purple-500/10">
+                    <Megaphone className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-semibold">Influencer Marketing Pricing</span>
+                </div>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Specify how the influencer will be compensated — per individual post or on a monthly retainer basis.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Pricing Model *</Label>
+                    <Select
+                      value={form.influencer_pricing_model}
+                      onValueChange={(v) => setForm({ ...form, influencer_pricing_model: v })}
+                    >
+                      <SelectTrigger id="influencer-pricing-model">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="per_post">Per Post Charges</SelectItem>
+                        <SelectItem value="monthly">Monthly Retainer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="influencer_rate">
+                      {form.influencer_pricing_model === "per_post" ? "Rate per Post (₹) *" : "Monthly Rate (₹) *"}
+                    </Label>
+                    <Input
+                      id="influencer_rate"
+                      type="number"
+                      value={form.influencer_rate}
+                      onChange={(e) => setForm({ ...form, influencer_rate: e.target.value })}
+                      placeholder={form.influencer_pricing_model === "per_post" ? "e.g., 500" : "e.g., 10000"}
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="influencer_min_followers">Min. Followers Required *</Label>
+                    <Input
+                      id="influencer_min_followers"
+                      type="number"
+                      value={form.influencer_min_followers}
+                      onChange={(e) => setForm({ ...form, influencer_min_followers: e.target.value })}
+                      placeholder="100"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Pricing Type</Label>
@@ -398,6 +508,110 @@ const CreateProject = () => {
                 onChange={(e) => setForm({ ...form, required_skills: e.target.value })}
                 placeholder="React, TypeScript, Node.js..."
               />
+            </div>
+
+            {/* Eligibility Criteria Tile */}
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-5 space-y-5">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                  <GraduationCap className="w-4 h-4 text-emerald-600" />
+                </div>
+                <span className="text-sm font-semibold">Eligibility Criteria</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">Optional — helps filter candidates</span>
+              </div>
+
+              {/* Selected criteria as removable badges */}
+              {selectedEligibility.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-background/40 border border-border/40">
+                  {selectedEligibility.map((item) => (
+                    <Badge
+                      key={item}
+                      variant="default"
+                      className="pl-2.5 pr-1 py-1 text-xs gap-1 cursor-pointer hover:bg-primary/80 transition-colors shadow-sm"
+                      onClick={() => removeEligibility(item)}
+                    >
+                      {item}
+                      <X className="w-3 h-3 ml-0.5" />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Categorized Options Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1 block">
+                  Select Predefined Criteria
+                </Label>
+                <Select 
+                  value={eligibilitySelectValue} 
+                  onValueChange={(v) => {
+                    if (v && !selectedEligibility.includes(v)) {
+                      toggleEligibility(v);
+                    }
+                    setEligibilitySelectValue("");
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                    <SelectValue placeholder="Browse categories (Education, Experience...)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ELIGIBILITY_CATEGORIES).map(([category, options]) => (
+                      <SelectGroup key={category}>
+                        <SelectLabel className="text-primary font-bold">{category}</SelectLabel>
+                        {options.map((option) => (
+                          <SelectItem 
+                            key={option} 
+                            value={option}
+                            disabled={selectedEligibility.includes(option)}
+                          >
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom Qualification Input */}
+              <div className="pt-4 border-t border-border/40">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1 block mb-2">
+                  Other Qualifications
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g., Knowledge of Figma, UI/UX Certification..."
+                    value={customCriteria}
+                    onChange={(e) => setCustomCriteria(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomEligibility();
+                      }
+                    }}
+                    className="h-9 text-sm"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addCustomEligibility}
+                    className="shrink-0 h-9"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                  Type any custom requirement and press Enter or click Add.
+                </p>
+              </div>
+
+              {selectedEligibility.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2 italic">
+                  Select criteria above or add custom ones. If none, project is open to everyone.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -31,6 +31,7 @@ export const PROJECT_CATEGORIES: Record<string, string[]> = {
     "Social Media Management",
     "Brand Strategy",
     "Market Research",
+    "Influencer Marketing",
   ],
   "Operations": [
     "Supply Chain Management",

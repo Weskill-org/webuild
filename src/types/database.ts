@@ -50,6 +50,10 @@ export interface Project {
   commission_type: 'percentage' | 'fixed' | null;
   commission_min: number;
   commission_max: number;
+  influencer_pricing_model: 'per_post' | 'monthly' | null;
+  influencer_rate: number;
+  influencer_min_followers: number;
+  eligibility_criteria: string[];
   duration: string | null;
   start_date: string | null;
   end_date: string | null;
