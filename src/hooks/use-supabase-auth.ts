@@ -86,6 +86,7 @@ export default function useSupabaseAuth() {
           role: profileData.role,
           company_name: profileData.company_name,
           university: profileData.university,
+          referral_code: profileData.referred_by_code,
         },
         emailRedirectTo: window.location.origin,
       }

@@ -22,7 +22,7 @@ import {
   Users, Briefcase, DollarSign, Activity, Search, Shield, ShieldAlert,
   Loader2, AlertTriangle, Flag, Gift, Award, Wallet,
   Plus, Trash2, Eye, CheckCircle, XCircle,
-  Settings, Megaphone, Percent, Save,
+  Settings, Megaphone, Percent, Save, UserPlus, Coins,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
@@ -115,6 +115,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="platform">Platform Settings</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="disputes">Disputes</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
             <TabsTrigger value="giftcards">Gift Cards</TabsTrigger>
@@ -125,6 +126,7 @@ export default function AdminDashboard() {
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="projects"><ProjectsTab /></TabsContent>
+          <TabsContent value="referrals"><ReferralsTab /></TabsContent>
           <TabsContent value="disputes"><DisputesTab /></TabsContent>
           <TabsContent value="reports"><ReportsTab /></TabsContent>
           <TabsContent value="giftcards"><GiftCardsTab /></TabsContent>
@@ -901,6 +903,13 @@ function PlatformTab() {
     rate: 10,
   });
 
+  // Referral reward settings
+  const [referralConfig, setReferralConfig] = useState({
+    amount: 150,
+    enabled: true,
+    max_referrals_per_user: 50,
+  });
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -916,6 +925,9 @@ function PlatformTab() {
 
         const c = data.find((s: any) => s.key === "commission")?.value;
         if (c) setCommission((prev) => ({ ...prev, ...c }));
+
+        const r = data.find((s: any) => s.key === "referral_reward")?.value;
+        if (r) setReferralConfig((prev) => ({ ...prev, ...r }));
       }
       setLoading(false);
     })();
@@ -1061,6 +1073,232 @@ function PlatformTab() {
         <Button className="mt-6" onClick={() => handleSave("commission", commission)}>
           <Save className="w-4 h-4 mr-2" /> Update Commission Rate
         </Button>
+      </Card>
+
+      {/* Referral Reward Settings */}
+      <Card className="p-6 border-green-500/20 bg-green-500/5">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-green-600" />
+            <h2 className="text-xl font-bold">Referral Reward Settings</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Enabled</span>
+            <Switch
+              checked={referralConfig.enabled}
+              onCheckedChange={(v) => setReferralConfig({ ...referralConfig, enabled: v })}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Reward Per Referral (coins)</label>
+            <div className="flex items-center gap-3">
+              <Input
+                type="number"
+                value={referralConfig.amount}
+                onChange={(e) => setReferralConfig({ ...referralConfig, amount: Number(e.target.value) })}
+                className="font-bold text-lg"
+                min={0}
+              />
+              <Coins className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Both referrer and referred user receive this amount.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Max Referrals Per User</label>
+            <Input
+              type="number"
+              value={referralConfig.max_referrals_per_user}
+              onChange={(e) => setReferralConfig({ ...referralConfig, max_referrals_per_user: Number(e.target.value) })}
+              min={1}
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum number of successful referrals a single user can make.
+            </p>
+          </div>
+        </div>
+        <Button className="mt-6" onClick={() => handleSave("referral_reward", { ...referralConfig, currency: "INR" })}>
+          <Save className="w-4 h-4 mr-2" /> Update Referral Settings
+        </Button>
+      </Card>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 10. REFERRALS TAB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ReferralsTab() {
+  const [referrals, setReferrals] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const [rRes, pRes] = await Promise.all([
+        supabase.from("referrals").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("id, full_name, email, referral_code"),
+      ]);
+      setReferrals(rRes.data ?? []);
+      const map: Record<string, string> = {};
+      (pRes.data ?? []).forEach((p: any) => {
+        map[p.id] = p.full_name || p.email || "—";
+      });
+      setProfiles(map);
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleRevoke = async (id: string) => {
+    if (!confirm("Revoke this referral? This will NOT claw back already credited rewards.")) return;
+    const { error } = await supabase
+      .from("referrals")
+      .update({ status: "revoked" })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setReferrals(referrals.map((r) => (r.id === id ? { ...r, status: "revoked" } : r)));
+    toast({ title: "Referral revoked" });
+  };
+
+  const completedCount = referrals.filter((r) => r.status === "completed").length;
+  const revokedCount = referrals.filter((r) => r.status === "revoked").length;
+  const totalRewards = referrals
+    .filter((r) => r.status === "completed")
+    .reduce((sum, r) => sum + (r.referrer_reward ?? 0) + (r.referred_reward ?? 0), 0);
+
+  const filtered = referrals.filter((r) => {
+    const referrerName = profiles[r.referrer_id] || "";
+    const referredName = profiles[r.referred_id] || "";
+    const matchSearch = !search || referrerName.toLowerCase().includes(search.toLowerCase()) || referredName.toLowerCase().includes(search.toLowerCase()) || (r.referral_code || "").toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || r.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <div className="space-y-4 mt-4">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Referrals</p>
+              <p className="text-2xl font-bold">{referrals.length}</p>
+            </div>
+            <UserPlus className="w-6 h-6 text-primary opacity-70" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Successful</p>
+              <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+            </div>
+            <CheckCircle className="w-6 h-6 text-green-500 opacity-70" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Rewards Distributed</p>
+              <p className="text-2xl font-bold text-amber-600">{totalRewards} coins</p>
+            </div>
+            <Coins className="w-6 h-6 text-amber-500 opacity-70" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Revoked</p>
+              <p className="text-2xl font-bold text-red-600">{revokedCount}</p>
+            </div>
+            <XCircle className="w-6 h-6 text-red-500 opacity-70" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters & Table */}
+      <Card className="p-4">
+        <div className="flex gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search referrals..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="revoked">Revoked</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {loading ? <LoaderBlock /> : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Referrer</TableHead>
+                  <TableHead>Referred User</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Reward (each)</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-sm font-medium">{profiles[r.referrer_id] || "—"}</TableCell>
+                    <TableCell className="text-sm">{profiles[r.referred_id] || "—"}</TableCell>
+                    <TableCell className="text-sm font-mono">{r.referral_code}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          r.status === "completed" ? "default" :
+                          r.status === "revoked" ? "destructive" : "secondary"
+                        }
+                        className="capitalize"
+                      >
+                        {r.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{r.referrer_reward ?? 0} coins</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {r.status === "completed" && (
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleRevoke(r.id)}>
+                          <XCircle className="w-3 h-3 mr-1" /> Revoke
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      No referrals found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </Card>
     </div>
   );

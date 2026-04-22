@@ -13,7 +13,26 @@ export interface Profile {
   linkedin: string | null;
   bio: string | null;
   phone: string | null;
+  referral_code: string | null;
+  referred_by_code: string | null;
   created_at: string;
+}
+
+export interface Referral {
+  id: string;
+  referrer_id: string;
+  referred_id: string;
+  referral_code: string;
+  status: 'pending' | 'completed' | 'revoked';
+  referrer_reward: number;
+  referred_reward: number;
+  referrer_credited: boolean;
+  referred_credited: boolean;
+  created_at: string;
+  completed_at: string | null;
+  // Joined fields
+  referrer_profile?: { full_name: string | null; email: string | null } | null;
+  referred_profile?: { full_name: string | null; email: string | null } | null;
 }
 
 export interface Project {

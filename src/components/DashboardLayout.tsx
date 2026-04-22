@@ -31,6 +31,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  Gift,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import weskillLogo from "@/assets/weskill logo.avif";
@@ -103,6 +104,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Partnerships", icon: Handshake, path: "/partnerships", roles: ["company", "campus"] },
     { label: "Disputes", icon: AlertTriangle, path: "/disputes" },
     { label: "Messages", icon: MessageSquare, path: "/messages", badge: unreadMessages },
+    { label: "Refer & Earn", icon: Gift, path: "/refer", roles: ["student"] },
     { label: "Wallet", icon: Wallet, path: "/wallet" },
     { label: "Certificates", icon: Award, path: "/certificates" },
     { label: "Notifications", icon: Bell, path: "/notifications", badge: unreadNotifications },

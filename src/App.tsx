@@ -48,6 +48,7 @@ import Features from "./pages/Features";
 import HowItWorks from "./pages/HowItWorks";
 import AboutUs from "./pages/AboutUs";
 import ExploreProjects from "./pages/ExploreProjects";
+import ReferEarn from "./pages/ReferEarn";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/profile/:id" element={<PublicProfile />} />
               <Route path="/portfolio/:id" element={<Portfolio />} />
               <Route path="/marketplace" element={<ProjectMarketplace />} />
+              <Route path="/refer" element={<ReferEarn />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/batches" element={<Batches />} />

@@ -3,11 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Gift } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
 import weskillLogo from "@/assets/weskill logo.avif";
 
 
@@ -18,6 +19,7 @@ const Signup = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "student";
+  const refCodeFromUrl = searchParams.get("ref") || "";
 
   const [formData, setFormData] = useState({
     email: "",
@@ -25,7 +27,8 @@ const Signup = () => {
     confirmPassword: "",
     fullName: "",
     companyName: "",
-    universityName: ""
+    universityName: "",
+    referralCode: refCodeFromUrl,
   });
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -55,6 +58,7 @@ const Signup = () => {
         full_name: role === 'student' ? formData.fullName : null,
         university: role === 'campus' ? formData.universityName : null,
         company_name: role === 'company' ? formData.companyName : null,
+        referred_by_code: formData.referralCode.trim().toUpperCase() || null,
       };
 
       const res = await signUp(formData.email, formData.password, profileData);
@@ -195,6 +199,28 @@ const Signup = () => {
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                 required
               />
+            </div>
+
+            {/* Referral Code */}
+            <div className="space-y-2">
+              <Label htmlFor="referralCode" className="flex items-center gap-1.5">
+                <Gift className="w-3.5 h-3.5 text-primary" />
+                Referral Code
+                <span className="text-xs text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="referralCode"
+                placeholder="e.g. WB-A3K9X2"
+                value={formData.referralCode}
+                onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
+                className={`font-mono tracking-wider ${refCodeFromUrl ? "opacity-60 cursor-not-allowed" : ""}`}
+                readOnly={!!refCodeFromUrl}
+              />
+              {formData.referralCode && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  ✓ Referral code applied — you'll receive bonus coins after signup!
+                </p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
