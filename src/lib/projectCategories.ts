@@ -96,3 +96,41 @@ export const CATEGORY_COLORS: Record<string, string> = {
 export function getCategoryColor(projectType: string): string {
   return CATEGORY_COLORS[projectType] ?? "bg-muted text-muted-foreground";
 }
+
+// ─── Database-driven helpers ─────────────────────────────────
+
+import { supabase } from "@/integrations/supabase/client";
+
+/** Fetch enabled categories from the database */
+export async function fetchCategoriesFromDB(): Promise<{ id: string; name: string; slug: string; color: string | null }[]> {
+  const { data, error } = await supabase
+    .from("admin_categories")
+    .select("id, name, slug, color")
+    .eq("is_enabled", true)
+    .order("display_order");
+  if (error || !data) return [];
+  return data;
+}
+
+/** Fetch enabled subcategories for a category from the database */
+export async function fetchSubcategoriesFromDB(categoryId: string): Promise<{ id: string; name: string; slug: string }[]> {
+  const { data, error } = await supabase
+    .from("admin_subcategories")
+    .select("id, name, slug")
+    .eq("category_id", categoryId)
+    .eq("is_enabled", true)
+    .order("display_order");
+  if (error || !data) return [];
+  return data;
+}
+
+/** Fetch all enabled categories mapped to their subcategories (like PROJECT_CATEGORIES) */
+export async function fetchCategoryMap(): Promise<Record<string, string[]>> {
+  const cats = await fetchCategoriesFromDB();
+  const result: Record<string, string[]> = {};
+  for (const cat of cats) {
+    const subs = await fetchSubcategoriesFromDB(cat.id);
+    result[cat.name] = subs.map((s) => s.name);
+  }
+  return result;
+}

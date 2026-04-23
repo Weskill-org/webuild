@@ -28,7 +28,21 @@ import Batches from "./pages/Batches";
 import Students from "./pages/Students";
 import StudentProjects from "./pages/StudentProjects";
 import VerifyCertificate from "./pages/VerifyCertificate";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminLayout from "./components/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminProjects from "./pages/admin/AdminProjects";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminSubcategories from "./pages/admin/AdminSubcategories";
+import AdminEligibility from "./pages/admin/AdminEligibility";
+import AdminReferrals from "./pages/admin/AdminReferrals";
+import AdminDisputes from "./pages/admin/AdminDisputes";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminGiftCards from "./pages/admin/AdminGiftCards";
+import AdminWallets from "./pages/admin/AdminWallets";
+import AdminCertificates from "./pages/admin/AdminCertificates";
+import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
 import Leaderboard from "./pages/Leaderboard";
 import Portfolio from "./pages/Portfolio";
 import LearningResources from "./pages/LearningResources";
@@ -103,7 +117,23 @@ const App = () => (
               <Route path="/batches" element={<Batches />} />
               <Route path="/students" element={<Students />} />
               <Route path="/student-projects" element={<StudentProjects />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="/admin/overview" replace />} />
+                <Route path="overview" element={<AdminOverview />} />
+                <Route path="platform-settings" element={<AdminPlatformSettings />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="projects" element={<AdminProjects />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="subcategories" element={<AdminSubcategories />} />
+                <Route path="eligibility" element={<AdminEligibility />} />
+                <Route path="referrals" element={<AdminReferrals />} />
+                <Route path="disputes" element={<AdminDisputes />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="gift-cards" element={<AdminGiftCards />} />
+                <Route path="wallets" element={<AdminWallets />} />
+                <Route path="certificates" element={<AdminCertificates />} />
+                <Route path="system-settings" element={<AdminSystemSettings />} />
+              </Route>
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/resources" element={<LearningResources />} />
               <Route path="/quizzes" element={<SkillQuizzes />} />

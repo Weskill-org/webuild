@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { sendNotification } from "@/lib/notifications";
 import DashboardLayout from "@/components/DashboardLayout";
-import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
+import { getCategoryColor } from "@/lib/projectCategories";
+import { fetchCategoriesFromDB, fetchSubcategoriesFromDB } from "@/lib/projectCategories";
 import AIDescriptionGenerator from "@/components/ai/AIDescriptionGenerator";
 
 interface Milestone {
@@ -30,14 +31,10 @@ interface Milestone {
   due_date: string;
 }
 
-/** Categorized eligibility options for a cleaner UI */
-const ELIGIBILITY_CATEGORIES = {
-  "Education (Schooling)": ["10th Pass", "12th Pass", "Diploma Holder"],
-  "Education (Undergraduate)": ["Undergraduate (Pursuing)", "Graduate (B.A./B.Sc./B.Com)", "B.Tech / B.E.", "BBA / BMS", "BCA"],
-  "Education (Postgraduate)": ["Post Graduate (M.A./M.Sc./M.Com)", "MBA", "MCA", "M.Tech / M.E.", "PhD / Doctorate"],
-  "Experience": ["Fresher (No Experience)", "1+ Year Experience", "2+ Years Experience"],
-  "Others": ["Any Qualification", "Professional Certification"]
-};
+/** DB-fetched types */
+interface DBCategory { id: string; name: string; slug: string; color: string | null; }
+interface DBSubcategory { id: string; name: string; slug: string; }
+interface DBEligibility { id: string; label: string; category: string | null; }
 
 const CreateProject = () => {
   const navigate = useNavigate();
@@ -67,6 +64,26 @@ const CreateProject = () => {
   const [selectedEligibility, setSelectedEligibility] = useState<string[]>([]);
   const [customCriteria, setCustomCriteria] = useState("");
   const [eligibilitySelectValue, setEligibilitySelectValue] = useState("");
+
+  // DB-driven state
+  const [dbCategories, setDbCategories] = useState<DBCategory[]>([]);
+  const [dbSubcategories, setDbSubcategories] = useState<DBSubcategory[]>([]);
+  const [dbEligibility, setDbEligibility] = useState<DBEligibility[]>([]);
+
+  // Fetch categories + eligibility on mount
+  useEffect(() => {
+    fetchCategoriesFromDB().then(setDbCategories);
+    supabase.from("admin_eligibility_criteria").select("id, label, category").eq("is_enabled", true).order("display_order").then(({ data }) => {
+      if (data) setDbEligibility(data as DBEligibility[]);
+    });
+  }, []);
+
+  // Fetch subcategories when project_type changes
+  useEffect(() => {
+    if (!form.project_type) { setDbSubcategories([]); return; }
+    const cat = dbCategories.find(c => c.name === form.project_type);
+    if (cat) fetchSubcategoriesFromDB(cat.id).then(setDbSubcategories);
+  }, [form.project_type, dbCategories]);
 
   const addMilestone = () => {
     setMilestones([...milestones, { title: "", description: "", due_date: "" }]);
@@ -100,8 +117,16 @@ const CreateProject = () => {
     setSelectedEligibility((prev) => prev.filter((e) => e !== option));
   };
 
-  const availableSubCategories = form.project_type ? getSubCategories(form.project_type) : [];
+  const availableSubCategories = dbSubcategories.map(s => s.name);
   const isInfluencerMarketing = form.sub_category === "Influencer Marketing";
+
+  // Group eligibility by category for the dropdown
+  const eligibilityByCategory: Record<string, string[]> = {};
+  dbEligibility.forEach(e => {
+    const cat = e.category || "Other";
+    if (!eligibilityByCategory[cat]) eligibilityByCategory[cat] = [];
+    eligibilityByCategory[cat].push(e.label);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,9 +322,9 @@ const CreateProject = () => {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PROJECT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {dbCategories.map((cat) => (
+                        <SelectItem key={cat.name} value={cat.name}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -555,7 +580,7 @@ const CreateProject = () => {
                     <SelectValue placeholder="Browse categories (Education, Experience...)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(ELIGIBILITY_CATEGORIES).map(([category, options]) => (
+                    {Object.entries(eligibilityByCategory).map(([category, options]) => (
                       <SelectGroup key={category}>
                         <SelectLabel className="text-primary font-bold">{category}</SelectLabel>
                         {options.map((option) => (
