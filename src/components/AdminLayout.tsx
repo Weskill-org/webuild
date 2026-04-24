@@ -4,7 +4,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
   Shield, ShieldAlert, LayoutDashboard, Settings, Users, Briefcase,
-  FolderTree, Layers, ListChecks, UserPlus, AlertTriangle, BarChart3,
+  FolderTree, ListChecks, UserPlus, AlertTriangle, BarChart3,
   Gift, Wallet, Award, Cog, Loader2, PanelLeftClose, PanelLeftOpen,
   ChevronRight, LogOut, ArrowLeft, Menu, X,
 } from "lucide-react";
@@ -24,7 +24,6 @@ const adminNavItems: AdminNavItem[] = [
   { label: "User Management",         icon: Users,           path: "/admin/users",              group: "Management" },
   { label: "Project Management",      icon: Briefcase,       path: "/admin/projects",           group: "Management" },
   { label: "Categories",              icon: FolderTree,      path: "/admin/categories",         group: "Content Config" },
-  { label: "Subcategories",           icon: Layers,          path: "/admin/subcategories",       group: "Content Config" },
   { label: "Eligibility Criteria",    icon: ListChecks,      path: "/admin/eligibility",        group: "Content Config" },
   { label: "Referrals",               icon: UserPlus,        path: "/admin/referrals",          group: "Moderation" },
   { label: "Disputes",                icon: AlertTriangle,   path: "/admin/disputes",           group: "Moderation" },
@@ -197,7 +196,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col admin-sidebar ${collapsed ? "w-[68px]" : "w-64"}`}>
+      <aside className={`hidden md:flex flex-col admin-sidebar h-screen sticky top-0 ${collapsed ? "w-[68px]" : "w-64"}`}>
         {renderSidebarContent(false)}
       </aside>
 

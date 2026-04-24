@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminCategorySubcategoriesDialog } from "@/components/admin/AdminCategorySubcategoriesDialog";
 
 interface Category {
   id: string; name: string; slug: string; description: string | null;
@@ -24,6 +25,7 @@ export default function AdminCategories() {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [subcategoriesDialogCat, setSubcategoriesDialogCat] = useState<Category | null>(null);
   const [form, setForm] = useState({ name: "", slug: "", description: "", icon: "", color: "", display_order: 0 });
 
   const fetchData = async () => {
@@ -106,23 +108,45 @@ export default function AdminCategories() {
 
         {loading ? <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : (
           <div className="overflow-x-auto"><Table><TableHeader><TableRow>
-            <TableHead>Name</TableHead><TableHead>Slug</TableHead><TableHead>Subcategories</TableHead>
-            <TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
+            <TableHead className="py-4">Category</TableHead>
+            <TableHead>Slug</TableHead>
+            <TableHead>Subcategories</TableHead>
+            <TableHead className="w-[100px]">Order</TableHead>
+            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="text-right pr-6">Actions</TableHead>
           </TableRow></TableHeader><TableBody>
             {filtered.map((cat) => (
-              <TableRow key={cat.id}>
+              <TableRow key={cat.id} className="hover:bg-muted/30 transition-colors group/row">
                 <TableCell><div className="flex items-center gap-2">
                   {cat.color && <div className={`w-3 h-3 rounded-full ${cat.color.split(" ")[0]}`} />}
                   <span className="font-medium text-sm">{cat.name}</span>
                 </div></TableCell>
                 <TableCell className="text-sm text-muted-foreground font-mono">{cat.slug}</TableCell>
-                <TableCell><Badge variant="secondary">{subcounts[cat.id] || 0}</Badge></TableCell>
-                <TableCell className="text-sm">{cat.display_order}</TableCell>
-                <TableCell><Switch checked={cat.is_enabled} onCheckedChange={() => handleToggle(cat)} /></TableCell>
-                <TableCell><div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}><Pencil className="w-3 h-3" /></Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(cat)}><Trash2 className="w-3 h-3" /></Button>
-                </div></TableCell>
+                <TableCell>
+                  <button 
+                    onClick={() => setSubcategoriesDialogCat(cat)} 
+                    className="group flex items-center gap-2 hover:opacity-100 transition-all focus:outline-none"
+                    title="Manage Subcategories"
+                  >
+                    <Badge 
+                      variant="secondary" 
+                      className="cursor-pointer h-7 min-w-[32px] justify-center rounded-full font-bold group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-md transition-all duration-200"
+                    >
+                      {subcounts[cat.id] || 0}
+                    </Badge>
+                    <span className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                      Subcategories
+                    </span>
+                  </button>
+                </TableCell>
+                <TableCell className="text-sm font-medium">{cat.display_order}</TableCell>
+                <TableCell><Switch checked={cat.is_enabled} onCheckedChange={() => handleToggle(cat)} className="scale-90" /></TableCell>
+                <TableCell className="text-right pr-4">
+                  <div className="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => openEdit(cat)}><Pencil className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(cat)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No categories found.</TableCell></TableRow>}
@@ -166,6 +190,13 @@ export default function AdminCategories() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AdminCategorySubcategoriesDialog
+        category={subcategoriesDialogCat}
+        open={!!subcategoriesDialogCat}
+        onOpenChange={(open) => !open && setSubcategoriesDialogCat(null)}
+        onUpdateCounts={fetchData}
+      />
     </div>
   );
 }

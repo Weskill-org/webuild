@@ -34,7 +34,6 @@ import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProjects from "./pages/admin/AdminProjects";
 import AdminCategories from "./pages/admin/AdminCategories";
-import AdminSubcategories from "./pages/admin/AdminSubcategories";
 import AdminEligibility from "./pages/admin/AdminEligibility";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminDisputes from "./pages/admin/AdminDisputes";
@@ -124,7 +123,6 @@ const App = () => (
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="projects" element={<AdminProjects />} />
                 <Route path="categories" element={<AdminCategories />} />
-                <Route path="subcategories" element={<AdminSubcategories />} />
                 <Route path="eligibility" element={<AdminEligibility />} />
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="disputes" element={<AdminDisputes />} />

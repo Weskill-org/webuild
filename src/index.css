@@ -568,6 +568,24 @@ All colors MUST be HSL.
   overflow-x: hidden;
   padding: 8px 12px;
   scrollbar-width: thin;
+  scrollbar-color: hsl(var(--sidebar-border)) transparent;
+}
+
+.admin-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar-nav::-webkit-scrollbar-thumb {
+  background: hsl(var(--sidebar-border));
+  border-radius: 10px;
+}
+
+.admin-sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--sidebar-foreground) / 0.2);
 }
 
 .admin-sidebar-group {
