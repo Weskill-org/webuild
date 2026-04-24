@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Gift } from "lucide-react";
+import { ArrowLeft, Loader2, Gift, AlertTriangle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { supabase } from "@/integrations/supabase/client";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { FieldError } from "@/components/auth/FieldError";
 import weskillLogo from "@/assets/weskill logo.avif";
 
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -31,23 +35,90 @@ const Signup = () => {
     referralCode: refCodeFromUrl,
   });
 
+  // Inline validation errors
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  // Account-exists banner
+  const [accountExists, setAccountExists] = useState(false);
+
+  /** Set a single field error (or clear it) */
+  const setFieldError = useCallback((field: string, msg: string | null) => {
+    setErrors((prev) => ({ ...prev, [field]: msg }));
+  }, []);
+
+  /** Validate a single field on blur */
+  const validateField = useCallback(
+    (field: string) => {
+      switch (field) {
+        case "fullName":
+          if (role === "student" && !formData.fullName.trim()) {
+            setFieldError("fullName", "Full name is required.");
+          } else {
+            setFieldError("fullName", null);
+          }
+          break;
+        case "companyName":
+          if (role === "company" && !formData.companyName.trim()) {
+            setFieldError("companyName", "Company name is required.");
+          } else {
+            setFieldError("companyName", null);
+          }
+          break;
+        case "universityName":
+          if (role === "campus" && !formData.universityName.trim()) {
+            setFieldError("universityName", "University name is required.");
+          } else {
+            setFieldError("universityName", null);
+          }
+          break;
+        case "email":
+          if (!formData.email.trim()) {
+            setFieldError("email", "Email is required.");
+          } else if (!EMAIL_REGEX.test(formData.email)) {
+            setFieldError("email", "Please enter a valid email address.");
+          } else {
+            setFieldError("email", null);
+          }
+          break;
+        case "password":
+          if (formData.password.length > 0 && formData.password.length < 6) {
+            setFieldError("password", "Password must be at least 6 characters.");
+          } else {
+            setFieldError("password", null);
+          }
+          // Also re-check confirm match
+          if (formData.confirmPassword && formData.confirmPassword !== formData.password) {
+            setFieldError("confirmPassword", "Passwords do not match.");
+          } else if (formData.confirmPassword) {
+            setFieldError("confirmPassword", null);
+          }
+          break;
+        case "confirmPassword":
+          if (formData.confirmPassword && formData.confirmPassword !== formData.password) {
+            setFieldError("confirmPassword", "Passwords do not match.");
+          } else {
+            setFieldError("confirmPassword", null);
+          }
+          break;
+      }
+    },
+    [formData, role, setFieldError]
+  );
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAccountExists(false);
+
+    // Run all validations
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match and try again.",
-      });
+      setFieldError("confirmPassword", "Passwords do not match.");
       return;
     }
-
     if (formData.password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Password too short",
-        description: "Password must be at least 6 characters.",
-      });
+      setFieldError("password", "Password must be at least 6 characters.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(formData.email)) {
+      setFieldError("email", "Please enter a valid email address.");
       return;
     }
 
@@ -64,11 +135,8 @@ const Signup = () => {
       const res = await signUp(formData.email, formData.password, profileData);
 
       if (res?.requiresConfirmation) {
-        toast({
-          title: "Confirm your email",
-          description: "We sent you a confirmation email. Please confirm your address before signing in.",
-        });
-        navigate("/login");
+        // Navigate to dedicated verify-email page
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
         return;
       }
 
@@ -80,13 +148,19 @@ const Signup = () => {
         navigate("/dashboard");
         return;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Signup failed:", err);
-      toast({
-        variant: "destructive",
-        title: "Signup failed",
-        description: err instanceof Error ? err.message : "Please try again or contact support",
-      });
+
+      if (err?.code === "account_exists" || err?.message === "ACCOUNT_EXISTS") {
+        // Show inline banner instead of just a toast
+        setAccountExists(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description: err instanceof Error ? err.message : "Please try again or contact support",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -124,6 +198,39 @@ const Signup = () => {
             <p className="text-muted-foreground">Join as {getRoleTitle()}</p>
           </div>
 
+          {/* Account-exists banner */}
+          {accountExists && (
+            <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
+                    This account already exists.
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-300">
+                    Please{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigate("/login")}
+                      className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
+                    >
+                      log in
+                    </button>
+                    {" "}or use{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigate("/forgot-password")}
+                      className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
+                    >
+                      Forgot Password
+                    </button>
+                    {" "}to recover your account.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-4">
             {role === "student" && (
               <div className="space-y-2">
@@ -133,8 +240,10 @@ const Signup = () => {
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  onBlur={() => validateField("fullName")}
                   required
                 />
+                <FieldError message={errors.fullName} />
               </div>
             )}
 
@@ -146,8 +255,10 @@ const Signup = () => {
                   placeholder="Acme Inc."
                   value={formData.companyName}
                   onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                  onBlur={() => validateField("companyName")}
                   required
                 />
+                <FieldError message={errors.companyName} />
               </div>
             )}
 
@@ -159,8 +270,10 @@ const Signup = () => {
                   placeholder="University of Example"
                   value={formData.universityName}
                   onChange={(e) => setFormData({...formData, universityName: e.target.value})}
+                  onBlur={() => validateField("universityName")}
                   required
                 />
+                <FieldError message={errors.universityName} />
               </div>
             )}
 
@@ -171,37 +284,45 @@ const Signup = () => {
                 type="email"
                 placeholder="you@example.com"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, email: e.target.value});
+                  if (accountExists) setAccountExists(false);
+                }}
+                onBlur={() => validateField("email")}
                 required
               />
+              <FieldError message={errors.email} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Create a strong password"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onBlur={() => validateField("password")}
                 required
                 minLength={6}
               />
+              <PasswordStrengthIndicator password={formData.password} />
+              <FieldError message={errors.password} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                onBlur={() => validateField("confirmPassword")}
                 required
               />
+              <FieldError message={errors.confirmPassword} />
             </div>
 
-            {/* Referral Code */}
+            {/* Referral Code — optional */}
             <div className="space-y-2">
               <Label htmlFor="referralCode" className="flex items-center gap-1.5">
                 <Gift className="w-3.5 h-3.5 text-primary" />
@@ -219,6 +340,11 @@ const Signup = () => {
               {formData.referralCode && (
                 <p className="text-xs text-green-600 dark:text-green-400">
                   ✓ Referral code applied — you'll receive bonus coins after signup!
+                </p>
+              )}
+              {!formData.referralCode && (
+                <p className="text-xs text-muted-foreground">
+                  Don't have a referral code? No problem — you can sign up without one.
                 </p>
               )}
             </div>

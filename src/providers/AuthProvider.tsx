@@ -15,6 +15,7 @@ interface AuthContextType {
   uploadAvatar: (file: File) => Promise<string | null>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | null>(null);

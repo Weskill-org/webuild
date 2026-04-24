@@ -1,32 +1,91 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, MailCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { FieldError } from "@/components/auth/FieldError";
 import weskillLogo from "@/assets/weskill logo.avif";
 
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, resendVerificationEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const { toast } = useToast();
+
+  // Inline errors
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  // Special banners
+  const [bannerType, setBannerType] = useState<"none" | "invalid" | "email_not_confirmed" | "rate_limited">("none");
+
+  const setFieldError = useCallback((field: string, msg: string | null) => {
+    setErrors((prev) => ({ ...prev, [field]: msg }));
+  }, []);
+
+  const validateField = useCallback(
+    (field: string) => {
+      if (field === "email") {
+        if (!email.trim()) {
+          setFieldError("email", "Email is required.");
+        } else if (!EMAIL_REGEX.test(email)) {
+          setFieldError("email", "Please enter a valid email address.");
+        } else {
+          setFieldError("email", null);
+        }
+      }
+      if (field === "password") {
+        if (!password) {
+          setFieldError("password", "Password is required.");
+        } else {
+          setFieldError("password", null);
+        }
+      }
+    },
+    [email, password, setFieldError]
+  );
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setResending(true);
+    try {
+      await resendVerificationEmail(email);
+      toast({
+        title: "Verification email sent",
+        description: "Please check your inbox and follow the link to verify your account.",
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Could not resend",
+        description: "Please wait a moment and try again.",
+      });
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBannerType("none");
+
     if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "Required fields",
-        description: "Please enter both email and password",
-      });
+      if (!email) setFieldError("email", "Email is required.");
+      if (!password) setFieldError("password", "Password is required.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      setFieldError("email", "Please enter a valid email address.");
       return;
     }
     
@@ -37,15 +96,15 @@ const Login = () => {
     } catch (err: any) {
       console.error("Login failed", err);
       const code = err?.code;
-      let description = "Invalid email or password";
+
       if (code === "email_not_confirmed") {
-        description = "Please confirm your email before logging in. Check your inbox for the confirmation link.";
+        setBannerType("email_not_confirmed");
+      } else if (code === "rate_limited") {
+        setBannerType("rate_limited");
+      } else {
+        setBannerType("invalid");
       }
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description,
-      });
+    } finally {
       setLoading(false);
     }
   };
@@ -65,7 +124,7 @@ const Login = () => {
           Back
         </Button>
 
-        <Card className="p-8">
+        <Card className={`p-8 transition-all ${bannerType === "invalid" ? "animate-shake" : ""}`}>
           <div className="text-center mb-8">
              <div className="w-12 h-12 rounded-xl bg-transparent flex items-center justify-center mx-auto mb-4 overflow-hidden">
                <img src={weskillLogo} alt="Weskill Logo" className="w-full h-full object-contain" />
@@ -73,6 +132,59 @@ const Login = () => {
             <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
             <p className="text-muted-foreground">Login to continue to Webuild</p>
           </div>
+
+          {/* Error banners */}
+          {bannerType === "invalid" && (
+            <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
+                  Invalid email or password. Please try again.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {bannerType === "email_not_confirmed" && (
+            <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex gap-3">
+                <MailCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-sm space-y-2">
+                  <p className="text-amber-800 dark:text-amber-200">
+                    Please verify your email before logging in. Check your inbox for the confirmation link.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={resending}
+                    onClick={handleResendVerification}
+                    className="border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                  >
+                    {resending ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                        Sending…
+                      </>
+                    ) : (
+                      "Resend verification email"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {bannerType === "rate_limited" && (
+            <div className="mb-6 rounded-lg border border-orange-500/30 bg-orange-50 dark:bg-orange-950/30 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-800 dark:text-orange-200">
+                  Too many login attempts. Please wait a moment and try again.
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
@@ -82,9 +194,14 @@ const Login = () => {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (bannerType !== "none") setBannerType("none");
+                }}
+                onBlur={() => validateField("email")}
                 required
               />
+              <FieldError message={errors.email} />
             </div>
 
             <div className="space-y-2">
@@ -98,14 +215,18 @@ const Login = () => {
                   Forgot?
                 </button>
               </div>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (bannerType !== "none") setBannerType("none");
+                }}
+                onBlur={() => validateField("password")}
                 required
               />
+              <FieldError message={errors.password} />
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
