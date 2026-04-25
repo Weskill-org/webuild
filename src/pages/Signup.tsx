@@ -322,32 +322,34 @@ const Signup = () => {
               <FieldError message={errors.confirmPassword} />
             </div>
 
-            {/* Referral Code — optional */}
-            <div className="space-y-2">
-              <Label htmlFor="referralCode" className="flex items-center gap-1.5">
-                <Gift className="w-3.5 h-3.5 text-primary" />
-                Referral Code
-                <span className="text-xs text-muted-foreground">(optional)</span>
-              </Label>
-              <Input
-                id="referralCode"
-                placeholder="e.g. WB-A3K9X2"
-                value={formData.referralCode}
-                onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
-                className={`font-mono tracking-wider ${refCodeFromUrl ? "opacity-60 cursor-not-allowed" : ""}`}
-                readOnly={!!refCodeFromUrl}
-              />
-              {formData.referralCode && (
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  ✓ Referral code applied — you'll receive bonus coins after signup!
-                </p>
-              )}
-              {!formData.referralCode && (
-                <p className="text-xs text-muted-foreground">
-                  Don't have a referral code? No problem — you can sign up without one.
-                </p>
-              )}
-            </div>
+            {/* Referral Code — optional - Only for Students */}
+            {role === "student" && (
+              <div className="space-y-2">
+                <Label htmlFor="referralCode" className="flex items-center gap-1.5">
+                  <Gift className="w-3.5 h-3.5 text-primary" />
+                  Referral Code
+                  <span className="text-xs text-muted-foreground">(optional)</span>
+                </Label>
+                <Input
+                  id="referralCode"
+                  placeholder="e.g. WB-A3K9X2"
+                  value={formData.referralCode}
+                  onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
+                  className={`font-mono tracking-wider ${refCodeFromUrl ? "opacity-60 cursor-not-allowed" : ""}`}
+                  readOnly={!!refCodeFromUrl}
+                />
+                {formData.referralCode && (
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    ✓ Referral code applied — you'll receive bonus coins after signup!
+                  </p>
+                )}
+                {!formData.referralCode && (
+                  <p className="text-xs text-muted-foreground">
+                    Don't have a referral code? No problem — you can sign up without one.
+                  </p>
+                )}
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (

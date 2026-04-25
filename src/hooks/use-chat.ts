@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { sendNotification } from "@/lib/notifications";
 import type { Message, Profile } from "@/types/database";
 
 export interface Conversation {
@@ -248,6 +249,16 @@ export function useChat() {
           ).sort((a, b) => new Date(b.lastDate).getTime() - new Date(a.lastDate).getTime());
         }
         return prev;
+      });
+
+      // Send push notification to the recipient
+      await sendNotification("message", {
+        user_id: profile.id, // sender_id for the function to lookup profile
+        data: {
+          recipient_id: selectedPartner,
+          body: body.trim(),
+          chatId: profile.id
+        }
       });
     }
     setTyping(false);

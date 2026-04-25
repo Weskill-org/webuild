@@ -7,6 +7,120 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Firebase OAuth2 helpers ────────────────────────────────────────────────
+
+function base64url(buf: ArrayBuffer): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function getAccessToken(serviceAccount: {
+  client_email: string;
+  private_key: string;
+  token_uri: string;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const payload = {
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: serviceAccount.token_uri,
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const encHeader = base64url(new TextEncoder().encode(JSON.stringify(header)));
+  const encPayload = base64url(
+    new TextEncoder().encode(JSON.stringify(payload))
+  );
+  const unsignedToken = `${encHeader}.${encPayload}`;
+
+  // Import the RSA private key
+  const pemBody = serviceAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\n/g, "");
+  const keyBuf = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyBuf.buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const sig = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const jwt = `${unsignedToken}.${base64url(sig)}`;
+
+  // Exchange JWT for access token
+  const tokenRes = await fetch(serviceAccount.token_uri, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  if (!tokenRes.ok) {
+    const errText = await tokenRes.text();
+    throw new Error(`Failed to get Google access token: ${errText}`);
+  }
+
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
+}
+
+async function sendFcmMessage(
+  accessToken: string,
+  projectId: string,
+  deviceToken: string,
+  title: string,
+  body: string,
+  data: Record<string, string> = {}
+): Promise<boolean> {
+  const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        token: deviceToken,
+        notification: { title, body },
+        data,
+        android: {
+          priority: "high",
+          notification: {
+            sound: "default",
+            default_vibrate_timings: true,
+            default_light_settings: true,
+          },
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error(
+      `[FCM] Failed to send to token ${deviceToken.slice(0, 20)}...: ${errText}`
+    );
+    return false;
+  }
+  return true;
+}
+
+// ─── Main handler ───────────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,6 +131,7 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -149,6 +264,21 @@ serve(async (req) => {
         break;
       }
 
+      case "message": {
+        const { data: sender } = await supabaseAdmin
+          .from("profiles")
+          .select("full_name, company_name")
+          .eq("id", user_id)
+          .single();
+        
+        notification = {
+          title: sender?.full_name || sender?.company_name || "New Message",
+          body: data?.body || "You have a new message",
+          recipients: [data?.recipient_id],
+        };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: "Unknown event type" }),
@@ -163,7 +293,7 @@ serve(async (req) => {
       );
     }
 
-    // Insert in-app notifications
+    // ─── 1. Insert in-app notifications ─────────────────────────────────────
     const notificationRows = notification.recipients.map((uid) => ({
       user_id: uid,
       type: event,
@@ -173,7 +303,75 @@ serve(async (req) => {
 
     await supabaseAdmin.from("notifications").insert(notificationRows);
 
-    // Send email if Resend is configured
+    // ─── 2. Send FCM push notifications ─────────────────────────────────────
+    let fcmSentCount = 0;
+    let fcmFailCount = 0;
+    let staleTokens: string[] = [];
+
+    if (FIREBASE_SA_JSON) {
+      try {
+        const serviceAccount = JSON.parse(FIREBASE_SA_JSON);
+        const firebaseProjectId = serviceAccount.project_id;
+        const accessToken = await getAccessToken(serviceAccount);
+
+        // Fetch all FCM tokens for the recipient user IDs
+        const { data: tokenRows, error: tokenErr } = await supabaseAdmin
+          .from("fcm_tokens")
+          .select("token, user_id")
+          .in("user_id", notification.recipients);
+
+        if (tokenErr) {
+          console.error("[FCM] Error fetching tokens:", tokenErr);
+        }
+
+        const tokens = tokenRows ?? [];
+        console.log(
+          `[FCM] Sending push to ${tokens.length} device(s) for ${notification.recipients.length} recipient(s)`
+        );
+
+        // Build the data payload for deep linking
+        const fcmData: Record<string, string> = {
+          type: event,
+          ...(project_id ? { projectId: project_id } : {}),
+          ...(data?.chatId ? { chatId: data.chatId } : {}),
+        };
+
+        // Send to each device in parallel
+        const results = await Promise.allSettled(
+          tokens.map(async (row: { token: string; user_id: string }) => {
+            const ok = await sendFcmMessage(
+              accessToken,
+              firebaseProjectId,
+              row.token,
+              notification!.title,
+              notification!.body,
+              fcmData
+            );
+            if (ok) {
+              fcmSentCount++;
+            } else {
+              fcmFailCount++;
+              staleTokens.push(row.token);
+            }
+          })
+        );
+
+        // Clean up stale / invalid tokens
+        if (staleTokens.length > 0) {
+          console.log(`[FCM] Cleaning up ${staleTokens.length} stale token(s)`);
+          await supabaseAdmin
+            .from("fcm_tokens")
+            .delete()
+            .in("token", staleTokens);
+        }
+      } catch (fcmErr) {
+        console.error("[FCM] Push notification error:", fcmErr);
+      }
+    } else {
+      console.warn("[FCM] FIREBASE_SERVICE_ACCOUNT_JSON not set — skipping push");
+    }
+
+    // ─── 3. Send email if Resend is configured ──────────────────────────────
     if (RESEND_API_KEY) {
       for (const uid of notification.recipients) {
         const { data: userData } = await supabaseAdmin.auth.admin.getUserById(uid);
@@ -202,7 +400,12 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, sent_to: notification.recipients.length }),
+      JSON.stringify({
+        success: true,
+        sent_to: notification.recipients.length,
+        fcm_sent: fcmSentCount,
+        fcm_failed: fcmFailCount,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

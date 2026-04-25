@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "419762405755",
+    "project_id": "webuild-4e0af",
+    "storage_bucket": "webuild-4e0af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:419762405755:android:6252d79e3b173c679cbdde",
+        "android_client_info": {
+          "package_name": "org.weskill.webuild"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqpkmuHsDLYVdce3ofYWHptLZCOdDCkJQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

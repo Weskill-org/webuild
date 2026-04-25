@@ -82,9 +82,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
             </Route>
+
+            {/* Password Reset Route (Needs to be accessible when Supabase auto-logs in via recovery link) */}
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Public Footer Pages */}
             <Route path="/careers" element={<Careers />} />

@@ -16,7 +16,7 @@ import weskillLogo from "@/assets/weskill logo.avif";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
-  const { updatePassword } = useAuth();
+  const { updatePassword, signOut } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -91,6 +91,7 @@ const ResetPassword = () => {
     setLoading(true);
     try {
       await updatePassword(password);
+      await signOut();
       toast({ title: "Password updated!", description: "You can now sign in with your new password." });
       navigate("/login");
     } catch (err: any) {

@@ -8,6 +8,7 @@ import {
   MessageCircle, Mail, Twitter, Loader2, IndianRupee,
   Sparkles, TrendingUp, UserPlus, Wallet,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,13 +17,20 @@ import useRealtime from "@/hooks/use-realtime";
 import type { Referral } from "@/types/database";
 
 const ReferEarn = () => {
-  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { profile, loading: authLoading } = useAuth();
   const { walletBalance } = useRealtime();
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [rewardAmount, setRewardAmount] = useState(150);
+
+  useEffect(() => {
+    if (!authLoading && profile && profile.role !== "student") {
+      navigate("/dashboard");
+    }
+  }, [profile, authLoading, navigate]);
 
   const referralCode = profile?.referral_code || "";
   const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
