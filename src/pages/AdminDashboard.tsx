@@ -21,7 +21,7 @@ import {
 import {
   Users, Briefcase, DollarSign, Activity, Search, Shield, ShieldAlert,
   Loader2, AlertTriangle, Flag, Gift, Award, Wallet,
-  Plus, Trash2, Eye, CheckCircle, XCircle,
+  Plus, Trash2, Eye, CheckCircle, XCircle, Check,
   Settings, Megaphone, Percent, Save, UserPlus, Coins,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -285,6 +285,22 @@ function UsersTab() {
     toast({ title: `${action === "grant" ? "Granted" : "Revoked"} ${role} role` });
   };
 
+  const handleToggleVerified = async (userId: string, currentStatus: boolean | null) => {
+    const newStatus = !currentStatus;
+    const { error } = await supabase.from("profiles").update({ 
+      verified: newStatus,
+      verified_at: newStatus ? new Date().toISOString() : null
+    }).eq("id", userId);
+    
+    if (error) { 
+      toast({ title: "Error", description: error.message, variant: "destructive" }); 
+      return; 
+    }
+    
+    setUsers(users.map(u => u.id === userId ? { ...u, verified: newStatus } : u));
+    toast({ title: `User ${newStatus ? "verified" : "unverified"} successfully` });
+  };
+
   return (
     <Card className="p-4 mt-4">
       <div className="flex gap-3 mb-4 flex-wrap">
@@ -352,6 +368,15 @@ function UsersTab() {
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleRoleAction(u.id, "moderator", "grant")}>
                           Mod
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant={u.verified ? "ghost" : "outline"}
+                          className={u.verified ? "text-green-500 hover:text-green-600 hover:bg-green-50" : ""}
+                          onClick={() => handleToggleVerified(u.id, u.verified)}
+                        >
+                          {u.verified ? <CheckCircle className="w-3 h-3 mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+                          {u.verified ? "Verified" : "Verify"}
                         </Button>
                       </div>
                     </TableCell>
