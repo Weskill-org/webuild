@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Award } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const ProfileSettings = () => {
@@ -22,7 +22,7 @@ const ProfileSettings = () => {
   });
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [badges, setBadges] = useState<{ skill_name: string }[]>([]);
+  const [badges, setBadges] = useState<{ skill_name: string; score: number }[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,7 +38,7 @@ const ProfileSettings = () => {
       });
       // Fetch badges
       import("@/integrations/supabase/client").then(({ supabase }) => {
-        supabase.from("skill_badges").select("skill_name").eq("user_id", profile.id).eq("passed", true)
+        supabase.from("skill_badges").select("skill_name, score").eq("user_id", profile.id).eq("passed", true)
           .then(({ data }) => setBadges(data ?? []));
       });
     }
@@ -163,12 +163,13 @@ const ProfileSettings = () => {
               {badges.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
                   {badges.map((b, i) => (
-                    <div key={i} className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                      <CheckCircle className="w-3.5 h-3.5" />
+                    <div key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                      <Award className="w-3.5 h-3.5" />
                       {b.skill_name}
+                      <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/20 text-[10px] font-bold">{b.score}%</span>
                     </div>
                   ))}
-                  <p className="text-xs text-muted-foreground self-center ml-1">Verified via Quizzes</p>
+                  <p className="text-xs text-muted-foreground self-center ml-1">Verified via Quizzes · Only highest score shown</p>
                 </div>
               )}
               <Input

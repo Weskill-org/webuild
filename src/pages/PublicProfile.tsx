@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Globe, Linkedin, Loader2, Star, MessageSquare, CheckCircle } from "lucide-react";
+import { ArrowLeft, Globe, Linkedin, Loader2, Star, MessageSquare, CheckCircle, Award, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -123,15 +123,19 @@ const PublicProfile = () => {
             <h2 className="font-semibold mb-3">Skills & Verified Badges</h2>
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
-                <Badge key={`badge-${i}`} className="bg-primary/10 text-primary border-primary hover:bg-primary/20 flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" />
+                <Badge key={`badge-${i}`} className="bg-primary/10 text-primary border-primary hover:bg-primary/20 flex items-center gap-1.5 py-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
                   {b.skill_name}
+                  <span className="ml-0.5 px-1.5 py-0.5 rounded bg-primary/20 text-[10px] font-bold">{b.score}%</span>
                 </Badge>
               ))}
               {(profile.skills ?? []).filter(s => !badges.some(b => b.skill_name === s)).map((skill, i) => (
                 <Badge key={`skill-${i}`} variant="outline">{skill}</Badge>
               ))}
             </div>
+            {badges.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1"><Award className="w-3.5 h-3.5" /> Verified skills show the highest quiz score achieved</p>
+            )}
           </Card>
         )}
 
