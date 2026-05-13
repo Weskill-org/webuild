@@ -6,7 +6,7 @@ import {
   Shield, ShieldAlert, LayoutDashboard, Settings, Users, Briefcase,
   FolderTree, ListChecks, UserPlus, AlertTriangle, BarChart3,
   Gift, Wallet, Award, Cog, Loader2, PanelLeftClose, PanelLeftOpen,
-  ChevronRight, LogOut, ArrowLeft, Menu, X,
+  ChevronRight, LogOut, ArrowLeft, Menu, X, BrainCircuit,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import weskillLogo from "@/assets/weskill logo.avif";
@@ -25,6 +25,7 @@ const adminNavItems: AdminNavItem[] = [
   { label: "Project Management",      icon: Briefcase,       path: "/admin/projects",           group: "Management" },
   { label: "Categories",              icon: FolderTree,      path: "/admin/categories",         group: "Content Config" },
   { label: "Eligibility Criteria",    icon: ListChecks,      path: "/admin/eligibility",        group: "Content Config" },
+  { label: "Quizzes",                  icon: BrainCircuit,    path: "/admin/quizzes",            group: "Content Config" },
   { label: "Referrals",               icon: UserPlus,        path: "/admin/referrals",          group: "Moderation" },
   { label: "Disputes",                icon: AlertTriangle,   path: "/admin/disputes",           group: "Moderation" },
   { label: "Reports & Analytics",     icon: BarChart3,       path: "/admin/reports",            group: "Moderation" },

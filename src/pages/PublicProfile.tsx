@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Globe, Linkedin, Loader2, Star, MessageSquare } from "lucide-react";
+import { ArrowLeft, Globe, Linkedin, Loader2, Star, MessageSquare, CheckCircle } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -17,19 +17,22 @@ const PublicProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [badges, setBadges] = useState<{ skill_name: string; score: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     (async () => {
       setLoading(true);
-      const [profileRes, reviewsRes] = await Promise.all([
+      const [profileRes, reviewsRes, badgesRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", id).single(),
         supabase.from("reviews").select("rating").eq("reviewee_id", id),
+        supabase.from("skill_badges").select("skill_name, score").eq("user_id", id).eq("passed", true)
       ]);
       if (profileRes.data) setProfile(profileRes.data as unknown as Profile);
       const ratings = (reviewsRes.data as any[]) ?? [];
       setReviewCount(ratings.length);
+      setBadges((badgesRes.data as any[]) ?? []);
       if (ratings.length > 0) {
         setAvgRating(ratings.reduce((s, r) => s + r.rating, 0) / ratings.length);
       }
@@ -115,12 +118,18 @@ const PublicProfile = () => {
           </div>
         </Card>
 
-        {(profile.skills?.length ?? 0) > 0 && (
+        {((profile.skills?.length ?? 0) > 0 || badges.length > 0) && (
           <Card className="p-6 mb-6">
-            <h2 className="font-semibold mb-3">Skills</h2>
+            <h2 className="font-semibold mb-3">Skills & Verified Badges</h2>
             <div className="flex flex-wrap gap-2">
-              {profile.skills!.map((skill, i) => (
-                <Badge key={i} variant="outline">{skill}</Badge>
+              {badges.map((b, i) => (
+                <Badge key={`badge-${i}`} className="bg-primary/10 text-primary border-primary hover:bg-primary/20 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {b.skill_name}
+                </Badge>
+              ))}
+              {(profile.skills ?? []).filter(s => !badges.some(b => b.skill_name === s)).map((skill, i) => (
+                <Badge key={`skill-${i}`} variant="outline">{skill}</Badge>
               ))}
             </div>
           </Card>

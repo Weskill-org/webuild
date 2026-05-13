@@ -36,6 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProjects from "./pages/admin/AdminProjects";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminEligibility from "./pages/admin/AdminEligibility";
+import AdminQuizzes from "./pages/admin/AdminQuizzes";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminDisputes from "./pages/admin/AdminDisputes";
 import AdminReports from "./pages/admin/AdminReports";
@@ -128,6 +129,7 @@ const App = () => (
                 <Route path="projects" element={<AdminProjects />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="eligibility" element={<AdminEligibility />} />
+                <Route path="quizzes" element={<AdminQuizzes />} />
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="disputes" element={<AdminDisputes />} />
                 <Route path="reports" element={<AdminReports />} />
