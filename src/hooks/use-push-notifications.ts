@@ -43,8 +43,12 @@ export default function usePushNotifications() {
       } else {
         console.log('[Push] FCM token saved successfully');
       }
-    } catch (err) {
-      console.error('[Push] Exception saving token:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('[Push] Exception saving token:', err.message);
+      } else {
+        console.error('[Push] Exception saving token:', String(err));
+      }
     }
   }, [user]);
 
@@ -58,8 +62,12 @@ export default function usePushNotifications() {
         .eq('user_id', user.id)
         .eq('token', tokenRef.current);
       console.log('[Push] FCM token removed');
-    } catch (err) {
-      console.error('[Push] Error removing token:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('[Push] Error removing token:', err.message);
+      } else {
+        console.error('[Push] Error removing token:', String(err));
+      }
     }
   }, [user]);
 
@@ -138,8 +146,12 @@ export default function usePushNotifications() {
             handleNotificationTap(data);
           }
         );
-      } catch (err) {
-        console.error('[Push] Setup error:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error('[Push] Setup error:', err.message);
+        } else {
+          console.error('[Push] Setup error:', String(err));
+        }
       }
     };
 
