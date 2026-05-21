@@ -227,7 +227,7 @@ const Wallet = () => {
                   <div>
                     <Label>Gift Card Code</Label>
                     <Input
-                      placeholder="e.g. WEBUILD-XXXX-XXXX"
+                      placeholder="e.g. WEBUILD-ABCD-1234"
                       value={giftCode}
                       onChange={(e) => setGiftCode(e.target.value.toUpperCase())}
                       className="font-mono tracking-wider"
