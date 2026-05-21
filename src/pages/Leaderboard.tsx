@@ -7,6 +7,7 @@ import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { Profile, Review, Project, Wallet } from "@/types/database";
 
 interface LeaderboardEntry {
   id: string;

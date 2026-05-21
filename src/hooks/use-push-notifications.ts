@@ -43,8 +43,12 @@ export default function usePushNotifications() {
       } else {
         console.log('[Push] FCM token saved successfully');
       }
-    } catch (err) {
-      console.error('[Push] Exception saving token:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('[Push] Exception saving token:', err.message);
+      } else {
+        console.error('[Push] Exception saving token:', String(err));
+      }
     }
   }, [user]);
 
@@ -58,8 +62,12 @@ export default function usePushNotifications() {
         .eq('user_id', user.id)
         .eq('token', tokenRef.current);
       console.log('[Push] FCM token removed');
-    } catch (err) {
-      console.error('[Push] Error removing token:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('[Push] Error removing token:', err.message);
+      } else {
+        console.error('[Push] Error removing token:', String(err));
+      }
     }
   }, [user]);
 
@@ -119,8 +127,6 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationReceived',
           (notification: PushNotificationSchema) => {
-            console.log('[Push] Foreground notification:', notification);
-
             // Show in-app toast for foreground notifications
             toast({
               title: notification.title ?? 'Notification',
@@ -133,13 +139,16 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationActionPerformed',
           (action: ActionPerformed) => {
-            console.log('[Push] Notification tapped:', action);
             const data = action.notification.data ?? {};
             handleNotificationTap(data);
           }
         );
-      } catch (err) {
-        console.error('[Push] Setup error:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error('[Push] Setup error:', err.message);
+        } else {
+          console.error('[Push] Setup error:', String(err));
+        }
       }
     };
 

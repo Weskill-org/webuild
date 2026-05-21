@@ -200,7 +200,10 @@ const ProjectDetails = () => {
     // Generate WB-YYYYMMDD-HHMMSS-RAND ID
     const date = new Date();
     const ds = date.toISOString().replace(/[-T:]/g, "").slice(0, 14); // YYYYMMDDHHMMSS
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const array = new Uint8Array(4);
+    window.crypto.getRandomValues(array);
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const rand = Array.from(array).map(x => chars[x % chars.length]).join('');
     const displayId = `WB-${ds.slice(0,8)}-${ds.slice(8)}-${rand}`;
 
     const { data, error } = await supabase.from("certificates").insert({
