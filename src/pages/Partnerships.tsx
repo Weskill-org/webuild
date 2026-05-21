@@ -101,10 +101,11 @@ export default function Partnerships() {
 
     const p = partnerships.find(x => x.id === id);
     if (p) {
-      await sendNotification(
-        status === "accepted" ? "partnership_accepted" : "partnership_rejected", 
-        { user_id: p.company_id }
-      );
+      if (status === "accepted") {
+        await sendNotification("partnership_accepted", { user_id: p.company_id });
+      } else {
+        await sendNotification("partnership_rejected", { user_id: p.company_id });
+      }
     }
   };
 

@@ -173,10 +173,17 @@ const ProjectDetails = () => {
 
     const app = applications.find(a => a.id === appId);
     if (app) {
-      await sendNotification(
-        status === "accepted" ? "application_accepted" : "application_rejected",
-        { project_id: project!.id, user_id: app.applicant_id }
-      );
+      if (status === "accepted") {
+        await sendNotification("application_accepted", {
+          project_id: project!.id,
+          user_id: app.applicant_id,
+        });
+      } else {
+        await sendNotification("application_rejected", {
+          project_id: project!.id,
+          user_id: app.applicant_id,
+        });
+      }
     }
   };
 
