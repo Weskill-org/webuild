@@ -45,7 +45,10 @@ export default function AdminUsers() {
 
   const handleRoleAction = async (userId: string, role: string, action: string) => {
     const finalRole = action === "grant" ? role : "user";
-    const { error } = await supabase.from("profiles").update({ role: finalRole }).eq("id", userId);
+    const { error } = await supabase.rpc("admin_update_user_role", {
+      target_user_id: userId,
+      new_role: finalRole
+    });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setUsers(users.map(u => u.id === userId ? { ...u, role: finalRole } : u));
     toast({ title: `${action === "grant" ? "Granted" : "Revoked"} ${role} role` });
@@ -53,10 +56,10 @@ export default function AdminUsers() {
 
   const handleToggleVerified = async (userId: string, currentStatus: boolean | null) => {
     const newStatus = !currentStatus;
-    const { error } = await supabase.from("profiles").update({ 
-      verified: newStatus,
-      verified_at: newStatus ? new Date().toISOString() : null
-    }).eq("id", userId);
+    const { error } = await supabase.rpc("admin_toggle_user_verified", {
+      target_user_id: userId,
+      new_status: newStatus
+    });
     
     if (error) { 
       toast({ title: "Error", description: error.message, variant: "destructive" }); 
