@@ -764,6 +764,78 @@ export type Database = {
           },
         ]
       }
+      quiz_attempts: {
+        Row: {
+          answers: Json | null
+          correct_answers_count: number | null
+          created_at: string | null
+          id: string
+          passed: boolean | null
+          percentage: number | null
+          performance_summary: string | null
+          quiz_id: string | null
+          score: number | null
+          section_scores: Json | null
+          started_at: string | null
+          submitted_at: string | null
+          total_marks: number | null
+          unattempted_answers_count: number | null
+          user_id: string | null
+          wrong_answers_count: number | null
+        }
+        Insert: {
+          answers?: Json | null
+          correct_answers_count?: number | null
+          created_at?: string | null
+          id?: string
+          passed?: boolean | null
+          percentage?: number | null
+          performance_summary?: string | null
+          quiz_id?: string | null
+          score?: number | null
+          section_scores?: Json | null
+          started_at?: string | null
+          submitted_at?: string | null
+          total_marks?: number | null
+          unattempted_answers_count?: number | null
+          user_id?: string | null
+          wrong_answers_count?: number | null
+        }
+        Update: {
+          answers?: Json | null
+          correct_answers_count?: number | null
+          created_at?: string | null
+          id?: string
+          passed?: boolean | null
+          percentage?: number | null
+          performance_summary?: string | null
+          quiz_id?: string | null
+          score?: number | null
+          section_scores?: Json | null
+          started_at?: string | null
+          submitted_at?: string | null
+          total_marks?: number | null
+          unattempted_answers_count?: number | null
+          user_id?: string | null
+          wrong_answers_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "skill_quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       reports: {
         Row: {
           created_at: string | null
@@ -897,29 +969,44 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          difficulty: string | null
+          duration: number | null
           id: string
+          instructions: string | null
           passing_score: number | null
           questions: Json
+          sections: Json | null
           skill_name: string
           title: string
+          total_marks: number | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
+          duration?: number | null
           id?: string
+          instructions?: string | null
           passing_score?: number | null
           questions?: Json
+          sections?: Json | null
           skill_name: string
           title: string
+          total_marks?: number | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
+          duration?: number | null
           id?: string
+          instructions?: string | null
           passing_score?: number | null
           questions?: Json
+          sections?: Json | null
           skill_name?: string
           title?: string
+          total_marks?: number | null
         }
         Relationships: []
       }

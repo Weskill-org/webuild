@@ -16,10 +16,23 @@ import Papa from "papaparse";
 import { toast } from "@/hooks/use-toast";
 
 /* ───────────────── types ───────────────── */
+interface ExamSection {
+  id: string;
+  name: string;
+  description?: string;
+  positive_marks: number;
+  negative_marks: number;
+  question_type: "single_choice" | "multiple_choice" | "numerical";
+}
+
 interface QuizQuestion {
+  id?: string;
   question: string;
   options: string[];
-  correct: number;
+  correct: number | number[] | string; // index for single, array of indices for multiple, string for numerical
+  type: "single_choice" | "multiple_choice" | "numerical";
+  section_id: string;
+  explanation?: string;
 }
 
 interface Quiz {
@@ -29,6 +42,11 @@ interface Quiz {
   description: string | null;
   questions: QuizQuestion[];
   passing_score: number;
+  duration: number;
+  instructions: string | null;
+  difficulty: string;
+  total_marks: number;
+  sections: ExamSection[];
   created_at: string | null;
 }
 
@@ -37,18 +55,47 @@ interface QuizForm {
   skill_name: string;
   description: string;
   passing_score: number;
+  duration: number;
+  instructions: string;
+  difficulty: string;
+  total_marks: number;
+  sections: ExamSection[];
   questions: QuizQuestion[];
 }
 
-const EMPTY_QUESTION: QuizQuestion = { question: "", options: ["", "", "", ""], correct: 0 };
-
-const defaultForm = (): QuizForm => ({
-  title: "",
-  skill_name: "",
+const DEFAULT_SECTION = (id: string = "sec-1"): ExamSection => ({
+  id,
+  name: "Section A",
   description: "",
-  passing_score: 70,
-  questions: [{ ...EMPTY_QUESTION, options: [...EMPTY_QUESTION.options] }],
+  positive_marks: 4,
+  negative_marks: -1,
+  question_type: "single_choice",
 });
+
+const defaultForm = (): QuizForm => {
+  const defaultSec = DEFAULT_SECTION();
+  return {
+    title: "",
+    skill_name: "",
+    description: "",
+    passing_score: 70,
+    duration: 180,
+    instructions: "1. The exam contains sections for each subject.\n2. Marking scheme is section-specific.\n3. Make sure to save each answer before proceeding.",
+    difficulty: "Medium",
+    total_marks: 0,
+    sections: [defaultSec],
+    questions: [
+      {
+        question: "",
+        options: ["", "", "", ""],
+        correct: 0,
+        type: "single_choice",
+        section_id: defaultSec.id,
+        explanation: "",
+      },
+    ],
+  };
+};
 
 /* ───────────────── component ───────────────── */
 export default function AdminQuizzes() {
@@ -73,25 +120,59 @@ export default function AdminQuizzes() {
   /* ───────── fetch ───────── */
   const fetchData = async () => {
     setLoading(true);
-    const [quizRes, badgeRes] = await Promise.all([
-      supabase.from("skill_quizzes").select("*").order("created_at", { ascending: false }),
-      supabase.from("skill_badges").select("quiz_id"),
-    ]);
-    const raw = (quizRes.data ?? []) as any[];
-    setQuizzes(
-      raw.map((q) => ({
-        ...q,
-        questions: Array.isArray(q.questions)
-          ? (q.questions as QuizQuestion[])
-          : [],
-      }))
-    );
-    const counts: Record<string, number> = {};
-    (badgeRes.data ?? []).forEach((b: any) => {
-      counts[b.quiz_id] = (counts[b.quiz_id] || 0) + 1;
-    });
-    setAttemptCounts(counts);
-    setLoading(false);
+    try {
+      const [quizRes, badgeRes] = await Promise.all([
+        supabase.from("skill_quizzes").select("*").order("created_at", { ascending: false }),
+        supabase.from("skill_badges").select("quiz_id"),
+      ]);
+      const raw = (quizRes.data ?? []) as any[];
+      setQuizzes(
+        raw.map((q) => {
+          const rawSections = Array.isArray(q.sections) ? (q.sections as ExamSection[]) : [];
+          const defaultSec = DEFAULT_SECTION();
+          const sections = rawSections.length > 0 ? rawSections : [defaultSec];
+          
+          const rawQuestions = Array.isArray(q.questions) ? (q.questions as any[]) : [];
+          const processedQuestions = rawQuestions.map((question) => {
+            const type = question.type || "single_choice";
+            const section_id = question.section_id || sections[0].id;
+            return {
+              question: question.question || "",
+              options: Array.isArray(question.options) ? question.options : ["", "", "", ""],
+              correct: question.correct !== undefined ? question.correct : 0,
+              type,
+              section_id,
+              explanation: question.explanation || "",
+            };
+          });
+
+          return {
+            id: q.id,
+            title: q.title || "",
+            skill_name: q.skill_name || "",
+            description: q.description || "",
+            questions: processedQuestions,
+            passing_score: q.passing_score ?? 70,
+            duration: q.duration ?? 180,
+            instructions: q.instructions || "",
+            difficulty: q.difficulty || "Medium",
+            total_marks: q.total_marks ?? 0,
+            sections,
+            created_at: q.created_at,
+          };
+        })
+      );
+
+      const counts: Record<string, number> = {};
+      (badgeRes.data ?? []).forEach((b: any) => {
+        counts[b.quiz_id] = (counts[b.quiz_id] || 0) + 1;
+      });
+      setAttemptCounts(counts);
+    } catch (err: any) {
+      toast({ title: "Fetch Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -112,9 +193,16 @@ export default function AdminQuizzes() {
       skill_name: quiz.skill_name,
       description: quiz.description || "",
       passing_score: quiz.passing_score ?? 70,
-      questions: quiz.questions.length
-        ? quiz.questions.map((q) => ({ ...q, options: [...q.options] }))
-        : [{ ...EMPTY_QUESTION, options: [...EMPTY_QUESTION.options] }],
+      duration: quiz.duration ?? 180,
+      instructions: quiz.instructions || "",
+      difficulty: quiz.difficulty || "Medium",
+      total_marks: quiz.total_marks ?? 0,
+      sections: quiz.sections.map((s) => ({ ...s })),
+      questions: quiz.questions.map((q) => ({
+        ...q,
+        options: [...q.options],
+        correct: Array.isArray(q.correct) ? [...q.correct] : q.correct,
+      })),
     });
     setShowEditor(true);
   };
@@ -126,17 +214,105 @@ export default function AdminQuizzes() {
       skill_name: quiz.skill_name,
       description: quiz.description || "",
       passing_score: quiz.passing_score ?? 70,
-      questions: quiz.questions.map((q) => ({ ...q, options: [...q.options] })),
+      duration: quiz.duration ?? 180,
+      instructions: quiz.instructions || "",
+      difficulty: quiz.difficulty || "Medium",
+      total_marks: quiz.total_marks ?? 0,
+      sections: quiz.sections.map((s) => ({ ...s })),
+      questions: quiz.questions.map((q) => ({
+        ...q,
+        options: [...q.options],
+        correct: Array.isArray(q.correct) ? [...q.correct] : q.correct,
+      })),
     });
     setShowEditor(true);
   };
 
-  /* ───────── question helpers ───────── */
-  const updateQuestion = (qi: number, patch: Partial<QuizQuestion>) => {
+  /* ───────── section helpers ───────── */
+  const addSection = () => {
+    const newId = `sec-${Date.now()}`;
     setForm((prev) => ({
       ...prev,
-      questions: prev.questions.map((q, i) => (i === qi ? { ...q, ...patch } : q)),
+      sections: [...prev.sections, DEFAULT_SECTION(newId)],
     }));
+  };
+
+  const removeSection = (secId: string) => {
+    if (form.sections.length <= 1) {
+      toast({ title: "Validation Error", description: "You must have at least one section.", variant: "destructive" });
+      return;
+    }
+    setForm((prev) => {
+      const remainingSections = prev.sections.filter((s) => s.id !== secId);
+      const fallbackSecId = remainingSections[0].id;
+      const updatedQuestions = prev.questions.map((q) =>
+        q.section_id === secId ? { ...q, section_id: fallbackSecId } : q
+      );
+      return {
+        ...prev,
+        sections: remainingSections,
+        questions: updatedQuestions,
+      };
+    });
+  };
+
+  const updateSection = (secId: string, patch: Partial<ExamSection>) => {
+    setForm((prev) => {
+      const updatedSections = prev.sections.map((s) => (s.id === secId ? { ...s, ...patch } : s));
+      
+      // Auto-update question type of questions in this section if question_type changed
+      let updatedQuestions = prev.questions;
+      if (patch.question_type) {
+        updatedQuestions = prev.questions.map((q) => {
+          if (q.section_id === secId) {
+            // reset correct answers when type changes to prevent data inconsistency
+            let newCorrect: any = 0;
+            if (patch.question_type === "multiple_choice") newCorrect = [0];
+            else if (patch.question_type === "numerical") newCorrect = "0";
+
+            return {
+              ...q,
+              type: patch.question_type,
+              correct: newCorrect,
+              options: patch.question_type === "numerical" ? [] : ["", "", "", ""],
+            };
+          }
+          return q;
+        });
+      }
+
+      return {
+        ...prev,
+        sections: updatedSections,
+        questions: updatedQuestions,
+      };
+    });
+  };
+
+  /* ───────── question helpers ───────── */
+  const updateQuestion = (qi: number, patch: Partial<QuizQuestion>) => {
+    setForm((prev) => {
+      const updatedQuestions = prev.questions.map((q, i) => {
+        if (i === qi) {
+          const nextQ = { ...q, ...patch };
+          // If section was changed, automatically update type of question to match section's default type
+          if (patch.section_id) {
+            const targetSection = prev.sections.find((s) => s.id === patch.section_id);
+            if (targetSection && targetSection.question_type !== q.type) {
+              nextQ.type = targetSection.question_type;
+              if (targetSection.question_type === "multiple_choice") nextQ.correct = [0];
+              else if (targetSection.question_type === "numerical") nextQ.correct = "0";
+              else nextQ.correct = 0;
+
+              nextQ.options = targetSection.question_type === "numerical" ? [] : ["", "", "", ""];
+            }
+          }
+          return nextQ;
+        }
+        return q;
+      });
+      return { ...prev, questions: updatedQuestions };
+    });
   };
 
   const updateOption = (qi: number, oi: number, value: string) => {
@@ -149,9 +325,27 @@ export default function AdminQuizzes() {
   };
 
   const addQuestion = () => {
+    const defaultSecId = form.sections[0]?.id || "sec-1";
+    const defaultSec = form.sections.find(s => s.id === defaultSecId);
+    const type = defaultSec ? defaultSec.question_type : "single_choice";
+    
+    let correct: any = 0;
+    if (type === "multiple_choice") correct = [0];
+    else if (type === "numerical") correct = "0";
+
     setForm((prev) => ({
       ...prev,
-      questions: [...prev.questions, { ...EMPTY_QUESTION, options: [...EMPTY_QUESTION.options] }],
+      questions: [
+        ...prev.questions,
+        {
+          question: "",
+          options: type === "numerical" ? [] : ["", "", "", ""],
+          correct,
+          type,
+          section_id: defaultSecId,
+          explanation: "",
+        },
+      ],
     }));
   };
 
@@ -173,20 +367,48 @@ export default function AdminQuizzes() {
   };
 
   const removeOption = (qi: number, oi: number) => {
-    const q = form.questions[qi];
-    if (q.options.length <= 2) return;
     setForm((prev) => ({
       ...prev,
       questions: prev.questions.map((question, i) => {
         if (i !== qi) return question;
         const newOpts = question.options.filter((_, j) => j !== oi);
+        let nextCorrect = question.correct;
+        
+        if (question.type === "multiple_choice" && Array.isArray(question.correct)) {
+          // Adjust indices for multi choice correct answer list
+          nextCorrect = question.correct
+            .map((cIndex) => {
+              if (cIndex === oi) return -1;
+              if (cIndex > oi) return cIndex - 1;
+              return cIndex;
+            })
+            .filter((cIndex) => cIndex >= 0);
+          if (nextCorrect.length === 0) nextCorrect = [0];
+        } else if (typeof question.correct === "number") {
+          if (question.correct === oi) nextCorrect = 0;
+          else if (question.correct > oi) nextCorrect = question.correct - 1;
+        }
+
         return {
           ...question,
           options: newOpts,
-          correct: question.correct >= newOpts.length ? 0 : question.correct,
+          correct: nextCorrect,
         };
       }),
     }));
+  };
+
+  const toggleMultiCorrect = (qi: number, oi: number) => {
+    const q = form.questions[qi];
+    const currentCorrect = Array.isArray(q.correct) ? q.correct : [0];
+    let nextCorrect: number[];
+    if (currentCorrect.includes(oi)) {
+      nextCorrect = currentCorrect.filter((c) => c !== oi);
+      if (nextCorrect.length === 0) nextCorrect = [oi]; // Maintain at least one selection
+    } else {
+      nextCorrect = [...currentCorrect, oi].sort();
+    }
+    updateQuestion(qi, { correct: nextCorrect });
   };
 
   /* ───────── save ───────── */
@@ -194,13 +416,50 @@ export default function AdminQuizzes() {
     if (!form.title.trim()) return "Title is required.";
     if (!form.skill_name.trim()) return "Skill name is required.";
     if (form.passing_score < 1 || form.passing_score > 100) return "Passing score must be 1-100.";
+    if (form.duration < 1) return "Duration must be at least 1 minute.";
+    if (form.sections.length === 0) return "At least one section is required.";
+    
+    // Validate Sections
+    for (let i = 0; i < form.sections.length; i++) {
+      const sec = form.sections[i];
+      if (!sec.name.trim()) return `Section ${i + 1} must have a name.`;
+      if (sec.positive_marks <= 0) return `Section "${sec.name}" positive marks must be greater than 0.`;
+    }
+
     if (form.questions.length === 0) return "At least one question is required.";
+    
+    // Validate Questions
     for (let i = 0; i < form.questions.length; i++) {
       const q = form.questions[i];
       if (!q.question.trim()) return `Question ${i + 1} text is empty.`;
-      if (q.options.some((o) => !o.trim())) return `Question ${i + 1} has empty options.`;
-      if (q.correct < 0 || q.correct >= q.options.length)
-        return `Question ${i + 1} has an invalid correct answer.`;
+      
+      const associatedSec = form.sections.find(s => s.id === q.section_id);
+      if (!associatedSec) return `Question ${i + 1} has an invalid or unassigned section.`;
+
+      if (q.type !== "numerical") {
+        if (q.options.length < 2) return `Question ${i + 1} must have at least 2 options.`;
+        if (q.options.some((o) => !o.trim())) return `Question ${i + 1} has empty options.`;
+      }
+
+      if (q.type === "single_choice") {
+        const correctIndex = Number(q.correct);
+        if (isNaN(correctIndex) || correctIndex < 0 || correctIndex >= q.options.length) {
+          return `Question ${i + 1} has an invalid correct option index.`;
+        }
+      } else if (q.type === "multiple_choice") {
+        if (!Array.isArray(q.correct) || q.correct.length === 0) {
+          return `Question ${i + 1} must have at least one correct option checked.`;
+        }
+        for (const idx of q.correct) {
+          if (idx < 0 || idx >= q.options.length) {
+            return `Question ${i + 1} correct option index ${idx} is invalid.`;
+          }
+        }
+      } else if (q.type === "numerical") {
+        if (q.correct === undefined || q.correct === null || String(q.correct).trim() === "") {
+          return `Question ${i + 1} must specify a correct numerical value.`;
+        }
+      }
     }
     return null;
   };
@@ -213,11 +472,22 @@ export default function AdminQuizzes() {
     }
     setSaving(true);
 
+    // Calculate total marks based on positive marks of each question's section
+    const calculatedTotalMarks = form.questions.reduce((sum, q) => {
+      const sec = form.sections.find((s) => s.id === q.section_id);
+      return sum + (sec ? Number(sec.positive_marks) : 4);
+    }, 0);
+
     const payload = {
       title: form.title.trim(),
       skill_name: form.skill_name.trim(),
       description: form.description.trim() || null,
       passing_score: form.passing_score,
+      duration: form.duration,
+      instructions: form.instructions.trim() || null,
+      difficulty: form.difficulty,
+      total_marks: calculatedTotalMarks,
+      sections: form.sections as any,
       questions: form.questions as any,
     };
 
@@ -250,16 +520,24 @@ export default function AdminQuizzes() {
   /* ───────── delete ───────── */
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    // Delete related badges first
-    await supabase.from("skill_badges").delete().eq("quiz_id", deleteTarget.id);
-    const { error } = await supabase.from("skill_quizzes").delete().eq("id", deleteTarget.id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
+    try {
+      // Delete related attempts first to prevent key constraint error
+      await supabase.from("quiz_attempts").delete().eq("quiz_id", deleteTarget.id);
+      // Delete related badges
+      await supabase.from("skill_badges").delete().eq("quiz_id", deleteTarget.id);
+      
+      const { error } = await supabase.from("skill_quizzes").delete().eq("id", deleteTarget.id);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Quiz deleted successfully" });
+      fetchData();
+    } catch (err: any) {
+      toast({ title: "Delete Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleteTarget(null);
     }
-    setDeleteTarget(null);
-    toast({ title: "Quiz deleted successfully" });
-    fetchData();
   };
 
   /* ───────── import/export ───────── */
@@ -284,10 +562,37 @@ export default function AdminQuizzes() {
                 skill_name: row.skill_name?.trim() || "General",
                 description: row.description?.trim() || null,
                 passing_score: parseInt(row.passing_score) || 70,
+                duration: parseInt(row.duration) || 180,
+                difficulty: row.difficulty?.trim() || "Medium",
+                instructions: row.instructions?.trim() || "1. All questions are compulsory.",
+                sections: [],
                 questions: []
               };
             }
+
+            const qMap = quizzesMap[title];
             
+            // Section parsing
+            const secName = row.section_name?.trim() || "Section A";
+            const secType = row.question_type?.trim() || "single_choice";
+            const posMarks = parseInt(row.positive_marks) || 4;
+            const negMarks = parseInt(row.negative_marks) !== undefined ? parseInt(row.negative_marks) : -1;
+            
+            let section = qMap.sections.find((s: any) => s.name === secName);
+            if (!section) {
+              const secId = `sec-${qMap.sections.length + 1}-${Date.now()}`;
+              section = {
+                id: secId,
+                name: secName,
+                description: "",
+                positive_marks: posMarks,
+                negative_marks: negMarks,
+                question_type: secType
+              };
+              qMap.sections.push(section);
+            }
+            
+            // Options parsing
             const options = [];
             if (row.option1?.trim()) options.push(row.option1.trim());
             if (row.option2?.trim()) options.push(row.option2.trim());
@@ -296,10 +601,24 @@ export default function AdminQuizzes() {
             if (row.option5?.trim()) options.push(row.option5.trim());
             if (row.option6?.trim()) options.push(row.option6.trim());
             
-            quizzesMap[title].questions.push({
+            // Correct Answer parsing
+            let correct: any = 0;
+            if (secType === "multiple_choice") {
+              const rawCorrect = row.correct_answer || row.correct_option_index || "0";
+              correct = String(rawCorrect).split(",").map(val => parseInt(val.trim())).filter(val => !isNaN(val));
+            } else if (secType === "numerical") {
+              correct = String(row.correct_answer || row.correct_option_index || "0").trim();
+            } else {
+              correct = parseInt(row.correct_answer || row.correct_option_index || "0") || 0;
+            }
+            
+            qMap.questions.push({
               question: row.question?.trim() || "Untitled Question",
-              options: options.length >= 2 ? options : ["Option 1", "Option 2"],
-              correct: parseInt(row.correct_option_index) || 0
+              options: secType !== "numerical" ? (options.length >= 2 ? options : ["Option 1", "Option 2"]) : [],
+              correct: correct,
+              type: secType,
+              section_id: section.id,
+              explanation: row.explanation?.trim() || ""
             });
           }
           
@@ -307,6 +626,14 @@ export default function AdminQuizzes() {
           if (quizzesToInsert.length === 0) {
             toast({ title: "No valid quizzes found in CSV", variant: "destructive" });
             return;
+          }
+
+          // Calculate total marks for each quiz
+          for (const qMap of quizzesToInsert) {
+            qMap.total_marks = qMap.questions.reduce((sum: number, q: any) => {
+              const sec = qMap.sections.find((s: any) => s.id === q.section_id);
+              return sum + (sec ? sec.positive_marks : 4);
+            }, 0);
           }
           
           setSaving(true);
@@ -321,7 +648,7 @@ export default function AdminQuizzes() {
           }
         } catch (err: any) {
           setSaving(false);
-          toast({ title: "Import Error", description: "Invalid CSV format", variant: "destructive" });
+          toast({ title: "Import Error", description: "Invalid CSV format or values", variant: "destructive" });
         }
         e.target.value = '';
       }
@@ -329,8 +656,11 @@ export default function AdminQuizzes() {
   };
 
   const downloadTemplate = () => {
-    const template = "quiz_title,skill_name,description,passing_score,question,option1,option2,option3,option4,correct_option_index\nSample Quiz,React,Basic React knowledge,70,What is JSX?,A syntax extension,A library,A framework,A language,0\nSample Quiz,React,Basic React knowledge,70,What is a hook?,A function,A class,A component,A prop,0";
-    const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
+    const headers = "quiz_title,skill_name,description,passing_score,duration,difficulty,instructions,section_name,question_type,positive_marks,negative_marks,question,option1,option2,option3,option4,correct_answer,explanation\n";
+    const row1 = '"Practice Test","Physics","Physics Practice Exam",50,180,"Hard","1. Candidates must solve all questions.","Physics Single Correct","single_choice",4,-1,"What is the unit of angular momentum?","kg m/s","kg m^2/s","kg m^2/s^2","kg/m s",1,"Angular momentum L = r x p = kg m^2/s"\n';
+    const row2 = '"Practice Test","Physics","Physics Practice Exam",50,180,"Hard","1. Candidates must solve all questions.","Physics Numerical","numerical",4,0,"If acceleration of object is 2 m/s^2, what distance does it cover in 5s starting from rest?",,,,,"25","s = ut + 0.5 a t^2 = 0 + 0.5 * 2 * 25 = 25m"\n';
+    
+    const blob = new Blob([headers + row1 + row2], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -363,7 +693,7 @@ export default function AdminQuizzes() {
             Quizzes Management
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Create, edit, and manage skill assessment quizzes for students
+            Create and manage exam portal assessments for students
           </p>
         </div>
         <div className="flex gap-2">
@@ -445,9 +775,11 @@ export default function AdminQuizzes() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="py-4">Quiz Title</TableHead>
-                  <TableHead>Skill</TableHead>
+                  <TableHead>Skill Tag</TableHead>
                   <TableHead className="text-center">Questions</TableHead>
-                  <TableHead className="text-center">Pass %</TableHead>
+                  <TableHead className="text-center">Duration</TableHead>
+                  <TableHead className="text-center">Total Marks</TableHead>
+                  <TableHead className="text-center">Difficulty</TableHead>
                   <TableHead className="text-center">Attempts</TableHead>
                   <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
@@ -475,8 +807,20 @@ export default function AdminQuizzes() {
                         {quiz.questions?.length || 0}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center text-sm font-medium">
-                      {quiz.passing_score}%
+                    <TableCell className="text-center text-sm">
+                      {quiz.duration} mins
+                    </TableCell>
+                    <TableCell className="text-center text-sm font-semibold text-primary">
+                      {quiz.total_marks}
+                    </TableCell>
+                    <TableCell className="text-center text-sm">
+                      <Badge className={
+                        quiz.difficulty === "Easy" ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" :
+                        quiz.difficulty === "Hard" ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" :
+                        "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+                      } variant="outline">
+                        {quiz.difficulty}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-center text-sm text-muted-foreground">
                       {attemptCounts[quiz.id] || 0}
@@ -525,7 +869,7 @@ export default function AdminQuizzes() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
                       <FileQuestion className="w-10 h-10 mx-auto mb-2 opacity-30" />
                       {search ? "No quizzes match your search." : "No quizzes yet. Create your first quiz!"}
                     </TableCell>
@@ -539,63 +883,173 @@ export default function AdminQuizzes() {
 
       {/* ═══════════ Create / Edit Dialog ═══════════ */}
       <Dialog open={showEditor} onOpenChange={setShowEditor}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BrainCircuit className="w-5 h-5 text-primary" />
-              {editing ? "Edit Quiz" : "Create New Quiz"}
+              {editing ? "Edit Exam Quiz" : "Create New Exam Quiz"}
             </DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="details" className="mt-2">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details">Quiz Details</TabsTrigger>
-              <TabsTrigger value="questions">
-                Questions ({form.questions.length})
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Exam Details</TabsTrigger>
+              <TabsTrigger value="sections">Sections ({form.sections.length})</TabsTrigger>
+              <TabsTrigger value="questions">Questions ({form.questions.length})</TabsTrigger>
             </TabsList>
 
             {/* ── Details Tab ── */}
             <TabsContent value="details" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title *</label>
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. JavaScript Fundamentals"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Exam Name *</label>
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Skill Mock Test 1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Skill Tag *</label>
+                  <Input
+                    value={form.skill_name}
+                    onChange={(e) => setForm({ ...form, skill_name: e.target.value })}
+                    placeholder="e.g. Physics, Chemistry, React"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Skill Name *</label>
-                <Input
-                  value={form.skill_name}
-                  onChange={(e) => setForm({ ...form, skill_name: e.target.value })}
-                  placeholder="e.g. JavaScript"
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Duration (Minutes) *</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.duration}
+                    onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 180 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Difficulty Level *</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={form.difficulty}
+                    onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Passing Score (%)</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={form.passing_score}
+                    onChange={(e) => setForm({ ...form, passing_score: parseInt(e.target.value) || 50 })}
+                  />
+                </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Brief description of the quiz…"
-                  rows={3}
+                  placeholder="Brief description of the exam..."
+                  rows={2}
                 />
               </div>
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Passing Score (%)</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={form.passing_score}
-                  onChange={(e) =>
-                    setForm({ ...form, passing_score: parseInt(e.target.value) || 70 })
-                  }
+                <label className="text-sm font-medium">Exam Instructions (shown before start) *</label>
+                <Textarea
+                  value={form.instructions}
+                  onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+                  placeholder="Detailed instructions for candidate..."
+                  rows={4}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Students need this score or above to earn the skill badge.
-                </p>
+              </div>
+            </TabsContent>
+
+            {/* ── Sections Tab ── */}
+            <TabsContent value="sections" className="space-y-4 mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm text-muted-foreground">Define the sections/subjects of the exam (e.g. Physics Single Choice, Physics Numerical).</p>
+                <Button size="sm" onClick={addSection}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Section
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {form.sections.map((sec, index) => (
+                  <Card key={sec.id} className="p-4 space-y-3 relative border-border/60">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-primary">Section {index + 1}</span>
+                      {form.sections.length > 1 && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                          onClick={() => removeSection(sec.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-1 col-span-1 md:col-span-2">
+                        <label className="text-xs font-medium">Section Name *</label>
+                        <Input
+                          value={sec.name}
+                          onChange={(e) => updateSection(sec.id, { name: e.target.value })}
+                          placeholder="e.g. Physics - Section A"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Question Type</label>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={sec.question_type}
+                          onChange={(e) => updateSection(sec.id, { question_type: e.target.value as any })}
+                        >
+                          <option value="single_choice">Single Choice (Radio)</option>
+                          <option value="multiple_choice">Multiple Choice (Checkbox)</option>
+                          <option value="numerical">Numerical Value</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium">Correct Marks</label>
+                          <Input
+                            type="number"
+                            value={sec.positive_marks}
+                            onChange={(e) => updateSection(sec.id, { positive_marks: parseInt(e.target.value) || 4 })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium">Negative Marks</label>
+                          <Input
+                            type="number"
+                            value={sec.negative_marks}
+                            onChange={(e) => updateSection(sec.id, { negative_marks: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Description (Optional)</label>
+                      <Input
+                        value={sec.description || ""}
+                        onChange={(e) => updateSection(sec.id, { description: e.target.value })}
+                        placeholder="Section guidelines, e.g. Answer any 5 out of 10 questions"
+                      />
+                    </div>
+                  </Card>
+                ))}
               </div>
             </TabsContent>
 
@@ -609,6 +1063,23 @@ export default function AdminQuizzes() {
                       Question {qi + 1}
                     </span>
                     <div className="flex-1" />
+                    
+                    {/* Section Assignment Dropdown */}
+                    <div className="flex items-center gap-2 mr-4">
+                      <span className="text-xs font-medium text-muted-foreground">Section:</span>
+                      <select
+                        className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none"
+                        value={q.section_id}
+                        onChange={(e) => updateQuestion(qi, { section_id: e.target.value })}
+                      >
+                        {form.sections.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {form.questions.length > 1 && (
                       <Button
                         size="icon"
@@ -628,55 +1099,138 @@ export default function AdminQuizzes() {
                     className="font-medium"
                   />
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Options (click radio to mark correct answer)
-                    </label>
-                    {q.options.map((opt, oi) => (
-                      <div key={oi} className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => updateQuestion(qi, { correct: oi })}
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            q.correct === oi
-                              ? "border-primary bg-primary"
-                              : "border-muted-foreground/30 hover:border-primary/50"
-                          }`}
-                        >
-                          {q.correct === oi && (
-                            <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                          )}
-                        </button>
-                        <Input
-                          value={opt}
-                          onChange={(e) => updateOption(qi, oi, e.target.value)}
-                          placeholder={`Option ${oi + 1}`}
-                          className={`flex-1 text-sm ${
-                            q.correct === oi ? "border-primary/40 bg-primary/5" : ""
-                          }`}
-                        />
-                        {q.options.length > 2 && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={() => removeOption(qi, oi)}
+                  {/* Single Choice Selection */}
+                  {q.type === "single_choice" && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Options (select correct option radio button)
+                      </label>
+                      {q.options.map((opt, oi) => (
+                        <div key={oi} className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateQuestion(qi, { correct: oi })}
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                              q.correct === oi
+                                ? "border-primary bg-primary"
+                                : "border-muted-foreground/30 hover:border-primary/50"
+                            }`}
                           >
-                            <X className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    {q.options.length < 6 && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs text-muted-foreground"
-                        onClick={() => addOption(qi)}
-                      >
-                        <Plus className="w-3 h-3 mr-1" /> Add Option
-                      </Button>
-                    )}
+                            {q.correct === oi && (
+                              <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                            )}
+                          </button>
+                          <Input
+                            value={opt}
+                            onChange={(e) => updateOption(qi, oi, e.target.value)}
+                            placeholder={`Option ${oi + 1}`}
+                            className={`flex-1 text-sm ${
+                              q.correct === oi ? "border-primary/40 bg-primary/5" : ""
+                            }`}
+                          />
+                          {q.options.length > 2 && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeOption(qi, oi)}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {q.options.length < 6 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs text-muted-foreground"
+                          onClick={() => addOption(qi)}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> Add Option
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Multiple Choice Selection */}
+                  {q.type === "multiple_choice" && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Options (select ALL correct option checkboxes)
+                      </label>
+                      {q.options.map((opt, oi) => {
+                        const correctList = Array.isArray(q.correct) ? q.correct : [];
+                        const isCorrect = correctList.includes(oi);
+                        return (
+                          <div key={oi} className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleMultiCorrect(qi, oi)}
+                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                isCorrect
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-muted-foreground/30 hover:border-primary/50"
+                              }`}
+                            >
+                              {isCorrect && <CheckCircle className="w-4 h-4" />}
+                            </button>
+                            <Input
+                              value={opt}
+                              onChange={(e) => updateOption(qi, oi, e.target.value)}
+                              placeholder={`Option ${oi + 1}`}
+                              className={`flex-1 text-sm ${
+                                isCorrect ? "border-primary/40 bg-primary/5" : ""
+                              }`}
+                            />
+                            {q.options.length > 2 && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => removeOption(qi, oi)}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {q.options.length < 6 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs text-muted-foreground"
+                          onClick={() => addOption(qi)}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> Add Option
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Numerical Selection */}
+                  {q.type === "numerical" && (
+                    <div className="space-y-2 max-w-sm">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Correct Numerical Value *
+                      </label>
+                      <Input
+                        value={String(q.correct)}
+                        onChange={(e) => updateQuestion(qi, { correct: e.target.value })}
+                        placeholder="e.g. 25.5 or -5"
+                      />
+                      <p className="text-[10px] text-muted-foreground">No options needed. Students type in their numerical answer.</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Explanation / Solution Reference</label>
+                    <Input
+                      value={q.explanation || ""}
+                      onChange={(e) => updateQuestion(qi, { explanation: e.target.value })}
+                      placeholder="Add hints/explanation for detailed result analysis..."
+                    />
                   </div>
                 </Card>
               ))}
@@ -693,7 +1247,7 @@ export default function AdminQuizzes() {
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editing ? "Update Quiz" : "Create Quiz"}
+              {editing ? "Update Exam Quiz" : "Create Exam Quiz"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -701,57 +1255,102 @@ export default function AdminQuizzes() {
 
       {/* ═══════════ Preview Dialog ═══════════ */}
       <Dialog open={!!previewQuiz} onOpenChange={() => setPreviewQuiz(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-primary" />
-              Quiz Preview
+              Exam Quiz Preview
             </DialogTitle>
           </DialogHeader>
           {previewQuiz && (
-            <div className="space-y-4 mt-2">
+            <div className="space-y-5 mt-2">
               <div>
                 <h2 className="text-lg font-bold">{previewQuiz.title}</h2>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center flex-wrap gap-2 mt-1">
                   <Badge variant="outline">{previewQuiz.skill_name}</Badge>
                   <span className="text-xs text-muted-foreground">
                     Pass: {previewQuiz.passing_score}% · {previewQuiz.questions.length} questions
                   </span>
+                  <span className="text-xs text-muted-foreground">· Duration: {previewQuiz.duration} mins</span>
+                  <span className="text-xs text-muted-foreground font-semibold text-primary">· Max Marks: {previewQuiz.total_marks}</span>
                 </div>
                 {previewQuiz.description && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2 bg-muted/30 p-2.5 rounded-lg border">
                     {previewQuiz.description}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-3">
-                {previewQuiz.questions.map((q, qi) => (
-                  <Card key={qi} className="p-4">
-                    <p className="font-medium text-sm mb-2">
-                      {qi + 1}. {q.question}
-                    </p>
-                    <div className="space-y-1.5">
-                      {q.options.map((opt, oi) => (
-                        <div
-                          key={oi}
-                          className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                            q.correct === oi
-                              ? "bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400"
-                              : "bg-muted/30"
-                          }`}
-                        >
-                          {q.correct === oi ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border border-muted-foreground/30 shrink-0" />
-                          )}
-                          {opt}
+              {/* Group Questions by Section */}
+              <div className="space-y-6">
+                {previewQuiz.sections.map((section, sIndex) => {
+                  const sectionQuestions = previewQuiz.questions.filter(q => q.section_id === section.id);
+                  if (sectionQuestions.length === 0) return null;
+                  return (
+                    <div key={section.id} className="space-y-3">
+                      <div className="border-b pb-1.5 flex justify-between items-center">
+                        <h3 className="font-bold text-sm text-primary flex items-center gap-2">
+                          <Badge variant="secondary" className="rounded-md">Sec {sIndex + 1}</Badge>
+                          {section.name}
+                        </h3>
+                        <div className="flex gap-3 text-xs text-muted-foreground">
+                          <span>Scheme: <strong className="text-green-600 font-medium">+{section.positive_marks}</strong> / <strong className="text-red-500 font-medium">{section.negative_marks}</strong></span>
+                          <span>Type: <strong className="capitalize">{section.question_type.replace("_", " ")}</strong></span>
                         </div>
-                      ))}
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {sectionQuestions.map((q, qi) => {
+                          const originalIndex = previewQuiz.questions.findIndex(x => x === q);
+                          return (
+                            <Card key={qi} className="p-4">
+                              <p className="font-medium text-sm mb-2">
+                                Q{originalIndex + 1}. {q.question}
+                              </p>
+                              
+                              {q.type === "numerical" ? (
+                                <div className="p-2 rounded bg-green-500/10 border border-green-500/20 text-xs font-semibold text-green-700 dark:text-green-400">
+                                  Correct numerical value: {String(q.correct)}
+                                </div>
+                              ) : (
+                                <div className="space-y-1.5">
+                                  {q.options.map((opt, oi) => {
+                                    const isCorrect = q.type === "multiple_choice" 
+                                      ? (Array.isArray(q.correct) && q.correct.includes(oi))
+                                      : q.correct === oi;
+                                    return (
+                                      <div
+                                        key={oi}
+                                        className={`flex items-center gap-2 p-2 rounded-md text-sm ${
+                                          isCorrect
+                                            ? "bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400"
+                                            : "bg-muted/30"
+                                        }`}
+                                      >
+                                        {isCorrect ? (
+                                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                                        ) : (
+                                          <div className="w-4 h-4 rounded-full border border-muted-foreground/30 shrink-0" />
+                                        )}
+                                        {opt}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              
+                              {q.explanation && (
+                                <p className="text-xs text-muted-foreground mt-2 border-t pt-2 italic">
+                                  <strong>Solution:</strong> {q.explanation}
+                                </p>
+                              )}
+                            </Card>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -792,13 +1391,14 @@ export default function AdminQuizzes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* ═══════════ Template Guide Dialog ═══════════ */}
       <Dialog open={showTemplateGuide} onOpenChange={setShowTemplateGuide}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="w-5 h-5 text-primary" />
-              Quiz Import Template Guide
+              Quiz Import CSV Template Guide
             </DialogTitle>
           </DialogHeader>
           
@@ -820,19 +1420,19 @@ export default function AdminQuizzes() {
                 </div>
                 
                 <Card className="p-4 border-primary/20 bg-primary/5">
+                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">
+                    <span>Section: {"{section_name}"}</span>
+                    <span>Scheme: +{"{positive_marks}"} / {"{negative_marks}"}</span>
+                  </div>
                   <p className="font-semibold text-sm mb-3">1. {"{question}"}</p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 p-2 rounded bg-background border text-xs">
                       <div className="w-3 h-3 rounded-full border border-primary bg-primary shrink-0" />
-                      {"{option1}"} <span className="text-[10px] text-muted-foreground ml-auto">(if correct_option_index is 0)</span>
+                      {"{option1}"} <span className="text-[10px] text-muted-foreground ml-auto">(if correct_answer matches option index)</span>
                     </div>
                     <div className="flex items-center gap-2 p-2 rounded bg-background border text-xs">
                       <div className="w-3 h-3 rounded-full border shrink-0" />
                       {"{option2}"}
-                    </div>
-                    <div className="flex items-center gap-2 p-2 rounded bg-background border text-xs opacity-60">
-                      <div className="w-3 h-3 rounded-full border shrink-0" />
-                      {"{option3}"}
                     </div>
                   </div>
                 </Card>
@@ -844,30 +1444,27 @@ export default function AdminQuizzes() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 border rounded bg-muted/30">
                   <p className="font-bold text-primary">quiz_title</p>
-                  <p className="text-muted-foreground">The name of the quiz. Questions with the same title are grouped into one quiz.</p>
+                  <p className="text-muted-foreground">Name of the quiz. Questions sharing a title are grouped into one exam.</p>
                 </div>
                 <div className="p-3 border rounded bg-muted/30">
-                  <p className="font-bold text-primary">skill_name</p>
-                  <p className="text-muted-foreground">The skill tag (e.g., React, UI Design).</p>
+                  <p className="font-bold text-primary">section_name</p>
+                  <p className="text-muted-foreground">Section e.g. "Physics Sec A" or "Maths Numericals".</p>
                 </div>
                 <div className="p-3 border rounded bg-muted/30">
-                  <p className="font-bold text-primary">question</p>
-                  <p className="text-muted-foreground">The actual text of the question.</p>
+                  <p className="font-bold text-primary">question_type</p>
+                  <p className="text-muted-foreground">Must be: `single_choice`, `multiple_choice`, or `numerical`.</p>
                 </div>
                 <div className="p-3 border rounded bg-muted/30">
-                  <p className="font-bold text-primary">correct_option_index</p>
-                  <p className="text-muted-foreground">Which option is correct? (0 for option1, 1 for option2, etc.)</p>
+                  <p className="font-bold text-primary">correct_answer</p>
+                  <p className="text-muted-foreground">Option index for single (0), comma-separated list for multiple (0,2), or number string for numerical (25.5).</p>
                 </div>
               </div>
             </div>
 
             <div className="bg-slate-950 p-4 rounded-lg text-slate-200">
-              <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">CSV Data Example (One Row)</p>
-              <code className="text-xs break-all block">
-                quiz_title,skill_name,description,passing_score,question,option1,option2,option3,option4,correct_option_index
-              </code>
-              <code className="text-xs break-all block mt-1 text-primary">
-                Final Exam,React,Test your React skills,70,What is Vite?,A bundler,A framework,A hook,A state,0
+              <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">CSV Column headers layout</p>
+              <code className="text-[11px] break-all block text-amber-400">
+                quiz_title,skill_name,description,passing_score,duration,difficulty,instructions,section_name,question_type,positive_marks,negative_marks,question,option1,option2,option3,option4,correct_answer,explanation
               </code>
             </div>
           </div>
