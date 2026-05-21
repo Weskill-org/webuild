@@ -7,6 +7,7 @@ import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { Profile, Review, Project, Wallet } from "@/types/database";
 
 interface LeaderboardEntry {
   id: string;
@@ -65,7 +66,7 @@ export default function Leaderboard() {
         return {
           id: p.id,
           name: p.full_name || p.company_name || p.university || "User",
-          role: p.role,
+          role: p.role || "",
           logo_url: p.logo_url,
           avgRating: Math.round(avg * 10) / 10,
           completedProjects: completed,
@@ -74,8 +75,8 @@ export default function Leaderboard() {
         };
       };
 
-      setAllStudents(profiles.filter((p: any) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
-      setAllCompanies(profiles.filter((p: any) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllStudents(profiles.filter((p: Profile) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter((p: Profile) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);
