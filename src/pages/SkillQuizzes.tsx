@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   Loader2, CheckCircle, XCircle, AlertCircle, Award, ShieldCheck, Trophy, 
   TrendingUp, Users, Star, X, Timer, ChevronLeft, ChevronRight, Bookmark,
-  Info, FileText, Check, HelpCircle, History, ArrowLeft, RefreshCw, Play
+  Info, FileText, Check, HelpCircle, History, ArrowLeft, RefreshCw, Play,
+  Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -63,6 +64,7 @@ export default function SkillQuizzes() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [badges, setBadges] = useState<Record<string, { passed: boolean; score: number }>>({});
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Exam Workflow States
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
@@ -98,6 +100,15 @@ export default function SkillQuizzes() {
   const [hasWarnedCriticalTime, setHasWarnedCriticalTime] = useState(false);
 
   const timerRef = useRef<any>(null);
+
+  const filteredQuizzes = quizzes.filter((q) => {
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      q.title.toLowerCase().includes(query) ||
+      q.skill_name.toLowerCase().includes(query) ||
+      (q.description && q.description.toLowerCase().includes(query))
+    );
+  });
 
   /* ───────────────── Fetching Data ───────────────── */
   const fetchAllData = async () => {
@@ -1569,6 +1580,26 @@ export default function SkillQuizzes() {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search quizzes by title, skill, or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 py-6 bg-background/50 backdrop-blur-sm border-border hover:border-muted-foreground/30 focus-visible:ring-primary transition-all rounded-xl shadow-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
         {/* Earned Badges Carousel/Tiles Section */}
         {Object.keys(badges).filter(qId => badges[qId].passed).length > 0 && (
           <div className="space-y-3">
@@ -1610,9 +1641,15 @@ export default function SkillQuizzes() {
           <Card className="p-8 text-center border-dashed">
             <p className="text-muted-foreground">No quizzes uploaded yet. Please check back later!</p>
           </Card>
+        ) : filteredQuizzes.length === 0 ? (
+          <Card className="p-8 text-center border-dashed flex flex-col items-center justify-center py-12">
+            <HelpCircle className="w-8 h-8 text-muted-foreground mb-2 opacity-60" />
+            <p className="font-semibold text-foreground text-sm">No quizzes found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try adjusting your keywords or clearing the search query.</p>
+          </Card>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {quizzes.map((q) => {
+            {filteredQuizzes.map((q) => {
               const badge = badges[q.id];
               const tier = badge ? getBadgeTier(badge.score) : null;
               

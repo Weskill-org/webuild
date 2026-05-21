@@ -326,6 +326,326 @@ const topics = [
     description: "PPC click-through curves, return on ad spend (ROAS) mathematical bounds, and SEO index crawl distributions.",
     domain: "marketing_creative",
     keywords: ["Click-Through Curve", "ROAS Math Bounds", "Crawl Distribution", "PPC Bidding", "Customer Acquisition"]
+  },
+  // 41. Python Programming
+  {
+    title: "Python: Advanced Metaprogramming & Memory Management",
+    skill_name: "Python Programming",
+    description: "Rigorous test on GIL concurrency constraints, custom decorators/metaclasses, and garbage collection mechanisms.",
+    domain: "software_engineering",
+    keywords: ["GIL Concurrency", "Metaclass Allocation", "Garbage Collection", "Weak Reference", "Asyncio Event Loop"]
+  },
+  // 42. Java Programming
+  {
+    title: "Java: JVM Memory Model & Concurrent Garbage Collection",
+    skill_name: "Java Programming",
+    description: "Deep dive into G1/ZGC collectors, JMM happen-before constraints, classloaders, and type erasure mechanics.",
+    domain: "software_engineering",
+    keywords: ["Happen-Before", "ZGC Collector", "Classloader Isolation", "Type Erasure", "ReentrantLock"]
+  },
+  // 43. JavaScript Programming
+  {
+    title: "JavaScript: Event Loop Phases & Execution Contexts",
+    skill_name: "JavaScript Programming",
+    description: "Tough conceptual questions on V8 optimization rules, macro/microtask queues, prototypes, and scope closures.",
+    domain: "software_engineering",
+    keywords: ["V8 Hidden Class", "Microtask Queue", "Prototype Chain", "Lexical Closure", "Temporal Dead Zone"]
+  },
+  // 44. PHP Programming
+  {
+    title: "PHP: Request Lifecycle & Opcode Optimization",
+    skill_name: "PHP Programming",
+    description: "Advanced concepts on OPcache internals, PSR standards compliance, resource streams, and runtime memory bounds.",
+    domain: "software_engineering",
+    keywords: ["OPcache Internals", "PSR Compliance", "Memory Limit", "FPM Process Pool", "Composer Autoloader"]
+  },
+  // 45. C++ Programming
+  {
+    title: "C++: RAII & Template Metaprogramming Bounds",
+    skill_name: "C++ Programming",
+    description: "Challenging questions on move semantics, smart pointer reference counts, vtables, and template specialization.",
+    domain: "software_engineering",
+    keywords: ["Move Semantics", "Vtable Pointer", "SFINAE Rules", "Smart Pointer", "Copy Elision"]
+  },
+  // 46. Go Programming
+  {
+    title: "Go: Goroutine Scheduler & Channel Concurrency",
+    skill_name: "Go Programming",
+    description: "Under-the-hood checks on GMP scheduler, channel selection blocks, slice growth ratios, and escape analysis.",
+    domain: "software_engineering",
+    keywords: ["GMP Scheduler", "Channel Selection", "Slice Header Growth", "Escape Analysis", "Defer Overhead"]
+  },
+  // 47. Rust Programming
+  {
+    title: "Rust: Lifetime Annotations & Ownership Safety",
+    skill_name: "Rust Programming",
+    description: "Tough questions on the borrow checker rules, variance, unsafe memory alignment, and procedural macros.",
+    domain: "software_engineering",
+    keywords: ["Borrow Checker", "Unsafe Block", "Lifetime Variance", "Procedural Macro", "RAII Drop Semantics"]
+  },
+  // 48. TypeScript Programming
+  {
+    title: "TypeScript: Type Gymnastics & Conditional Typings",
+    skill_name: "TypeScript Programming",
+    description: "Highly advanced exercises in mapped/conditional types, template literal types, and compiler configuration flags.",
+    domain: "software_engineering",
+    keywords: ["Conditional Type", "Mapped Type", "Template Literal Type", "Covariance Contravariance", "Declaration Merging"]
+  },
+  // 49. C# Programming
+  {
+    title: "C#: CLR Internals & Asynchronous Task Scheduler",
+    skill_name: "C# Programming",
+    description: "Detailed test on LOH garbage collection, async state machines, reflection boundaries, and LINQ deferred execution.",
+    domain: "software_engineering",
+    keywords: ["Large Object Heap", "State Machine Async", "LINQ Execution", "Type Reflection", "CLR ThreadPool"]
+  },
+  // 50. Ruby Programming
+  {
+    title: "Ruby: Dynamic Metaprogramming & Object Model",
+    skill_name: "Ruby Programming",
+    description: "Deep dive into Eigenclasses, method lookup tables, Proc vs Lambda scope, and MRI garbage collection.",
+    domain: "software_engineering",
+    keywords: ["Eigenclass Method", "Method Lookup", "Proc Lambda Scope", "MRI GC Allocation", "Singleton Class"]
+  },
+  // 51. Swift Programming
+  {
+    title: "Swift: Automatic Reference Counting & Value Type Mechanics",
+    skill_name: "Swift Programming",
+    description: "Advanced concepts on weak/unowned references, protocol-oriented design, Copy-on-Write (COW) implementations, and GCD.",
+    domain: "software_engineering",
+    keywords: ["Reference Counting ARC", "Copy-on-Write COW", "Protocol Extension", "GCD Dispatch", "Struct Stack Allocation"]
+  },
+  // 52. Kotlin Programming
+  {
+    title: "Kotlin: Coroutine Scopes & Null Safety Compiler Bounds",
+    skill_name: "Kotlin Programming",
+    description: "Detailed check on suspending functions, structured concurrency, delegate properties, and JVM bytecode outputs.",
+    domain: "software_engineering",
+    keywords: ["Coroutine Context", "Null Safety", "Property Delegation", "Bytecode Interoperability", "Flow Stream"]
+  },
+  // 53. HTML5 & Web Semantics
+  {
+    title: "HTML5: Custom Elements, Shadow DOM & Layout Parsing",
+    skill_name: "HTML5 & Web Semantics",
+    description: "Usability and structure questions on Shadow DOM tree slots, template elements, semantic tree weights, and viewport guidelines.",
+    domain: "marketing_creative",
+    keywords: ["Shadow DOM", "Custom Elements", "Accessibility Tree", "Template Element", "Viewport Scaling"]
+  },
+  // 54. CSS3 & Layout Engines
+  {
+    title: "CSS3: Flexbox/Grid Mathematics & Render Reflows",
+    skill_name: "CSS3 & SASS",
+    description: "Concept-heavy questions on layout reflow boundaries, flex-basis computation math, specificity scoring, and GPU paint layers.",
+    domain: "marketing_creative",
+    keywords: ["Reflow Boundary", "Flex-Basis Math", "Specificity Score", "Hardware Acceleration", "CSS Grid Layout"]
+  },
+  // 55. SQL & Query Optimization
+  {
+    title: "SQL: Index Structures, Joins & Transaction Concurrency",
+    skill_name: "SQL & Query Optimization",
+    description: "Query optimization, execution paths, B-Tree vs Hash index scans, nested loops, hash joins, and transaction anomalies.",
+    domain: "software_engineering",
+    keywords: ["Hash Join Scan", "Index Scan Optimizer", "Read Committed Anomalies", "Window Partition", "Nested Loop Join"]
+  },
+  // 56. Scala Programming
+  {
+    title: "Scala: Functional Composition & Implicit Resolution",
+    skill_name: "Scala Programming",
+    description: "Monadic compositions, implicit parameters resolution scopes, Akka Actor mailbox limits, and compiler macros.",
+    domain: "software_engineering",
+    keywords: ["Monadic Composition", "Implicit Resolution", "Akka Mailbox Limit", "Pattern Matching", "Covariant Param"]
+  },
+  // 57. Shell Scripting & Bash
+  {
+    title: "Shell Scripting: Bash Streams, Subshells & Process Pipes",
+    skill_name: "Shell Scripting & Bash",
+    description: "Complex stream redirections (stderr/stdout), globbing expansions, subshell variable scopes, and signal handling traps.",
+    domain: "software_engineering",
+    keywords: ["Stream Redirection", "Globbing Expansion", "Subshell Variable Scope", "Signal Handler Trap", "Exit Code Evaluation"]
+  },
+  // 58. Perl Programming
+  {
+    title: "Perl: Regex Engine Bounds & Symbol References",
+    skill_name: "Perl Programming",
+    description: "Regex backtracking limits, typeglob variables, symbolic/hard references, and memory allocation optimization.",
+    domain: "software_engineering",
+    keywords: ["Regex Backtracking", "Typeglob Variable", "Symbolic Reference", "Garbage Collection", "Scalar Context"]
+  },
+  // 59. Haskell Programming
+  {
+    title: "Haskell: Lazy Evaluation Mechanics & Monad Transformers",
+    skill_name: "Haskell Programming",
+    description: "Thunk allocations, lazy evaluation graph reductions, type class instance resolutions, and monadic effects stacking.",
+    domain: "software_engineering",
+    keywords: ["Thunk Allocation", "Lazy Evaluation", "Type Class Instance", "Monad Transformer", "Curried Function"]
+  },
+  // 60. R Programming
+  {
+    title: "R: Vectorized Computations & Memory Allocations",
+    skill_name: "R Programming",
+    description: "Performance bounds of vectorized execution, S3/S4 object inheritance, data table memory copies, and graphics engine limits.",
+    domain: "ai_data_science",
+    keywords: ["Vectorized Execution", "Object Inheritance S3", "Data Table Memory", "Graphics Engine Limit", "Lazy Evaluation R"]
+  },
+  // 61. MATLAB & Linear Algebra
+  {
+    title: "MATLAB: Numerical Integration & Matrix Transformations",
+    skill_name: "MATLAB & Linear Algebra",
+    description: "Solving differential systems, ODE solver steps, vectorized matrix multiplications, and custom toolboxes.",
+    domain: "ai_data_science",
+    keywords: ["ODE Solver", "Matrix Vectorization", "Laplace Transform", "Eigenvalue Boundary", "Sparse Matrix Solver"]
+  },
+  // 62. Objective-C Runtime
+  {
+    title: "Objective-C: Message Sending & Dynamic Method Resolution",
+    skill_name: "Objective-C",
+    description: "Deep dive into objc_msgSend, class method dispatch swizzling, category implementations, and retain/release cycles under ARC.",
+    domain: "software_engineering",
+    keywords: ["objc_msgSend Dispatch", "Method Swizzling", "Dynamic Resolution", "ARC Retain Cycle", "Class Category"]
+  },
+  // 63. Dart Programming
+  {
+    title: "Dart: Event Loops, Microtasks & Compilation Bridges",
+    skill_name: "Dart Programming",
+    description: "Concepts in single-threaded event processing, microtask queues, JIT vs AOT compiling steps, and memory GC.",
+    domain: "software_engineering",
+    keywords: ["Microtask Queue", "Event Loops Dart", "JIT AOT Compilation", "Garbage Collection Dart", "Stream StreamController"]
+  },
+  // 64. Assembly Language & CPU
+  {
+    title: "Assembly: Registers, Memory Offsets & CPU Architecture",
+    skill_name: "Assembly Language & CPU Architecture",
+    description: "Registers mapping (x86/ARM), stack frame boundaries, CPU interrupt latency steps, and cache memory alignment rules.",
+    domain: "software_engineering",
+    keywords: ["Stack Frame Boundary", "Register Mapping", "Interrupt Latency", "Cache Alignment", "Instruction Pipeline"]
+  },
+  // 65. Solidity & Smart Contracts
+  {
+    title: "Solidity: Smart Contract Gas Mechanics & Security Audits",
+    skill_name: "Solidity & Smart Contracts",
+    description: "Gas pricing optimizations, reentrancy attacks, smart contract state slots allocation rules, and overflow checks.",
+    domain: "software_engineering",
+    keywords: ["Gas Optimization Solidity", "Reentrancy Attacks", "State Slot Allocation", "Overflow Checks EVM", "Fallback Execution"]
+  },
+  // 66. GraphQL API Design
+  {
+    title: "GraphQL: Schema Architecture & Resolver Query Efficiencies",
+    skill_name: "GraphQL",
+    description: "Resolving N+1 database queries via dataloaders, AST query validation, schema mutations, and subscriptions scalability.",
+    domain: "software_engineering",
+    keywords: ["Dataloader Batching", "AST Query Validation", "GraphQL Mutation", "Subscriptions Scaling", "N+1 Problem Resolving"]
+  },
+  // 67. React & TypeScript Integration
+  {
+    title: "React/TypeScript: Type Safety in Hooks & Custom Renderers",
+    skill_name: "TypeScript & React Integration",
+    description: "Strict typing for hooks/events, advanced polymorphic component patterns, context typings, and render bounds.",
+    domain: "software_engineering",
+    keywords: ["Polymorphic Component", "Hook Typing React", "Context Typings TS", "Render Performance", "Strict Event Handler"]
+  },
+  // 68. Docker & Containerization
+  {
+    title: "Docker: Storage Layer Isolation & Network Drivers",
+    skill_name: "Docker & Containerization",
+    description: "Under-the-hood union filesystems overlay2, container cgroups allocation bounds, and overlay network routing topologies.",
+    domain: "software_engineering",
+    keywords: ["Overlay2 Filesystem", "Cgroups Isolation", "Overlay Network Routing", "Docker API Engine", "Volume Mount Latency"]
+  },
+  // 69. Kubernetes Administration
+  {
+    title: "Kubernetes: Scheduling Algorithms & Pod Networking",
+    skill_name: "Kubernetes Administration",
+    description: "Scheduling filters/scoring, CNI networking constraints, Ingress controllers routing tables, and secret decryption keys.",
+    domain: "software_engineering",
+    keywords: ["Scheduling Filters", "CNI Networking Constraints", "Ingress Routing Table", "Secret Decryption Key", "ConfigMap Volume"]
+  },
+  // 70. Elasticsearch & Lucene
+  {
+    title: "Elasticsearch: Inverted Index & Lucene Segment Searches",
+    skill_name: "Elasticsearch & Lucene",
+    description: "TF-IDF / BM25 scoring mechanics, analyzer character filters, segment merge bounds, and shard routing logic.",
+    domain: "software_engineering",
+    keywords: ["BM25 Scoring", "Analyzer Filters", "Segment Merge Bounds", "Shard Routing Logic", "Inverted Index Lucene"]
+  },
+  // 71. Redis & In-Memory Databases
+  {
+    title: "Redis: Data Type Implementation & Cluster Scalability",
+    skill_name: "Redis & In-Memory Databases",
+    description: "ZipList vs SkipList structures, AOF vs RDB persistence performance, and cluster keyslots redistribution.",
+    domain: "software_engineering",
+    keywords: ["ZipList SkipList", "AOF Persistence", "RDB Persistence", "Cluster Keyslots", "PubSub Messaging"]
+  },
+  // 72. Kafka & Event Streaming
+  {
+    title: "Kafka: Topic Partitioning & High-Throughput Consumers",
+    skill_name: "Kafka & Event Streaming",
+    description: "Producer batch allocations, consumer group partition allocations, broker logs retention, and ZooKeeper/KRaft metadata.",
+    domain: "software_engineering",
+    keywords: ["Producer Batching", "Consumer Partition Allocation", "Broker Log Retention", "ZooKeeper KRaft Metadata", "Offset Commits"]
+  },
+  // 73. Terraform & Infrastructure
+  {
+    title: "Terraform: State Graph Resolvers & Lifecycle Actions",
+    skill_name: "Terraform & Infrastructure",
+    description: "State lock mechanics, DAG resource dependency evaluations, provider cache structures, and import boundaries.",
+    domain: "software_engineering",
+    keywords: ["State Lock Mechanics", "DAG Dependency Evaluation", "Provider Cache", "Import Boundaries Terraform", "Lifecycle Hooks"]
+  },
+  // 74. Ansible & Configuration
+  {
+    title: "Ansible: Task Playbooks & Idempotency Calculations",
+    skill_name: "Ansible & Configuration",
+    description: "Playbook execution paths, variable precedence rules, host connection optimizations, and custom modules runtime.",
+    domain: "software_engineering",
+    keywords: ["Playbook Execution Paths", "Variable Precedence", "Connection Optimizations", "Custom Module Runtime", "Idempotency Compliance"]
+  },
+  // 75. Next.js & Server Components
+  {
+    title: "Next.js: React Server Components & Routing Cache Maps",
+    skill_name: "Next.js & Server Components",
+    description: "RSC payload serialization, static site generation revalidation (ISR) limits, and Server Actions security barriers.",
+    domain: "software_engineering",
+    keywords: ["RSC Payload Serialization", "ISR Revalidation Limits", "Server Actions Security", "Client Server Boundary", "Dynamic Routing Cache"]
+  },
+  // 76. Django Framework
+  {
+    title: "Django: ORM Query Compiling & Custom Middleware Pipes",
+    skill_name: "Django & Python Web",
+    description: "Query optimization (select/prefetch_related), custom middleware request-response flows, and forms CSRF verification.",
+    domain: "software_engineering",
+    keywords: ["ORM Query Optimization", "Middleware Request Response", "CSRF Verification", "Form Validation Django", "Class Based Views"]
+  },
+  // 77. Spring Boot Framework
+  {
+    title: "Spring Boot: Context Inversion of Control & AOP Boundaries",
+    skill_name: "Spring Boot & Java Enterprise",
+    description: "Dependency injection resolution, bean lifecycle transitions, aspect-oriented programming proxy classes, and transactional limits.",
+    domain: "software_engineering",
+    keywords: ["IOC Dependency Injection", "Bean Lifecycle Transitions", "AOP Proxy Classes", "Transactional Limits Spring", "AutoConfiguration Internals"]
+  },
+  // 78. Laravel Framework
+  {
+    title: "Laravel: Service Container & Eloquent ORM Efficiencies",
+    skill_name: "Laravel & PHP MVC",
+    description: "Eloquent eager loading queries, service container bindings, custom pipeline middleware, and Blade engine compiler optimizations.",
+    domain: "software_engineering",
+    keywords: ["Eager Loading Eloquent", "Service Container Bindings", "Pipeline Middleware Laravel", "Blade Compiler Optimizations", "Service Provider Registry"]
+  },
+  // 79. Express.js & Node Web
+  {
+    title: "Express.js: Middleware Call Stacks & Route Multiplexing",
+    skill_name: "Express.js & Node Web",
+    description: "Router stack flow parameters, request body parser memory sizes, error handling middleware limits, and session storage.",
+    domain: "software_engineering",
+    keywords: ["Router Stack Flow", "Body Parser Memory", "Error Handling Middleware", "Session Storage Express", "Route Multiplexing Node"]
+  },
+  // 80. Angular Framework
+  {
+    title: "Angular: Change Detection Cycles & RxJS Stream Pipelines",
+    skill_name: "Angular & TypeScript",
+    description: "Zones change detection boundaries, OnPush performance modes, component injections, and RxJS subscription management.",
+    domain: "software_engineering",
+    keywords: ["Zones Change Detection", "OnPush Performance Mode", "Component Injections Angular", "RxJS Subscription Management", "Angular Template Compiler"]
   }
 ];
 
@@ -626,8 +946,8 @@ function generateQuestions(topic, index) {
 
 // Generate the seed SQL file contents.
 function generateSQL() {
-  console.log("Generating SQL statements for 40 quizzes * 60 questions = 2,400 questions...");
-  let sql = `-- Migration to seed 40 advanced, high-rigor diverse domain quizzes with 60 questions each
+  console.log("Generating SQL statements for 80 quizzes * 60 questions = 4,800 questions...");
+  let sql = `-- Migration to seed 80 advanced, high-rigor diverse domain quizzes with 60 questions each
 -- This is generated programmatically to ensure correctness and scale.
 
 -- Clear previous seeded quizzes except the manual Power BI fundamentals quiz
@@ -716,7 +1036,7 @@ if (!fs.existsSync(migrationsDir)) {
   fs.mkdirSync(migrationsDir, { recursive: true });
 }
 
-const filename = '20260521160000_seed_40_diverse_quizzes.sql';
+const filename = '20260521195000_seed_80_diverse_quizzes.sql';
 const filePath = path.join(migrationsDir, filename);
 
 const sqlContent = generateSQL();
