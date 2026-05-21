@@ -86,7 +86,7 @@ const Students = () => {
       const ids = [...new Set(bsList.map((bs) => bs.student_id))];
       const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
       const profileMap: Record<string, Profile> = {};
-      (profiles ?? []).forEach((p: any) => (profileMap[p.id] = p as Profile));
+      (profiles ?? []).forEach((p) => (profileMap[p.id] = p as Profile));
       setStudents(bsList.map((bs) => ({ ...bs, profile: profileMap[bs.student_id] })));
     } else {
       setStudents([]);
@@ -156,9 +156,10 @@ const Students = () => {
           }, 1500);
         }
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
-      setAddResult({ status: "error", message: err.message });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+      setAddResult({ status: "error", message: errorMessage });
     } finally {
       setSubmitting(false);
     }

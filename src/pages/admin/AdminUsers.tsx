@@ -62,7 +62,7 @@ export default function AdminUsers() {
     });
     
     if (error) { 
-      toast({ title: "Error", description: error.message, variant: "destructive" }); 
+      toast({ title: "Error", description: error.message || "Failed to verify user", variant: "destructive" });
       return; 
     }
     

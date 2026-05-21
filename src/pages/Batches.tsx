@@ -61,10 +61,26 @@ const Batches = () => {
     // Get student counts
     if (batchList.length > 0) {
       const counts: Record<string, number> = {};
-      for (const b of batchList) {
-        const { count } = await supabase.from("batch_students").select("*", { count: "exact", head: true }).eq("batch_id", b.id);
-        counts[b.id] = count ?? 0;
+      // Initialize counts to 0 for all batches
+      const batchIds = batchList.map(b => b.id);
+      batchIds.forEach(id => {
+        counts[id] = 0;
+      });
+
+      // Fetch all batch_students for the current batches in a single query
+      const { data: studentData, error } = await supabase
+        .from("batch_students")
+        .select("batch_id")
+        .in("batch_id", batchIds);
+
+      if (!error && studentData) {
+        studentData.forEach((student) => {
+          if (counts[student.batch_id] !== undefined) {
+            counts[student.batch_id]++;
+          }
+        });
       }
+
       setStudentCounts(counts);
     }
     setLoading(false);
