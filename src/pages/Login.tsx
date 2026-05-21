@@ -93,9 +93,9 @@ const Login = () => {
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login failed", err);
-      const code = err?.code;
+      const code = err && typeof err === 'object' && 'code' in err ? (err as Record<string, unknown>).code : undefined;
 
       if (code === "email_not_confirmed") {
         setBannerType("email_not_confirmed");
@@ -256,7 +256,7 @@ const Login = () => {
               onClick={async () => {
                 try {
                   await signInWithGoogle();
-                } catch (err) {
+                } catch (err: unknown) {
                   console.error("Google sign in error", err);
                   toast({
                     variant: "destructive",
