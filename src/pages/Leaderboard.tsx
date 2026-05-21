@@ -51,20 +51,20 @@ export default function Leaderboard() {
       }
 
       const walletMap: Record<string, number> = {};
-      wallets.forEach((w) => { walletMap[w.owner_id] = w.balance ?? 0; });
+      wallets.forEach((w: { owner_id: string; balance: number | null }) => { walletMap[w.owner_id] = w.balance ?? 0; });
 
       const reviewMap: Record<string, number[]> = {};
-      reviews.forEach((r) => {
+      reviews.forEach((r: { reviewee_id: string; rating: number }) => {
         if (!reviewMap[r.reviewee_id]) reviewMap[r.reviewee_id] = [];
         reviewMap[r.reviewee_id].push(r.rating);
       });
 
       const completedMap: Record<string, number> = {};
-      projects.filter((p) => p.completed).forEach((p) => {
+      projects.filter((p: { owner_id: string; completed: boolean }) => p.completed).forEach((p: { owner_id: string; completed: boolean }) => {
         completedMap[p.owner_id] = (completedMap[p.owner_id] ?? 0) + 1;
       });
 
-      const buildEntry = (p: Tables<"profiles">): LeaderboardEntry => {
+      const buildEntry = (p: Profile): LeaderboardEntry => {
         const ratings = reviewMap[p.id] ?? [];
         const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
         const completed = completedMap[p.id] ?? 0;
@@ -81,8 +81,8 @@ export default function Leaderboard() {
         };
       };
 
-      setAllStudents(profiles.filter((p) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
-      setAllCompanies(profiles.filter((p) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllStudents(profiles.filter((p: Profile) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter((p: Profile) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);
