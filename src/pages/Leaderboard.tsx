@@ -7,6 +7,7 @@ import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { Profile, Review, Project, Wallet } from "@/types/database";
 
 interface LeaderboardEntry {
   id: string;
@@ -44,20 +45,20 @@ export default function Leaderboard() {
       const wallets = walletsRes.data ?? [];
 
       const walletMap: Record<string, number> = {};
-      wallets.forEach((w: { owner_id: string; balance: number | null }) => { walletMap[w.owner_id] = w.balance ?? 0; });
+      wallets.forEach((w: Wallet) => { walletMap[w.owner_id] = w.balance ?? 0; });
 
       const reviewMap: Record<string, number[]> = {};
-      reviews.forEach((r: { reviewee_id: string; rating: number }) => {
+      reviews.forEach((r: Review) => {
         if (!reviewMap[r.reviewee_id]) reviewMap[r.reviewee_id] = [];
         reviewMap[r.reviewee_id].push(r.rating);
       });
 
       const completedMap: Record<string, number> = {};
-      projects.filter((p: { completed: boolean }) => p.completed).forEach((p: { owner_id: string; completed: boolean }) => {
+      projects.filter((p: Project) => p.completed).forEach((p: Project) => {
         completedMap[p.owner_id] = (completedMap[p.owner_id] ?? 0) + 1;
       });
 
-      const buildEntry = (p: { id: string; full_name?: string | null; company_name?: string | null; university?: string | null; role?: string | null; logo_url?: string | null }): LeaderboardEntry => {
+      const buildEntry = (p: Profile): LeaderboardEntry => {
         const ratings = reviewMap[p.id] ?? [];
         const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
         const completed = completedMap[p.id] ?? 0;
@@ -66,7 +67,7 @@ export default function Leaderboard() {
           id: p.id,
           name: p.full_name || p.company_name || p.university || "User",
           role: p.role || "",
-          logo_url: p.logo_url || null,
+          logo_url: p.logo_url,
           avgRating: Math.round(avg * 10) / 10,
           completedProjects: completed,
           totalEarnings: earnings,
@@ -74,8 +75,8 @@ export default function Leaderboard() {
         };
       };
 
-      setAllStudents(profiles.filter((p: { role?: string | null }) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
-      setAllCompanies(profiles.filter((p: { role?: string | null }) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllStudents(profiles.filter((p: Profile) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter((p: Profile) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);
