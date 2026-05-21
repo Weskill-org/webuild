@@ -113,7 +113,7 @@ const Blog = () => {
   const { toast } = useToast();
 
   const handleShare = (platform: string, post: typeof allPosts[0]) => {
-    const url = window.location.href;
+    const url = window.location.origin + window.location.pathname;
     const text = `Check out this article: ${post.title}`;
     let shareUrl = '';
 
@@ -139,7 +139,8 @@ const Blog = () => {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const url = window.location.origin + window.location.pathname;
+      await navigator.clipboard.writeText(url);
       setIsCopied(true);
       toast({
         title: "Link Copied!",
