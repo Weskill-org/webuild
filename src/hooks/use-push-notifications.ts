@@ -139,7 +139,6 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationActionPerformed',
           (action: ActionPerformed) => {
-            console.log('[Push] Notification tapped:', action);
             const data = action.notification.data ?? {};
             handleNotificationTap(data);
           }
