@@ -40,8 +40,6 @@ export default function usePushNotifications() {
 
       if (error) {
         console.error('[Push] Error saving FCM token:', error);
-      } else {
-        console.log('[Push] FCM token saved successfully');
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -61,13 +59,8 @@ export default function usePushNotifications() {
         .delete()
         .eq('user_id', user.id)
         .eq('token', tokenRef.current);
-      console.log('[Push] FCM token removed');
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error('[Push] Error removing token:', err.message);
-      } else {
-        console.error('[Push] Error removing token:', String(err));
-      }
+    } catch (err) {
+      console.error('[Push] Error removing token:', err);
     }
   }, [user]);
 
@@ -113,7 +106,6 @@ export default function usePushNotifications() {
 
         // 3. Listen for registration success → save token
         PushNotifications.addListener('registration', async (token: Token) => {
-          console.log('[Push] Registration token:', token.value);
           tokenRef.current = token.value;
           await saveToken(token.value);
         });
