@@ -60,12 +60,12 @@ export default function AdminUsers() {
 
   const handleToggleVerified = async (userId: string, currentStatus: boolean | null) => {
     const newStatus = !currentStatus;
-    const { data, error } = await supabase.functions.invoke("admin-action", {
-      body: { action: "toggle_verified", userId, payload: { verified: newStatus } }
+    const { error } = await supabase.functions.invoke("admin-verify-user", {
+      body: { userId, verified: newStatus }
     });
     
-    if (error || data?.error) {
-      toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+    if (error) { 
+      toast({ title: "Error", description: error.message || "Failed to verify user", variant: "destructive" });
       return; 
     }
     
