@@ -45,8 +45,15 @@ export default function AdminUsers() {
 
   const handleRoleAction = async (userId: string, role: string, action: string) => {
     const finalRole = action === "grant" ? role : "user";
-    const { error } = await supabase.from("profiles").update({ role: finalRole }).eq("id", userId);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    const { data, error } = await supabase.functions.invoke("admin-action", {
+      body: { action: "update_role", userId, payload: { role: finalRole } }
+    });
+
+    if (error || data?.error) {
+      toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+
     setUsers(users.map(u => u.id === userId ? { ...u, role: finalRole } : u));
     toast({ title: `${action === "grant" ? "Granted" : "Revoked"} ${role} role` });
   };
