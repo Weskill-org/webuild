@@ -11,6 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Search, IndianRupee, Clock, Briefcase, Filter, Bookmark, BookmarkCheck, X, Layers, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -282,9 +287,21 @@ const ProjectMarketplace = () => {
                       <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
                     </div>
                     <div className="flex items-center gap-2 ml-3 shrink-0">
-                      <Button variant="ghost" size="icon" onClick={() => toggleBookmark(project.id)}>
-                        {isBookmarked ? <BookmarkCheck className="w-5 h-5 text-primary" /> : <Bookmark className="w-5 h-5" />}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleBookmark(project.id)}
+                            aria-label={isBookmarked ? "Remove bookmark" : "Bookmark project"}
+                          >
+                            {isBookmarked ? <BookmarkCheck className="w-5 h-5 text-primary" /> : <Bookmark className="w-5 h-5" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isBookmarked ? "Remove bookmark" : "Bookmark project"}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
 
