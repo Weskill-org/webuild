@@ -7,7 +7,7 @@ import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
-import { Profile } from "@/types/database";
+import { Profile, Review, Project, Wallet } from "@/types/database";
 
 interface LeaderboardEntry {
   id: string;
@@ -32,17 +32,23 @@ export default function Leaderboard() {
 
   useEffect(() => {
     (async () => {
-      const [profilesRes, reviewsRes, projectsRes, walletsRes] = await Promise.all([
-        supabase.from("profiles").select("*"),
-        supabase.from("reviews").select("*"),
-        supabase.from("projects").select("id, owner_id, status, completed"),
-        supabase.from("wallets").select("owner_id, balance"),
-      ]);
+      const { data: profiles, error } = await supabase.from('profiles').select(`
+        id,
+        full_name,
+        company_name,
+        university,
+        role,
+        logo_url,
+        reviews:reviews!reviews_reviewee_id_fkey(rating),
+        projects:projects!projects_owner_id_fkey(completed),
+        wallets:wallets!wallets_owner_id_fkey(balance)
+      `).in('role', ['student', 'company']);
 
-      const profiles = profilesRes.data ?? [];
-      const reviews = reviewsRes.data ?? [];
-      const projects = projectsRes.data ?? [];
-      const wallets = walletsRes.data ?? [];
+      if (error || !profiles) {
+        console.error("Error fetching leaderboard data:", error);
+        setLoading(false);
+        return;
+      }
 
       const walletMap: Record<string, number> = {};
       wallets.forEach((w: { owner_id: string; balance: number | null }) => { walletMap[w.owner_id] = w.balance ?? 0; });
@@ -66,7 +72,7 @@ export default function Leaderboard() {
         return {
           id: p.id,
           name: p.full_name || p.company_name || p.university || "User",
-          role: p.role || "unknown",
+          role: p.role || "",
           logo_url: p.logo_url,
           avgRating: Math.round(avg * 10) / 10,
           completedProjects: completed,
