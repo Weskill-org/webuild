@@ -55,7 +55,7 @@ export default function AdminWallets() {
                   <TableCell className="text-sm font-medium">{p?.full_name || p?.company_name || "—"}</TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{p?.role || "—"}</Badge></TableCell>
                   <TableCell className="text-sm font-semibold">{inr(w.balance ?? 0)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{w.currency}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{w.currency || "INR"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{new Date(w.updated_at).toLocaleDateString()}</TableCell>
                 </TableRow>
               );
