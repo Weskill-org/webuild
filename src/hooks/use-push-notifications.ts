@@ -119,8 +119,6 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationReceived',
           (notification: PushNotificationSchema) => {
-            console.log('[Push] Foreground notification:', notification);
-
             // Show in-app toast for foreground notifications
             toast({
               title: notification.title ?? 'Notification',
