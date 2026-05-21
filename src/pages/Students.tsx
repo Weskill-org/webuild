@@ -86,7 +86,7 @@ const Students = () => {
       const ids = [...new Set(bsList.map((bs) => bs.student_id))];
       const { data: profiles } = await supabase.from("profiles").select("*").in("id", ids);
       const profileMap: Record<string, Profile> = {};
-      (profiles ?? []).forEach((p: any) => (profileMap[p.id] = p as Profile));
+      (profiles ?? []).forEach((p) => (profileMap[p.id] = p as Profile));
       setStudents(bsList.map((bs) => ({ ...bs, profile: profileMap[bs.student_id] })));
     } else {
       setStudents([]);
