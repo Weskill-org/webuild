@@ -156,9 +156,10 @@ const Students = () => {
           }, 1500);
         }
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
-      setAddResult({ status: "error", message: err.message });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
+      setAddResult({ status: "error", message: errorMessage });
     } finally {
       setSubmitting(false);
     }
