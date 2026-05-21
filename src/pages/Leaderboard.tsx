@@ -44,20 +44,20 @@ export default function Leaderboard() {
       const wallets = walletsRes.data ?? [];
 
       const walletMap: Record<string, number> = {};
-      wallets.forEach((w: any) => { walletMap[w.owner_id] = w.balance ?? 0; });
+      wallets.forEach(w => { walletMap[w.owner_id] = w.balance ?? 0; });
 
       const reviewMap: Record<string, number[]> = {};
-      reviews.forEach((r: any) => {
+      reviews.forEach(r => {
         if (!reviewMap[r.reviewee_id]) reviewMap[r.reviewee_id] = [];
         reviewMap[r.reviewee_id].push(r.rating);
       });
 
       const completedMap: Record<string, number> = {};
-      projects.filter((p: any) => p.completed).forEach((p: any) => {
+      projects.filter(p => p.completed).forEach(p => {
         completedMap[p.owner_id] = (completedMap[p.owner_id] ?? 0) + 1;
       });
 
-      const buildEntry = (p: any): LeaderboardEntry => {
+      const buildEntry = (p: typeof profiles[0]): LeaderboardEntry => {
         const ratings = reviewMap[p.id] ?? [];
         const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
         const completed = completedMap[p.id] ?? 0;
@@ -65,7 +65,7 @@ export default function Leaderboard() {
         return {
           id: p.id,
           name: p.full_name || p.company_name || p.university || "User",
-          role: p.role,
+          role: p.role as string,
           logo_url: p.logo_url,
           avgRating: Math.round(avg * 10) / 10,
           completedProjects: completed,
@@ -74,8 +74,8 @@ export default function Leaderboard() {
         };
       };
 
-      setAllStudents(profiles.filter((p: any) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
-      setAllCompanies(profiles.filter((p: any) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllStudents(profiles.filter(p => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter(p => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);
