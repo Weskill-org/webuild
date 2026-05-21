@@ -54,12 +54,14 @@ const VerifyCertificate = () => {
   }, [uid]);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    navigator.clipboard.writeText(cleanUrl);
     toast({ title: "Link copied to clipboard!" });
   };
 
   const handleLinkedInShare = () => {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`;
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cleanUrl)}`;
     window.open(url, "_blank");
   };
 
