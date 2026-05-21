@@ -4,6 +4,7 @@ import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from '@/hooks/use-toast';
 import { Project, Message, Wallet, Transaction, Certificate, Notification } from '@/types/database';
+import { useQueryClient } from '@tanstack/react-query';
 
 type TableName = 'projects' | 'wallets' | 'transactions' | 'messages' | 'certificates' | 'notifications';
 
@@ -21,6 +22,7 @@ interface RealtimeRow {
 
 export default function useRealtime() {
   const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -54,6 +56,18 @@ export default function useRealtime() {
     switch (table) {
       case 'projects':
         updater(setProjects);
+        queryClient.setQueryData<Project[]>(['realtime-projects', profile?.id], (old) => {
+          if (!old) return old;
+          let next = old;
+          if (eventType === 'INSERT' && newRow) {
+            next = [newRow as unknown as Project, ...old];
+          } else if (eventType === 'UPDATE' && newRow) {
+            next = old.map((r) => (r.id === newRow.id ? { ...r, ...newRow as unknown as Project } : r));
+          } else if (eventType === 'DELETE' && oldRow) {
+            next = old.filter((r) => r.id !== oldRow.id);
+          }
+          return next;
+        });
         break;
       case 'messages':
         updater(setMessages);
@@ -71,7 +85,7 @@ export default function useRealtime() {
         updater(setNotifications);
         break;
     }
-  }, []);
+  }, [profile?.id, queryClient]);
 
   useEffect(() => {
     if (!user || !profile?.id) return;
@@ -160,15 +174,8 @@ export default function useRealtime() {
     // Initial fetch
     (async () => {
       try {
-        // --- Role-aware project fetching ---
-        if (profile?.role === 'company') {
-          // Company: only their own projects
-          const { data: projData } = await supabase
-            .from('projects')
-            .select('*, profiles:owner_id(company_name, logo_url)')
-            .eq('owner_id', profile.id);
-          setProjects((projData as Project[]) ?? []);
-        } else if (profile?.role === 'student') {
+        // --- Role-aware auxiliary data fetching ---
+        if (profile?.role === 'student') {
           // Student: fetch their applications first for state
           const { data: allApps } = await supabase
             .from('project_applications')
@@ -180,10 +187,6 @@ export default function useRealtime() {
           const applied = apps.filter(a => a.status === 'pending').map(a => a.project_id);
           setAcceptedProjectIds(accepted);
           setAppliedProjectIds(applied);
-
-          // Fetch ALL projects for student (Marketplace needs this)
-          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
-          setProjects((projData as Project[]) ?? []);
         } else if (profile?.role === 'campus') {
           // Campus: get batches → students → their accepted applications → projects
           const { data: batches } = await supabase
@@ -211,14 +214,29 @@ export default function useRealtime() {
             const projIds = [...new Set((campusApps ?? []).map((a: any) => a.project_id))];
             setCampusProjectIds(projIds);
           }
+        }
 
-          // Fetch ALL projects for campus (Marketplace needs this)
-          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
-          setProjects((projData as Project[]) ?? []);
+        // --- Fetch Projects with Caching ---
+        const cachedProjects = queryClient.getQueryData<Project[]>(['realtime-projects', profile?.id]);
+        if (cachedProjects) {
+          setProjects(cachedProjects);
         } else {
-          // Fallback: admin or other roles
-          const { data: projData } = await supabase.from('projects').select('*, profiles:owner_id(company_name, logo_url)');
-          setProjects((projData as Project[]) ?? []);
+          let projData: any = null;
+          if (profile?.role === 'company') {
+            const { data } = await supabase
+              .from('projects')
+              .select('id, owner_id, title, description, project_type, sub_category, required_skills, budget_min, budget_max, pricing_type, commission_type, commission_min, commission_max, duration, status, completed, created_at, updated_at, profiles:owner_id(company_name, logo_url)')
+              .eq('owner_id', profile.id);
+            projData = data;
+          } else {
+            const { data } = await supabase.from('projects').select('id, owner_id, title, description, project_type, sub_category, required_skills, budget_min, budget_max, pricing_type, commission_type, commission_min, commission_max, duration, status, completed, created_at, updated_at, profiles:owner_id(company_name, logo_url)');
+            projData = data;
+          }
+
+          if (projData) {
+            setProjects(projData as Project[]);
+            queryClient.setQueryData(['realtime-projects', profile?.id], projData);
+          }
         }
 
         const { data: msgData } = await supabase
