@@ -53,13 +53,12 @@ export default function AdminUsers() {
 
   const handleToggleVerified = async (userId: string, currentStatus: boolean | null) => {
     const newStatus = !currentStatus;
-    const { error } = await supabase.from("profiles").update({ 
-      verified: newStatus,
-      verified_at: newStatus ? new Date().toISOString() : null
-    }).eq("id", userId);
+    const { error } = await supabase.functions.invoke("admin-verify-user", {
+      body: { userId, verified: newStatus }
+    });
     
     if (error) { 
-      toast({ title: "Error", description: error.message, variant: "destructive" }); 
+      toast({ title: "Error", description: error.message || "Failed to verify user", variant: "destructive" });
       return; 
     }
     
