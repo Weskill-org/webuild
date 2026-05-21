@@ -40,8 +40,6 @@ export default function usePushNotifications() {
 
       if (error) {
         console.error('[Push] Error saving FCM token:', error);
-      } else {
-        console.log('[Push] FCM token saved successfully');
       }
     } catch (err) {
       console.error('[Push] Exception saving token:', err);
@@ -57,7 +55,6 @@ export default function usePushNotifications() {
         .delete()
         .eq('user_id', user.id)
         .eq('token', tokenRef.current);
-      console.log('[Push] FCM token removed');
     } catch (err) {
       console.error('[Push] Error removing token:', err);
     }
@@ -105,7 +102,6 @@ export default function usePushNotifications() {
 
         // 3. Listen for registration success → save token
         PushNotifications.addListener('registration', async (token: Token) => {
-          console.log('[Push] Registration token:', token.value);
           tokenRef.current = token.value;
           await saveToken(token.value);
         });
@@ -119,8 +115,6 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationReceived',
           (notification: PushNotificationSchema) => {
-            console.log('[Push] Foreground notification:', notification);
-
             // Show in-app toast for foreground notifications
             toast({
               title: notification.title ?? 'Notification',
@@ -133,7 +127,6 @@ export default function usePushNotifications() {
         PushNotifications.addListener(
           'pushNotificationActionPerformed',
           (action: ActionPerformed) => {
-            console.log('[Push] Notification tapped:', action);
             const data = action.notification.data ?? {};
             handleNotificationTap(data);
           }
