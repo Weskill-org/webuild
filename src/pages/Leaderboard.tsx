@@ -7,6 +7,7 @@ import { Trophy, Star, Briefcase, Medal, Loader2, Crown, ChevronUp } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { Profile, Review, Project, Wallet } from "@/types/database";
 
 interface LeaderboardEntry {
   id: string;
@@ -31,41 +32,41 @@ export default function Leaderboard() {
 
   useEffect(() => {
     (async () => {
-      const [profilesRes, reviewsRes, projectsRes, walletsRes] = await Promise.all([
-        supabase.from("profiles").select("*"),
-        supabase.from("reviews").select("*"),
-        supabase.from("projects").select("id, owner_id, status, completed"),
-        supabase.from("wallets").select("owner_id, balance"),
-      ]);
+      const { data: profiles, error } = await supabase.from('profiles').select(`
+        id,
+        full_name,
+        company_name,
+        university,
+        role,
+        logo_url,
+        reviews:reviews!reviews_reviewee_id_fkey(rating),
+        projects:projects!projects_owner_id_fkey(completed),
+        wallets:wallets!wallets_owner_id_fkey(balance)
+      `).in('role', ['student', 'company']);
 
-      const profiles = profilesRes.data ?? [];
-      const reviews = reviewsRes.data ?? [];
-      const projects = projectsRes.data ?? [];
-      const wallets = walletsRes.data ?? [];
-
-      const walletMap: Record<string, number> = {};
-      wallets.forEach((w: any) => { walletMap[w.owner_id] = w.balance ?? 0; });
-
-      const reviewMap: Record<string, number[]> = {};
-      reviews.forEach((r: any) => {
-        if (!reviewMap[r.reviewee_id]) reviewMap[r.reviewee_id] = [];
-        reviewMap[r.reviewee_id].push(r.rating);
-      });
-
-      const completedMap: Record<string, number> = {};
-      projects.filter((p: any) => p.completed).forEach((p: any) => {
-        completedMap[p.owner_id] = (completedMap[p.owner_id] ?? 0) + 1;
-      });
+      if (error || !profiles) {
+        console.error("Error fetching leaderboard data:", error);
+        setLoading(false);
+        return;
+      }
 
       const buildEntry = (p: any): LeaderboardEntry => {
-        const ratings = reviewMap[p.id] ?? [];
+        const ratings = p.reviews?.map((r: any) => r.rating) ?? [];
         const avg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
-        const completed = completedMap[p.id] ?? 0;
-        const earnings = walletMap[p.id] ?? 0;
+
+        const completed = p.projects?.filter((pr: any) => pr.completed).length ?? 0;
+
+        let earnings = 0;
+        if (Array.isArray(p.wallets) && p.wallets.length > 0) {
+          earnings = p.wallets[0].balance ?? 0;
+        } else if (p.wallets && !Array.isArray(p.wallets)) {
+          earnings = p.wallets.balance ?? 0;
+        }
+
         return {
           id: p.id,
           name: p.full_name || p.company_name || p.university || "User",
-          role: p.role,
+          role: p.role || "",
           logo_url: p.logo_url,
           avgRating: Math.round(avg * 10) / 10,
           completedProjects: completed,
@@ -74,8 +75,8 @@ export default function Leaderboard() {
         };
       };
 
-      setAllStudents(profiles.filter((p: any) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
-      setAllCompanies(profiles.filter((p: any) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllStudents(profiles.filter((p: Profile) => p.role === "student").map(buildEntry).sort((a, b) => b.score - a.score));
+      setAllCompanies(profiles.filter((p: Profile) => p.role === "company").map(buildEntry).sort((a, b) => b.score - a.score));
       setLoading(false);
     })();
   }, []);

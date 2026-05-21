@@ -19,6 +19,12 @@ interface PaymentResult {
   error?: string;
 }
 
+interface RazorpayResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
 export async function createRazorpayOrder(params: CreateOrderParams) {
   const { data, error } = await supabase.functions.invoke("razorpay", {
     body: {
@@ -55,7 +61,7 @@ export function openRazorpayCheckout(
       description: `Payment for ${projectTitle}`,
       order_id: orderId,
       prefill: { email: userEmail },
-      handler: async (response: any) => {
+      handler: async (response: RazorpayResponse) => {
         // Verify payment
         const { data, error } = await supabase.functions.invoke("razorpay", {
           body: {

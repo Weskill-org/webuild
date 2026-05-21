@@ -41,8 +41,12 @@ export default function usePushNotifications() {
       if (error) {
         console.error('[Push] Error saving FCM token:', error);
       }
-    } catch (err) {
-      console.error('[Push] Exception saving token:', err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('[Push] Exception saving token:', err.message);
+      } else {
+        console.error('[Push] Exception saving token:', String(err));
+      }
     }
   }, [user]);
 
@@ -131,8 +135,12 @@ export default function usePushNotifications() {
             handleNotificationTap(data);
           }
         );
-      } catch (err) {
-        console.error('[Push] Setup error:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error('[Push] Setup error:', err.message);
+        } else {
+          console.error('[Push] Setup error:', String(err));
+        }
       }
     };
 
