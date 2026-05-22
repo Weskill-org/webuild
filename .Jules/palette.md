@@ -1,0 +1,1 @@
+## 2026-05-22 - Icon-only buttons accessibility\n**Learning:** Icon-only buttons (like those used for sending chat messages) lack an accessible name by default, making them invisible or unclear to screen reader users.\n**Action:** Always add an explicit `aria-label` to `<Button size="icon">` components and unlabeled `<Input>` fields to provide clear context.
