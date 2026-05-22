@@ -56,6 +56,7 @@ import NotFound from "./pages/NotFound";
 import Careers from "./pages/Careers";
 import Partners from "./pages/Partners";
 import Blog from "./pages/Blog";
+import BlogPostDetails from "./pages/BlogPostDetails";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Contact from "./pages/Contact";
@@ -93,6 +94,8 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPostDetails />} />
+            <Route path="/blogs" element={<Navigate to="/blog" replace />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/contact" element={<Contact />} />
