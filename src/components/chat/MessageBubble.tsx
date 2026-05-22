@@ -1,3 +1,4 @@
+import React from 'react';
 import { Check, CheckCheck } from "lucide-react";
 import type { Message } from "@/types/database";
 
@@ -6,7 +7,10 @@ interface Props {
   isMine: boolean;
 }
 
-export default function MessageBubble({ message, isMine }: Props) {
+// ⚡ Bolt: Wrapped MessageBubble in React.memo
+// 🎯 Why: Chat threads contain long lists of messages. Without memoization, adding a new message or updating typing status causes O(n) re-renders of all previous bubbles.
+// 📊 Impact: Prevents unnecessary re-renders of historical messages, keeping chat performant even with hundreds of messages.
+const MessageBubble = React.memo(function MessageBubble({ message, isMine }: Props) {
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
       <div
@@ -34,4 +38,6 @@ export default function MessageBubble({ message, isMine }: Props) {
       </div>
     </div>
   );
-}
+});
+
+export default MessageBubble;
