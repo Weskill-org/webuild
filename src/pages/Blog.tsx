@@ -29,82 +29,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import allPostsData from "@/blogPosts.json";
 
 const Blog = () => {
-  const allPosts = [
-    { 
-      title: "The Future of Collaborative Learning", 
-      category: "Education", 
-      date: "Oct 24, 2026", 
-      readTime: "5 min read", 
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "Collaborative learning is evolving at an unprecedented pace. In this article, we explore how digital platforms are breaking down boundaries and enabling teams to learn together more effectively than ever before. From peer-to-peer mentoring to Al-driven study groups, the future of education is fundamentally social."
-    },
-    { 
-      title: "Building Scalable Real-time Systems", 
-      category: "Engineering", 
-      date: "Oct 20, 2026", 
-      readTime: "8 min read", 
-      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "Scale isn't just about handling more traffic; it's about maintaining performance and reliability under pressure. This deep dive covers the architecture of real-time systems, focusing on low-latency messaging, distributed state management, and the challenges of synchronizing data across global networks."
-    },
-    { 
-      title: "Design Systems that Scale", 
-      category: "Design", 
-      date: "Oct 15, 2026", 
-      readTime: "6 min read", 
-      image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "A design system is more than just a library of components; it's a shared language for product development. We discuss how to build flexible, accessible, and maintainable design systems that empower designers and developers to create consistent user experiences at high speed."
-    },
-    { 
-      title: "Community Driven Open Source", 
-      category: "Community", 
-      date: "Oct 10, 2026", 
-      readTime: "4 min read", 
-      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "Open source is the backbone of modern technology, but its heartbeat is the community. This article looks at how we can foster inclusive, vibrant open-source ecosystems that reward contributors and ensure the long-term sustainability of the projects we all rely on."
-    },
-    { 
-      title: "Accelerating Junior Dev Careers", 
-      category: "Career", 
-      date: "Oct 05, 2026", 
-      readTime: "7 min read", 
-      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "The first few years of a developer's career are crucial. We share strategies for junior developers to maximize their learning, build impactful networks, and transition into senior roles. Focus on soft skills, mentorship, and the importance of saying 'yes' to challenging projects."
-    },
-    { 
-      title: "The Art of Writing Good Code Reviews", 
-      category: "Engineering", 
-      date: "Oct 01, 2026", 
-      readTime: "6 min read", 
-      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "Code reviews are a critical part of quality assurance and knowledge sharing. In this guide, we discuss how to give and receive constructive feedback that improves code quality while building trust and collaboration within engineering teams."
-    },
-    { 
-      title: "Maximizing Productivity with Remote Work", 
-      category: "Career", 
-      date: "Sep 28, 2026", 
-      readTime: "4 min read", 
-      image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "Remote work is here to stay. Discover tips and tools for maintaining focus, setting boundaries, and staying connected with your team while working from anywhere in the world."
-    },
-    { 
-      title: "Understanding React Server Components", 
-      category: "Engineering", 
-      date: "Sep 25, 2026", 
-      readTime: "10 min read", 
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "React Server Components are a game-changer for performance. We explain how they work, when to use them, and how they differ from traditional client-side rendering and SSR."
-    },
-    { 
-      title: "Modern UI Trends in 2026", 
-      category: "Design", 
-      date: "Sep 20, 2026", 
-      readTime: "5 min read", 
-      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      content: "What's next for user interface design? From glassmorphism to neomorphism and beyond, we explore the aesthetic trends shaping the digital products of tomorrow."
-    }
-  ];
+  const allPosts = allPostsData;
 
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedPost, setSelectedPost] = useState<null | typeof allPosts[0]>(null);
@@ -272,23 +200,8 @@ const Blog = () => {
                   </div>
                   
                   <div className="space-y-6">
-                    <p className="text-lg text-foreground font-medium leading-relaxed">
+                    <div className="text-lg text-foreground font-medium leading-relaxed whitespace-pre-wrap">
                       {selectedPost.content}
-                    </p>
-                    
-                    <div className="bg-primary/5 border-l-4 border-primary p-5 rounded-r-xl">
-                      <p className="text-muted-foreground leading-relaxed italic font-medium">
-                        "At Webuild, we believe that sharing insights and experiences is fundamental to building a stronger, more collaborative developer ecosystem."
-                      </p>
-                    </div>
-
-                    <div className="text-sm text-muted-foreground space-y-4 leading-relaxed">
-                      <p>
-                        This article explores the core challenges and opportunities within the <span className="text-foreground font-bold">{selectedPost.category}</span> domain. We delve into practical strategies, industry best practices, and emerging technologies that are shaping the future of digital development.
-                      </p>
-                      <p>
-                        Key takeaways include the importance of continuous learning, the value of cross-functional collaboration, and why staying curious is the ultimate dev skill in 2026.
-                      </p>
                     </div>
                   </div>
 
