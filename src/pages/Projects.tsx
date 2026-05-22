@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,10 @@ const Projects = () => {
   const initialTab = searchParams.get("tab") || "all";
 
   const isCompany = profile?.role === "company";
-  const myProjects = isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
+
+  const myProjects = useMemo(() => {
+    return isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
+  }, [projects, isCompany, profile?.id]);
 
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -184,20 +187,22 @@ const Projects = () => {
   };
 
   // Filtered projects
-  const filteredProjects = myProjects
-    .filter(p => filter === "all" || p.status === filter)
-    .filter(p => {
-      if (filterType !== "all" && p.project_type !== filterType) return false;
-      if (filterSubCategory !== "all" && p.sub_category !== filterSubCategory) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        const matchesTitle = p.title.toLowerCase().includes(q);
-        const matchesDesc = p.description?.toLowerCase().includes(q);
-        const matchesSkills = (p.required_skills ?? []).some(s => s.toLowerCase().includes(q));
-        if (!matchesTitle && !matchesDesc && !matchesSkills) return false;
-      }
-      return true;
-    });
+  const filteredProjects = useMemo(() => {
+    return myProjects
+      .filter(p => filter === "all" || p.status === filter)
+      .filter(p => {
+        if (filterType !== "all" && p.project_type !== filterType) return false;
+        if (filterSubCategory !== "all" && p.sub_category !== filterSubCategory) return false;
+        if (search) {
+          const q = search.toLowerCase();
+          const matchesTitle = p.title.toLowerCase().includes(q);
+          const matchesDesc = p.description?.toLowerCase().includes(q);
+          const matchesSkills = (p.required_skills ?? []).some(s => s.toLowerCase().includes(q));
+          if (!matchesTitle && !matchesDesc && !matchesSkills) return false;
+        }
+        return true;
+      });
+  }, [myProjects, filter, filterType, filterSubCategory, search]);
 
   return (
     <DashboardLayout>

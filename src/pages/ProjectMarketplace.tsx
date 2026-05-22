@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,9 +77,9 @@ const ProjectMarketplace = () => {
     }
   };
 
-  const openProjects = projects.filter((p) => p.status === "open");
+  const openProjects = useMemo(() => projects.filter((p) => p.status === "open"), [projects]);
 
-  const skillFilters = skillFilter.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const skillFilters = useMemo(() => skillFilter.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean), [skillFilter]);
 
   const clearFilters = () => {
     setProjectType("all");
@@ -89,33 +89,35 @@ const ProjectMarketplace = () => {
     setBudgetRange([0, 50000]);
   };
 
-  const filtered = openProjects
-    .filter((p) => {
-      const matchesSearch =
-        !search ||
-        p.title.toLowerCase().includes(search.toLowerCase()) ||
-        p.description?.toLowerCase().includes(search.toLowerCase()) ||
-        (p.required_skills ?? []).some((s) => s.toLowerCase().includes(search.toLowerCase()));
-      const matchesType = projectType === "all" || p.project_type === projectType;
-      const matchesSubCategory = subCategory === "all" || p.sub_category === subCategory;
-      const matchesBudget = (p.budget_min ?? 0) >= budgetRange[0] && (p.budget_max ?? 0) <= budgetRange[1];
-      const matchesDuration = duration === "all" || p.duration === duration;
-      const matchesSkills =
-        skillFilters.length === 0 ||
-        skillFilters.some((sf) => (p.required_skills ?? []).some((rs) => rs.toLowerCase().includes(sf)));
-      return matchesSearch && matchesType && matchesSubCategory && matchesBudget && matchesDuration && matchesSkills;
-    })
-    .sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      if (sortBy === "budget-high") return (b.budget_max ?? 0) - (a.budget_max ?? 0);
-      if (sortBy === "budget-low") return (a.budget_min ?? 0) - (b.budget_min ?? 0);
-      if (sortBy === "recommended") {
-        const aRec = recommendations.includes(a.id) ? 1 : 0;
-        const bRec = recommendations.includes(b.id) ? 1 : 0;
-        return bRec - aRec;
-      }
-      return 0;
-    });
+  const filtered = useMemo(() => {
+    return openProjects
+      .filter((p) => {
+        const matchesSearch =
+          !search ||
+          p.title.toLowerCase().includes(search.toLowerCase()) ||
+          p.description?.toLowerCase().includes(search.toLowerCase()) ||
+          (p.required_skills ?? []).some((s) => s.toLowerCase().includes(search.toLowerCase()));
+        const matchesType = projectType === "all" || p.project_type === projectType;
+        const matchesSubCategory = subCategory === "all" || p.sub_category === subCategory;
+        const matchesBudget = (p.budget_min ?? 0) >= budgetRange[0] && (p.budget_max ?? 0) <= budgetRange[1];
+        const matchesDuration = duration === "all" || p.duration === duration;
+        const matchesSkills =
+          skillFilters.length === 0 ||
+          skillFilters.some((sf) => (p.required_skills ?? []).some((rs) => rs.toLowerCase().includes(sf)));
+        return matchesSearch && matchesType && matchesSubCategory && matchesBudget && matchesDuration && matchesSkills;
+      })
+      .sort((a, b) => {
+        if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (sortBy === "budget-high") return (b.budget_max ?? 0) - (a.budget_max ?? 0);
+        if (sortBy === "budget-low") return (a.budget_min ?? 0) - (b.budget_min ?? 0);
+        if (sortBy === "recommended") {
+          const aRec = recommendations.includes(a.id) ? 1 : 0;
+          const bRec = recommendations.includes(b.id) ? 1 : 0;
+          return bRec - aRec;
+        }
+        return 0;
+      });
+  }, [openProjects, search, projectType, subCategory, budgetRange, duration, skillFilters, sortBy, recommendations]);
 
   return (
     <DashboardLayout>
