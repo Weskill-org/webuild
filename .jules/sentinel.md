@@ -1,0 +1,4 @@
+## 2024-05-23 - URL Query Parameter Leakage via window.location.href
+**Vulnerability:** The application used raw `window.location.href` to generate share links and clipboard copies on blog posts, which could unintentionally include sensitive query parameters or URL fragments.
+**Learning:** React applications often use query strings to pass state, authentication tokens, referral codes, or session data. Blindly taking the current full URL and allowing it to be shared externally poses a risk of information disclosure or session hijacking.
+**Prevention:** Always sanitize generated URLs before sharing them externally or copying them to a user's clipboard. Typically, this means constructing the URL using only the origin and pathname (`window.location.origin + window.location.pathname`) unless specific query parameters are explicitly known to be safe.

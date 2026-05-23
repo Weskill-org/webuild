@@ -82,7 +82,8 @@ const BlogPostDetails = () => {
   }
 
   const handleShare = (platform: string) => {
-    const url = window.location.href;
+    // SECURITY: Sanitize URL to prevent leaking sensitive query parameters (e.g. session tokens)
+    const url = window.location.origin + window.location.pathname;
     const text = `Check out this article: ${post.title}`;
     let shareUrl = "";
 
@@ -108,7 +109,9 @@ const BlogPostDetails = () => {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      // SECURITY: Sanitize URL to prevent leaking sensitive query parameters (e.g. session tokens)
+      const cleanUrl = window.location.origin + window.location.pathname;
+      await navigator.clipboard.writeText(cleanUrl);
       setIsCopied(true);
       toast({
         title: "Link Copied!",
