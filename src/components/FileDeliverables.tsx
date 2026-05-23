@@ -218,13 +218,13 @@ export default function FileDeliverables({ projectId, milestoneId, canUpload = t
                 {d.description && <p className="text-xs text-muted-foreground mt-0.5">{d.description}</p>}
               </div>
               <div className="flex gap-1">
-                <Button size="icon" variant="ghost" asChild>
+                <Button size="icon" variant="ghost" asChild aria-label="Download file">
                   <a href={d.file_url} target="_blank" rel="noopener noreferrer">
                     <Download className="w-4 h-4" />
                   </a>
                 </Button>
                 {d.uploader_id === profile?.id && (
-                  <Button size="icon" variant="ghost" onClick={() => handleDelete(d)} className="text-destructive hover:text-destructive">
+                  <Button size="icon" variant="ghost" onClick={() => handleDelete(d)} className="text-destructive hover:text-destructive" aria-label="Delete file">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
