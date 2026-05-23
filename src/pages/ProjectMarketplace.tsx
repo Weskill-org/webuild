@@ -77,6 +77,10 @@ const ProjectMarketplace = () => {
     }
   };
 
+  const openProjects = useMemo(() => projects.filter((p) => p.status === "open"), [projects]);
+
+  const skillFilters = useMemo(() => skillFilter.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean), [skillFilter]);
+
   const clearFilters = () => {
     setProjectType("all");
     setSubCategory("all");
@@ -85,14 +89,8 @@ const ProjectMarketplace = () => {
     setBudgetRange([0, 50000]);
   };
 
-  // ⚡ Bolt: Wrapped project filtering and sorting in useMemo
-  // 🎯 Why: Project filtering and sorting are expensive array operations. Without memoization, they recalculate on every render (even when filters/search haven't changed, e.g., during unrelated UI updates).
-  // 📊 Impact: Prevents unnecessary recalculations and keeps typing in the search bar smooth.
   const filtered = useMemo(() => {
-    const skillFilters = skillFilter.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-
-    return projects
-      .filter((p) => p.status === "open")
+    return openProjects
       .filter((p) => {
         const matchesSearch =
           !search ||
@@ -119,7 +117,7 @@ const ProjectMarketplace = () => {
         }
         return 0;
       });
-  }, [projects, search, projectType, subCategory, budgetRange, duration, skillFilter, sortBy, recommendations]);
+  }, [openProjects, search, projectType, subCategory, budgetRange, duration, skillFilters, sortBy, recommendations]);
 
   return (
     <DashboardLayout>

@@ -44,7 +44,10 @@ const Projects = () => {
   const initialTab = searchParams.get("tab") || "all";
 
   const isCompany = profile?.role === "company";
-  const myProjects = isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
+
+  const myProjects = useMemo(() => {
+    return isCompany ? projects.filter(p => p.owner_id === profile?.id) : projects;
+  }, [projects, isCompany, profile?.id]);
 
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [editTitle, setEditTitle] = useState("");
