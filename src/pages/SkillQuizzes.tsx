@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,14 +101,16 @@ export default function SkillQuizzes() {
 
   const timerRef = useRef<any>(null);
 
-  const filteredQuizzes = quizzes.filter((q) => {
-    const query = searchQuery.toLowerCase().trim();
-    return (
-      q.title.toLowerCase().includes(query) ||
-      q.skill_name.toLowerCase().includes(query) ||
-      (q.description && q.description.toLowerCase().includes(query))
-    );
-  });
+  const filteredQuizzes = useMemo(() => {
+    return quizzes.filter((q) => {
+      const query = searchQuery.toLowerCase().trim();
+      return (
+        q.title.toLowerCase().includes(query) ||
+        q.skill_name.toLowerCase().includes(query) ||
+        (q.description && q.description.toLowerCase().includes(query))
+      );
+    });
+  }, [quizzes, searchQuery]);
 
   /* ───────────────── Fetching Data ───────────────── */
   const fetchAllData = async () => {
