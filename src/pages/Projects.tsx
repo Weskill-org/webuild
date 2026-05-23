@@ -186,7 +186,9 @@ const Projects = () => {
     setSearch("");
   };
 
-  // Filtered projects
+  // ⚡ Bolt: Wrapped project filtering and sorting in useMemo
+  // 🎯 Why: Project filtering and sorting are expensive array operations. Without memoization, they recalculate on every render (even when filters/search haven't changed, e.g., during unrelated UI updates).
+  // 📊 Impact: Prevents unnecessary recalculations and keeps typing in the search bar smooth.
   const filteredProjects = useMemo(() => {
     return myProjects
       .filter(p => filter === "all" || p.status === filter)
