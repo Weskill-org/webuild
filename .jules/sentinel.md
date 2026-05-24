@@ -1,4 +1,4 @@
-## 2024-05-23 - URL Query Parameter Leakage via window.location.href
-**Vulnerability:** The application used raw `window.location.href` to generate share links and clipboard copies on blog posts, which could unintentionally include sensitive query parameters or URL fragments.
-**Learning:** React applications often use query strings to pass state, authentication tokens, referral codes, or session data. Blindly taking the current full URL and allowing it to be shared externally poses a risk of information disclosure or session hijacking.
-**Prevention:** Always sanitize generated URLs before sharing them externally or copying them to a user's clipboard. Typically, this means constructing the URL using only the origin and pathname (`window.location.origin + window.location.pathname`) unless specific query parameters are explicitly known to be safe.
+## 2024-05-20 - Missing Authorization in Razorpay Edge Function
+**Vulnerability:** The `razorpay` Edge Function (`supabase/functions/razorpay/index.ts`) allows any unauthenticated user to call the `release_payment` action and release funds from escrow.
+**Learning:** Edge Functions invoked via `supabase.functions.invoke()` need explicit authentication checks (e.g., parsing the JWT token from the `Authorization` header) when performing sensitive operations like transferring funds. Simply using `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and assumes the backend has verified the request.
+**Prevention:** Always verify the caller's JWT token (using `createClient` with `SUPABASE_ANON_KEY` and `auth.getUser(token)`) and ensure they are authorized to perform the action (e.g., verifying they are the owner of the project) before executing sensitive business logic in Edge Functions.
