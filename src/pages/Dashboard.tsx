@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,15 @@ const Dashboard = () => {
   } = useRealtime();
 
   const displayName = profile?.full_name || profile?.company_name || profile?.university || "there";
+
+  // ⚡ Bolt Optimization: Memoized filter pipeline
+  // 🎯 Why: Re-filtering the entire projects list on every keystroke (or unrelated render) was expensive.
+  // 📊 Impact: Filtering execution only happens when `searchQuery` or `projects` change, maintaining 60fps typing.
+  const displayedProjects = useMemo(() =>
+    projects
+      .filter(p => !searchQuery || p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+      .slice(0, 5),
+  [projects, searchQuery]);
 
   return (
     <DashboardLayout>
@@ -134,9 +143,7 @@ const Dashboard = () => {
 
         <div className="grid gap-4">
           {projects.length > 0 ? (
-            projects
-              .filter(p => !searchQuery || p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
-              .slice(0, 5)
+            displayedProjects
               .map((project) => (
                 <Card key={project.id} className="p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
                   <div className="flex justify-between items-start mb-3">

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useAuth } from '@/providers/AuthProvider';
@@ -283,8 +283,11 @@ export default function useRealtime() {
     };
   }, [user, profile?.id, profile?.role, applyChange]);
 
+  // ⚡ Bolt Optimization: Memoized computed counts
+  // 🎯 Why: Previously recalculated O(n) active projects on EVERY render (e.g., when a chat message arrived).
+  // 📊 Impact: O(1) performance during unrelated state updates instead of O(n).
   // Active Projects: non-completed projects the user is involved in
-  const activeProjectsCount = (() => {
+  const activeProjectsCount = useMemo(() => {
     if (profile?.role === 'student') {
       // Student: projects they have an accepted application for, not yet completed
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && p.status !== 'completed' && p.status !== 'submitted').length;
@@ -295,10 +298,13 @@ export default function useRealtime() {
     }
     // Company: projects they own, not yet completed
     return projects.filter((p) => p.status !== 'completed').length;
-  })();
+  }, [profile?.role, projects, acceptedProjectIds, campusProjectIds]);
 
+  // ⚡ Bolt Optimization: Memoized computed counts
+  // 🎯 Why: Prevented O(n) recalculations across the full projects list.
+  // 📊 Impact: O(1) time complexity on re-renders unless relevant dependencies change.
   // Completed: finished projects the user is involved in
-  const completedCount = (() => {
+  const completedCount = useMemo(() => {
     if (profile?.role === 'student') {
       // Student: only count THEIR completed projects
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
@@ -308,10 +314,14 @@ export default function useRealtime() {
       return projects.filter((p) => campusProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
     }
     return projects.filter((p) => p.status === 'completed').length;
-  })();
-  const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);
-  const unreadMessages = messages.filter((m) => !m.read && m.recipient_id === profile?.id).length;
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
+  }, [profile?.role, projects, acceptedProjectIds, campusProjectIds]);
+
+  // ⚡ Bolt Optimization: Memoized derived states
+  // 🎯 Why: Derived data from arrays (reduce, filter) was re-evaluating unnecessarily on any state change.
+  // 📊 Impact: Avoids multiple O(n) passes on the wallets, messages, and notifications arrays on unrelated updates.
+  const walletBalance = useMemo(() => wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0), [wallets]);
+  const unreadMessages = useMemo(() => messages.filter((m) => !m.read && m.recipient_id === profile?.id).length, [messages, profile?.id]);
+  const unreadNotifications = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   return {
     projects,
