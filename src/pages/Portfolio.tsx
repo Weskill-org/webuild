@@ -148,7 +148,7 @@ export default function Portfolio() {
                     <p className="text-xs text-muted-foreground">{c.company_name} · {c.issued_at ? new Date(c.issued_at).toLocaleDateString() : ""}</p>
                   </div>
                   {c.certificate_uid && (
-                    <Button size="icon" variant="ghost" asChild className="shrink-0 ml-auto">
+                    <Button size="icon" variant="ghost" asChild className="shrink-0 ml-auto" aria-label="View certificate">
                       <a href={`/verify/${c.certificate_uid}`} target="_blank"><ExternalLink className="w-4 h-4" /></a>
                     </Button>
                   )}
