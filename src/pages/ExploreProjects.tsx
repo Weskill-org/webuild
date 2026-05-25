@@ -76,10 +76,23 @@ const ExploreProjects = () => {
     setSearch("");
   };
 
+  // ⚡ Bolt Optimization: Loop consolidation & Memoization
+  // 🎯 Why: Previously ran three separate array loops (`.filter`) on every keystroke/filter change.
+  // 📊 Impact: Combined three O(n) loops into a single O(n) loop and memoized the result based on `projects`, saving redundant iterations.
   // Stats
-  const openCount = projects.filter((p) => p.status === "open").length;
-  const inProgressCount = projects.filter((p) => p.status === "in_progress").length;
-  const completedCount = projects.filter((p) => p.status === "completed").length;
+  const { openCount, inProgressCount, completedCount } = useMemo(() => {
+    let openCount = 0;
+    let inProgressCount = 0;
+    let completedCount = 0;
+
+    for (const p of projects) {
+      if (p.status === "open") openCount++;
+      else if (p.status === "in_progress") inProgressCount++;
+      else if (p.status === "completed") completedCount++;
+    }
+
+    return { openCount, inProgressCount, completedCount };
+  }, [projects]);
 
   return (
     <div className="min-h-screen bg-background">

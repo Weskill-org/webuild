@@ -299,8 +299,11 @@ export default function useRealtime() {
     }
     // Company: projects they own, not yet completed
     return projects.filter((p) => p.status !== 'completed').length;
-  }, [projects, profile?.role, acceptedProjectIds, campusProjectIds]);
+  }, [profile?.role, projects, acceptedProjectIds, campusProjectIds]);
 
+  // ⚡ Bolt Optimization: Memoized computed counts
+  // 🎯 Why: Prevented O(n) recalculations across the full projects list.
+  // 📊 Impact: O(1) time complexity on re-renders unless relevant dependencies change.
   // Completed: finished projects the user is involved in
   const completedCount = useMemo(() => {
     if (profile?.role === 'student') {
@@ -312,8 +315,11 @@ export default function useRealtime() {
       return projects.filter((p) => campusProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
     }
     return projects.filter((p) => p.status === 'completed').length;
-  }, [projects, profile?.role, acceptedProjectIds, campusProjectIds]);
+  }, [profile?.role, projects, acceptedProjectIds, campusProjectIds]);
 
+  // ⚡ Bolt Optimization: Memoized derived states
+  // 🎯 Why: Derived data from arrays (reduce, filter) was re-evaluating unnecessarily on any state change.
+  // 📊 Impact: Avoids multiple O(n) passes on the wallets, messages, and notifications arrays on unrelated updates.
   const walletBalance = useMemo(() => wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0), [wallets]);
   const unreadMessages = useMemo(() => messages.filter((m) => !m.read && m.recipient_id === profile?.id).length, [messages, profile?.id]);
   const unreadNotifications = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
