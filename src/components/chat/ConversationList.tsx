@@ -34,6 +34,7 @@ export default function ConversationList({ conversations, selectedPartner, onSel
           className="h-9 w-9 shrink-0" 
           onClick={() => setIsModalOpen(true)}
           title="New Message"
+          aria-label="New Message"
         >
           <UserPlus className="w-4 h-4" />
         </Button>
