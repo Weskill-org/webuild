@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,20 +101,22 @@ const StudentProjects = () => {
   };
 
   // Filter based on application status and joined project status
-  const filteredApps = applications.filter((app) => {
-    if (!app.projects) return false;
-    
-    if (currentTab === "applied") {
-      return app.status === "pending" || app.status === "rejected";
-    }
-    if (currentTab === "accepted") {
-      return app.status === "accepted" && app.projects.status !== "completed" && app.projects.status !== "submitted";
-    }
-    if (currentTab === "completed") {
-      return app.status === "accepted" && (app.projects.status === "completed" || app.projects.status === "submitted");
-    }
-    return false;
-  });
+  const filteredApps = useMemo(() => {
+    return applications.filter((app) => {
+      if (!app.projects) return false;
+
+      if (currentTab === "applied") {
+        return app.status === "pending" || app.status === "rejected";
+      }
+      if (currentTab === "accepted") {
+        return app.status === "accepted" && app.projects.status !== "completed" && app.projects.status !== "submitted";
+      }
+      if (currentTab === "completed") {
+        return app.status === "accepted" && (app.projects.status === "completed" || app.projects.status === "submitted");
+      }
+      return false;
+    });
+  }, [applications, currentTab]);
 
   return (
     <DashboardLayout>

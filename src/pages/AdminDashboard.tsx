@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
@@ -261,15 +261,21 @@ function UsersTab() {
     })();
   }, []);
 
-  const filtered = users.filter((u) => {
-    const name = u.full_name || u.company_name || u.university || u.email || "";
-    const matchSearch = !search || name.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "all" || u.role === roleFilter;
-    return matchSearch && matchRole;
-  });
+  const filtered = useMemo(() => {
+    return users.filter((u) => {
+      const name = u.full_name || u.company_name || u.university || u.email || "";
+      const matchSearch = !search || name.toLowerCase().includes(search.toLowerCase());
+      const matchRole = roleFilter === "all" || u.role === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [users, search, roleFilter]);
 
-  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const { paged, totalPages } = useMemo(() => {
+    return {
+      paged: filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+      totalPages: Math.ceil(filtered.length / PAGE_SIZE)
+    };
+  }, [filtered, page]);
 
   const handleRoleAction = async (userId: string, role: "admin" | "moderator" | "user", action: "grant" | "revoke") => {
     const finalRole = action === "grant" ? role : "user";
@@ -430,11 +436,13 @@ function ProjectsTab() {
     })();
   }, []);
 
-  const filtered = projects.filter((p) => {
-    const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    return projects.filter((p) => {
+      const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "all" || p.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [projects, search, statusFilter]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this project permanently?")) return;
@@ -1205,13 +1213,15 @@ function ReferralsTab() {
     .filter((r) => r.status === "completed")
     .reduce((sum, r) => sum + (r.referrer_reward ?? 0) + (r.referred_reward ?? 0), 0);
 
-  const filtered = referrals.filter((r) => {
-    const referrerName = profiles[r.referrer_id] || "";
-    const referredName = profiles[r.referred_id] || "";
-    const matchSearch = !search || referrerName.toLowerCase().includes(search.toLowerCase()) || referredName.toLowerCase().includes(search.toLowerCase()) || (r.referral_code || "").toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    return referrals.filter((r) => {
+      const referrerName = profiles[r.referrer_id] || "";
+      const referredName = profiles[r.referred_id] || "";
+      const matchSearch = !search || referrerName.toLowerCase().includes(search.toLowerCase()) || referredName.toLowerCase().includes(search.toLowerCase()) || (r.referral_code || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "all" || r.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [referrals, search, statusFilter, profiles]);
 
   return (
     <div className="space-y-4 mt-4">

@@ -283,9 +283,10 @@ export default function useRealtime() {
     };
   }, [user, profile?.id, profile?.role, applyChange]);
 
-  // ⚡ Bolt Optimization: Memoized computed counts
-  // 🎯 Why: Previously recalculated O(n) active projects on EVERY render (e.g., when a chat message arrived).
-  // 📊 Impact: O(1) performance during unrelated state updates instead of O(n).
+  // ⚡ Bolt: Wrapped derived state calculations in useMemo
+  // 🎯 Why: These values were being recalculated on every render of useRealtime hook. Since this hook is used across many components (DashboardLayout, Projects, etc.), avoiding recalculations of expensive array operations improves overall app performance.
+  // 📊 Impact: Prevents unnecessary array filtering/reducing when unrelated state changes trigger re-renders.
+
   // Active Projects: non-completed projects the user is involved in
   const activeProjectsCount = useMemo(() => {
     if (profile?.role === 'student') {
