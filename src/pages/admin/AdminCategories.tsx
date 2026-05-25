@@ -143,8 +143,8 @@ export default function AdminCategories() {
                 <TableCell><Switch checked={cat.is_enabled} onCheckedChange={() => handleToggle(cat)} className="scale-90" /></TableCell>
                 <TableCell className="text-right pr-4">
                   <div className="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => openEdit(cat)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(cat)}><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => openEdit(cat)} aria-label="Edit category"><Pencil className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(cat)} aria-label="Delete category"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
