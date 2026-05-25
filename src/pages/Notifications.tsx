@@ -156,6 +156,7 @@ const Notifications = () => {
                     size="icon" 
                     className="text-muted-foreground hover:text-destructive"
                     onClick={(e) => deleteNotification(n.id, e)}
+                    aria-label="Delete notification"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
