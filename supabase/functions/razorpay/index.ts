@@ -19,6 +19,7 @@ serve(async (req) => {
     const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       return new Response(
@@ -27,14 +28,44 @@ serve(async (req) => {
       );
     }
 
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader && action !== "verify_payment") {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let user = null;
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const SUPABASE_ANON_KEY_FOR_CLIENT = Deno.env.get("SUPABASE_ANON_KEY") || SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY_FOR_CLIENT);
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      user = userData.user;
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const authHeader = `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`;
+    const razorpayAuthHeader = `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`;
 
     // ACTION: create_order — creates a Razorpay order for escrow
     if (action === "create_order") {
+      if (user?.id !== user_id) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
         method: "POST",
-        headers: { Authorization: authHeader, "Content-Type": "application/json" },
+        headers: { Authorization: razorpayAuthHeader, "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: Math.round(amount * 100), // paise
           currency: currency || "INR",
@@ -97,6 +128,19 @@ serve(async (req) => {
 
     // ACTION: release_payment — release escrow to student on milestone completion
     if (action === "release_payment") {
+      // Get project to find owner and accepted applicant
+      const { data: project } = await supabaseAdmin
+        .from("projects")
+        .select("owner_id")
+        .eq("id", project_id)
+        .single();
+
+      if (!project || project.owner_id !== user?.id) {
+        return new Response(JSON.stringify({ error: "Unauthorized. Only the project owner can release payment." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const COMMISSION_RATE = 0.10; // 10% platform commission
 
       const { data: escrow } = await supabaseAdmin
@@ -116,13 +160,7 @@ serve(async (req) => {
       const commission = escrow.amount * COMMISSION_RATE;
       const payout = escrow.amount - commission;
 
-      // Get project to find accepted applicant
-      const { data: project } = await supabaseAdmin
-        .from("projects")
-        .select("owner_id")
-        .eq("id", project_id)
-        .single();
-
+      // Get accepted applicant
       const { data: acceptedApp } = await supabaseAdmin
         .from("project_applications")
         .select("applicant_id")
