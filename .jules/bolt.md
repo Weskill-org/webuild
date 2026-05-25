@@ -5,6 +5,10 @@
 ## 2026-05-22 - [Memoize Array Filtering in Renders]
 **Learning:** Filtering and sorting large lists directly in the render body creates new array references on every render, which can defeat memoization of child components and cause performance bottlenecks. If a calculation depends on an unmemoized array variable defined within the render, wrapping the calculation in `useMemo` requires moving the unmemoized array creation into the `useMemo` block as well.
 **Action:** Always wrap expensive list filtering and sorting in `useMemo` and ensure any intermediate derived arrays are calculated within the hook to maintain stable references and valid dependencies.
+
+## 2026-05-24 - [Memoizing Derived State in Custom Hooks]
+**Learning:** In heavily used custom hooks like realtime synchronizers, derived state computations (like filtering arrays to get counts or reducing to a balance) happen on every re-render of the hook. If the hook is imported in multiple places, these expensive O(N) operations stack up. Memoizing them prevents performance bottlenecks when unrelated state changes trigger re-renders.
+**Action:** When calculating derived counts or aggregates from arrays in custom hooks, wrap the calculations in `useMemo` with explicit dependencies to avoid O(N) recalculations on every render.
 ## 2024-05-23 - Memoization of Unnecessary List Recomputations
 **Learning:** Certain high-complexity pages like `SkillQuizzes` contain highly active state updates (e.g., an exam timer decrementing every second). This triggers full component re-renders. Unmemoized derived state, such as large array filters (e.g., `quizzes.filter(...)`), are re-evaluated pointlessly on every tick, hurting performance.
 **Action:** When filtering or transforming large datasets in components that have frequently updating states like timers, always wrap the derived list computation in a `useMemo` block using the correct dependency arrays.

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useAuth } from '@/providers/AuthProvider';
@@ -283,8 +283,12 @@ export default function useRealtime() {
     };
   }, [user, profile?.id, profile?.role, applyChange]);
 
+  // ⚡ Bolt: Wrapped derived state calculations in useMemo
+  // 🎯 Why: These values were being recalculated on every render of useRealtime hook. Since this hook is used across many components (DashboardLayout, Projects, etc.), avoiding recalculations of expensive array operations improves overall app performance.
+  // 📊 Impact: Prevents unnecessary array filtering/reducing when unrelated state changes trigger re-renders.
+
   // Active Projects: non-completed projects the user is involved in
-  const activeProjectsCount = (() => {
+  const activeProjectsCount = useMemo(() => {
     if (profile?.role === 'student') {
       // Student: projects they have an accepted application for, not yet completed
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && p.status !== 'completed' && p.status !== 'submitted').length;
@@ -295,10 +299,10 @@ export default function useRealtime() {
     }
     // Company: projects they own, not yet completed
     return projects.filter((p) => p.status !== 'completed').length;
-  })();
+  }, [projects, profile?.role, acceptedProjectIds, campusProjectIds]);
 
   // Completed: finished projects the user is involved in
-  const completedCount = (() => {
+  const completedCount = useMemo(() => {
     if (profile?.role === 'student') {
       // Student: only count THEIR completed projects
       return projects.filter((p) => acceptedProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
@@ -308,10 +312,11 @@ export default function useRealtime() {
       return projects.filter((p) => campusProjectIds.includes(p.id) && (p.status === 'completed' || p.status === 'submitted')).length;
     }
     return projects.filter((p) => p.status === 'completed').length;
-  })();
-  const walletBalance = wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0);
-  const unreadMessages = messages.filter((m) => !m.read && m.recipient_id === profile?.id).length;
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
+  }, [projects, profile?.role, acceptedProjectIds, campusProjectIds]);
+
+  const walletBalance = useMemo(() => wallets.reduce((acc, w) => acc + (w.balance ?? 0), 0), [wallets]);
+  const unreadMessages = useMemo(() => messages.filter((m) => !m.read && m.recipient_id === profile?.id).length, [messages, profile?.id]);
+  const unreadNotifications = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   return {
     projects,
