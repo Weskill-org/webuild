@@ -45,10 +45,48 @@ serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Auth Check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const body: RequestBody = await req.json();
     const { campus_id, batch_id } = body;
+
+    // IDOR Check
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin" && user.id !== campus_id) {
+       return new Response(
+          JSON.stringify({ error: "Forbidden: You do not have access to this campus" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+    }
 
     if (!campus_id || !batch_id) {
       return new Response(
@@ -112,7 +150,7 @@ serve(async (req) => {
         });
 
         // listUsers doesn't support email filter via params, so we search by email
-        let existingUser = null;
+        const existingUser = null;
 
         // Use a more targeted approach: try to get user by email
         // We'll query the profiles table joined with auth concept, or use getUserByEmail (not available)
