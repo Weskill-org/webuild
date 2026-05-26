@@ -241,13 +241,13 @@ export default function useRealtime() {
 
         const { data: msgData } = await supabase
           .from('messages')
-          .select('*')
+          .select('id, sender_id, recipient_id, subject, body, read, created_at')
           .or(`recipient_id.eq.${profile.id},sender_id.eq.${profile.id}`);
         setMessages((msgData as Message[]) ?? []);
 
         const { data: walletData } = await supabase
           .from('wallets')
-          .select('*')
+          .select('id, owner_id, balance, currency, created_at, updated_at')
           .eq('owner_id', profile.id);
         
         const fetchedWallets = (walletData as Wallet[]) ?? [];
@@ -256,20 +256,20 @@ export default function useRealtime() {
         if (fetchedWallets.length > 0) {
           const { data: txData } = await supabase
             .from('transactions')
-            .select('*')
+            .select('id, wallet_id, type, amount, description, reference_id, created_at')
             .eq('wallet_id', fetchedWallets[0].id);
           setTransactions((txData as Transaction[]) ?? []);
         }
 
         const { data: certData } = await supabase
           .from('certificates')
-          .select('*')
+          .select('id, project_id, student_id, company_name, project_title, course_name, payout_amount, issued_at, certificate_uid, display_id, qr_data')
           .eq('student_id', profile.id);
         setCertificates((certData as Certificate[]) ?? []);
 
         const { data: notifData } = await supabase
           .from('notifications')
-          .select('*')
+          .select('id, user_id, title, body, type, read, created_at')
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false });
         setNotifications((notifData as Notification[]) ?? []);
