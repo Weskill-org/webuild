@@ -919,13 +919,26 @@ export default function SkillQuizzes() {
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
     // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    // ⚡ Bolt: Loop consolidation (Cannot useMemo here since it is after an early return, but we can consolidate the 5 .filter() calls into one pass)
+    // 🎯 Why: This component re-renders every 1s due to a timer. Previously it ran 5 separate .filter() passes every second.
+    // 📊 Impact: Combined 5 O(n) loops into a single O(n) pass.
+    const counts = (() => {
+      let answered = 0;
+      let not_answered = 0;
+      let marked = 0;
+      let answered_marked = 0;
+      let not_visited = 0;
+
+      for (const s of Object.values(paletteStatuses)) {
+        if (s === "answered") answered++;
+        else if (s === "not_answered") not_answered++;
+        else if (s === "marked") marked++;
+        else if (s === "answered_marked") answered_marked++;
+        else if (s === "not_visited") not_visited++;
+      }
+
+      return { answered, not_answered, marked, answered_marked, not_visited };
+    })();
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
