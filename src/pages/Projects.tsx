@@ -84,7 +84,7 @@ const Projects = () => {
       if (myProjects.length === 0) return;
       const { data, error } = await supabase
         .from('deliverables')
-        .select('*')
+        .select('id, project_id, file_name, file_url, file_size, description, created_at')
         .in('project_id', myProjects.map(p => p.id));
       
       if (data) {
