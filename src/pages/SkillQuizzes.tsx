@@ -101,6 +101,27 @@ export default function SkillQuizzes() {
 
   const timerRef = useRef<any>(null);
 
+  // ⚡ Bolt Optimization: Memoized and consolidated palette counts calculation
+  // 🎯 Why: Previously, this ran 5 separate O(n) array passes on every second tick of the exam timer (`timeLeft` change) inside a conditional render block.
+  // 📊 Impact: Reduces O(5n) array operations per second to O(n) only when answers change, eliminating thousands of redundant operations during a long exam.
+  const paletteCounts = useMemo(() => {
+    const result = {
+      answered: 0,
+      not_answered: 0,
+      marked: 0,
+      answered_marked: 0,
+      not_visited: 0,
+    };
+
+    for (const status of Object.values(paletteStatuses)) {
+      if (status in result) {
+        result[status as keyof typeof result]++;
+      }
+    }
+
+    return result;
+  }, [paletteStatuses]);
+
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
       const query = searchQuery.toLowerCase().trim();
@@ -918,14 +939,7 @@ export default function SkillQuizzes() {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    const counts = paletteCounts;
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
