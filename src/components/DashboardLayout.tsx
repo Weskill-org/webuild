@@ -292,6 +292,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 size="icon"
                 className="relative w-9 h-9"
                 onClick={() => navigate("/notifications")}
+                aria-label="View notifications"
               >
                 <Bell className="w-5 h-5" />
                 {unreadNotifications > 0 && (
@@ -301,6 +302,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <button
                 onClick={() => navigate("/settings")}
                 className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0"
+                aria-label="User settings"
               >
                 {profile?.logo_url ? (
                   <img src={profile.logo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
