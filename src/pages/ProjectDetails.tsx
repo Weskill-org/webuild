@@ -523,6 +523,7 @@ const ProjectDetails = () => {
                             onClick={() => navigate(`/messages?partner=${app.applicant_id}`)}
                             className="text-muted-foreground hover:text-primary"
                             title="Message Applicant"
+                            aria-label="Message applicant"
                           >
                             <MessageSquare className="w-4 h-4" />
                           </Button>
