@@ -127,8 +127,30 @@ serve(async (req) => {
   }
 
   try {
-    const { event, project_id, user_id, data } = await req.json();
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Verify authentication using anon key and the user's token
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { event, project_id, user_id, data } = await req.json();
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -306,7 +328,7 @@ serve(async (req) => {
     // ─── 2. Send FCM push notifications ─────────────────────────────────────
     let fcmSentCount = 0;
     let fcmFailCount = 0;
-    let staleTokens: string[] = [];
+    const staleTokens: string[] = [];
 
     if (FIREBASE_SA_JSON) {
       try {
