@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -35,13 +35,22 @@ export default function AdminUsers() {
     })();
   }, []);
 
-  const filtered = users.filter((u) => {
-    const name = u.full_name || u.company_name || u.university || u.email || "";
-    return (!search || name.toLowerCase().includes(search.toLowerCase())) &&
-           (roleFilter === "all" || u.role === roleFilter);
-  });
-  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  // ⚡ Bolt Optimization: Memoized filter pipeline
+  // 🎯 Why: Re-filtering the entire users list on every keystroke (or unrelated render) was expensive.
+  // 📊 Impact: Filtering execution only happens when `search`, `roleFilter` or `users` change.
+  const { filtered, totalPages } = useMemo(() => {
+    const f = users.filter((u) => {
+      const name = u.full_name || u.company_name || u.university || u.email || "";
+      return (!search || name.toLowerCase().includes(search.toLowerCase())) &&
+             (roleFilter === "all" || u.role === roleFilter);
+    });
+    return {
+      filtered: f,
+      totalPages: Math.ceil(f.length / PAGE_SIZE)
+    };
+  }, [users, search, roleFilter]);
+
+  const paged = useMemo(() => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filtered, page]);
 
   const handleRoleAction = async (userId: string, role: string, action: string) => {
     const finalRole = action === "grant" ? role : "user";
