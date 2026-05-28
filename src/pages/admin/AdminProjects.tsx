@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -36,10 +36,15 @@ export default function AdminProjects() {
     })();
   }, []);
 
-  const filtered = projects.filter((p) => {
-    return (!search || p.title.toLowerCase().includes(search.toLowerCase())) &&
-           (statusFilter === "all" || p.status === statusFilter);
-  });
+  // ⚡ Bolt Optimization: Memoized filter pipeline
+  // 🎯 Why: Re-filtering the entire projects list on every keystroke (or unrelated render) was expensive.
+  // 📊 Impact: Filtering execution only happens when `search`, `statusFilter` or `projects` change.
+  const filtered = useMemo(() => {
+    return projects.filter((p) => {
+      return (!search || p.title.toLowerCase().includes(search.toLowerCase())) &&
+             (statusFilter === "all" || p.status === statusFilter);
+    });
+  }, [projects, search, statusFilter]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
