@@ -290,6 +290,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="View notifications"
                 className="relative w-9 h-9"
                 onClick={() => navigate("/notifications")}
               >
