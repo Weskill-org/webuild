@@ -918,14 +918,17 @@ export default function SkillQuizzes() {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    // ⚡ Bolt Optimization: Loop consolidation
+    // 🎯 Why: Active quiz page re-renders every second due to `timeLeft` countdown. Previously, this unmemoized object instantiation caused 5 separate O(n) array loops (`Object.values(...).filter(...)`) per second, burning CPU unnecessarily.
+    // 📊 Impact: Combined 5 array loops into a single O(n) pass. Moving useMemo up past the conditional return breaks hooks rules, so opting for a clean 1-pass loop to eliminate 4 iterations per second.
+    const counts = { answered: 0, not_answered: 0, marked: 0, answered_marked: 0, not_visited: 0 };
+    for (const status of Object.values(paletteStatuses)) {
+      if (status === "answered") counts.answered++;
+      else if (status === "not_answered") counts.not_answered++;
+      else if (status === "marked") counts.marked++;
+      else if (status === "answered_marked") counts.answered_marked++;
+      else if (status === "not_visited") counts.not_visited++;
+    }
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
