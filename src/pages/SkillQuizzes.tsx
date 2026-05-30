@@ -101,6 +101,28 @@ export default function SkillQuizzes() {
 
   const timerRef = useRef<any>(null);
 
+  // ⚡ Bolt Performance Optimization
+  // Calculates palette statuses using a single O(N) reduce pass instead of 5 separate O(N) filter passes.
+  // Memoized at the top level to avoid recalculation on every second tick of the exam timer,
+  // and placed here to obey React hooks rules (cannot be inside the active exam conditional).
+  const paletteCounts = useMemo(() => {
+    return Object.values(paletteStatuses).reduce(
+      (acc, status) => {
+        if (acc[status] !== undefined) {
+          acc[status]++;
+        }
+        return acc;
+      },
+      {
+        answered: 0,
+        not_answered: 0,
+        marked: 0,
+        answered_marked: 0,
+        not_visited: 0,
+      } as Record<string, number>
+    );
+  }, [paletteStatuses]);
+
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
       const query = searchQuery.toLowerCase().trim();
@@ -917,16 +939,6 @@ export default function SkillQuizzes() {
   if (activeQuiz && examMode === "active") {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
-    
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
-
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
 
@@ -1120,33 +1132,33 @@ export default function SkillQuizzes() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-2 p-1.5 bg-secondary/20 rounded">
                   <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white rounded-b rounded-t-sm shadow-sm">
-                    {counts.answered}
+                    {paletteCounts.answered}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-medium">Answered</span>
                 </div>
                 <div className="flex items-center gap-2 p-1.5 bg-secondary/20 rounded">
                   <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-rose-500 text-white rounded-t rounded-b-sm shadow-sm">
-                    {counts.not_answered}
+                    {paletteCounts.not_answered}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-medium">Not Answered</span>
                 </div>
                 <div className="flex items-center gap-2 p-1.5 bg-secondary/20 rounded">
                   <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-indigo-600 text-white rounded-full shadow-sm">
-                    {counts.marked}
+                    {paletteCounts.marked}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-medium">Marked</span>
                 </div>
                 <div className="flex items-center gap-2 p-1.5 bg-secondary/20 rounded">
                   <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-indigo-600 text-white rounded-full shadow-sm ring-1 ring-emerald-400">
-                    {counts.answered_marked}
+                    {paletteCounts.answered_marked}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-medium font-bold truncate">Marked & Ans</span>
                 </div>
                 <div className="col-span-2 flex items-center gap-2 p-1.5 bg-secondary/20 rounded justify-center">
                   <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-secondary text-secondary-foreground border border-border rounded shadow-sm">
-                    {counts.not_visited}
+                    {paletteCounts.not_visited}
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">Not Visited ({counts.not_visited})</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">Not Visited ({paletteCounts.not_visited})</span>
                 </div>
               </div>
             </Card>
@@ -1217,15 +1229,15 @@ export default function SkillQuizzes() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-emerald-500 font-semibold">Answered:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{counts.answered}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{paletteCounts.answered}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-rose-500 font-semibold">Not Answered:</span>
-                    <span className="font-bold text-rose-600 dark:text-rose-400">{counts.not_answered}</span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400">{paletteCounts.not_answered}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-indigo-500 font-semibold font-bold">Marked for Review:</span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{counts.marked + counts.answered_marked}</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{paletteCounts.marked + paletteCounts.answered_marked}</span>
                   </div>
                 </div>
               </div>
