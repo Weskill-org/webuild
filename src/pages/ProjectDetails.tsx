@@ -37,6 +37,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/DashboardLayout";
 import ReviewDialog from "@/components/ReviewDialog";
 import { sendNotification } from "@/lib/notifications";
+import { sanitizeUrl } from "@/lib/utils";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getCategoryColor } from "@/lib/projectCategories";
 import FileDeliverables from "@/components/FileDeliverables";
@@ -784,8 +785,8 @@ const ProjectDetails = () => {
                     <Link to={`/profile/${owner.id}`} className="font-medium truncate hover:text-primary transition-colors">
                       {owner.company_name || owner.full_name}
                     </Link>
-                    {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
+                    {owner.website && sanitizeUrl(owner.website) && (
+                      <a href={sanitizeUrl(owner.website)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}
