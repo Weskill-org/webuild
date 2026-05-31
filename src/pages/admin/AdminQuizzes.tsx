@@ -832,6 +832,7 @@ export default function AdminQuizzes() {
                           variant="ghost"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Preview"
+                          aria-label="Preview quiz"
                           onClick={() => setPreviewQuiz(quiz)}
                         >
                           <Eye className="w-4 h-4" />
@@ -841,6 +842,7 @@ export default function AdminQuizzes() {
                           variant="ghost"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Duplicate"
+                          aria-label="Duplicate quiz"
                           onClick={() => duplicateQuiz(quiz)}
                         >
                           <Copy className="w-4 h-4" />
@@ -850,6 +852,7 @@ export default function AdminQuizzes() {
                           variant="ghost"
                           className="h-8 w-8 text-primary hover:bg-primary/10"
                           title="Edit"
+                          aria-label="Edit quiz"
                           onClick={() => openEdit(quiz)}
                         >
                           <Pencil className="w-4 h-4" />
@@ -859,6 +862,7 @@ export default function AdminQuizzes() {
                           variant="ghost"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           title="Delete"
+                          aria-label="Delete quiz"
                           onClick={() => setDeleteTarget(quiz)}
                         >
                           <Trash2 className="w-4 h-4" />
