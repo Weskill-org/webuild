@@ -292,6 +292,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 size="icon"
                 className="relative w-9 h-9"
                 onClick={() => navigate("/notifications")}
+                aria-label="View notifications"
               >
                 <Bell className="w-5 h-5" />
                 {unreadNotifications > 0 && (
