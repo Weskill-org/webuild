@@ -822,7 +822,7 @@ export default function SkillQuizzes() {
       <DashboardLayout>
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b">
-            <Button variant="ghost" size="icon" onClick={() => { setActiveQuiz(null); setExamMode("list"); }}>
+            <Button variant="ghost" size="icon" onClick={() => { setActiveQuiz(null); setExamMode("list"); }} aria-label="Back to quizzes">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -1274,7 +1274,7 @@ export default function SkillQuizzes() {
           {/* Header Banner */}
           <div className="flex items-center justify-between border-b pb-4 flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => { setActiveQuiz(null); setActiveAttempt(null); setExamMode("list"); }}>
+              <Button variant="ghost" size="icon" onClick={() => { setActiveQuiz(null); setActiveAttempt(null); setExamMode("list"); }} aria-label="Back to quizzes">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
