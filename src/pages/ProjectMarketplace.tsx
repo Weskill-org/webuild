@@ -90,13 +90,15 @@ const ProjectMarketplace = () => {
   };
 
   const filtered = useMemo(() => {
+    const searchLower = search ? search.toLowerCase() : "";
+
     return openProjects
       .filter((p) => {
         const matchesSearch =
           !search ||
-          p.title.toLowerCase().includes(search.toLowerCase()) ||
-          p.description?.toLowerCase().includes(search.toLowerCase()) ||
-          (p.required_skills ?? []).some((s) => s.toLowerCase().includes(search.toLowerCase()));
+          p.title.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower) ||
+          (p.required_skills ?? []).some((s) => s.toLowerCase().includes(searchLower));
         const matchesType = projectType === "all" || p.project_type === projectType;
         const matchesSubCategory = subCategory === "all" || p.sub_category === subCategory;
         const matchesBudget = (p.budget_min ?? 0) >= budgetRange[0] && (p.budget_max ?? 0) <= budgetRange[1];

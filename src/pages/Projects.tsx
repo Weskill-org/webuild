@@ -190,13 +190,14 @@ const Projects = () => {
   // 🎯 Why: Project filtering and sorting are expensive array operations. Without memoization, they recalculate on every render (even when filters/search haven't changed, e.g., during unrelated UI updates).
   // 📊 Impact: Prevents unnecessary recalculations and keeps typing in the search bar smooth.
   const filteredProjects = useMemo(() => {
+    const q = search ? search.toLowerCase() : "";
+
     return myProjects
       .filter(p => filter === "all" || p.status === filter)
       .filter(p => {
         if (filterType !== "all" && p.project_type !== filterType) return false;
         if (filterSubCategory !== "all" && p.sub_category !== filterSubCategory) return false;
         if (search) {
-          const q = search.toLowerCase();
           const matchesTitle = p.title.toLowerCase().includes(q);
           const matchesDesc = p.description?.toLowerCase().includes(q);
           const matchesSkills = (p.required_skills ?? []).some(s => s.toLowerCase().includes(q));
