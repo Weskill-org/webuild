@@ -54,12 +54,13 @@ const ExploreProjects = () => {
   }, []);
 
   const filteredProjects = useMemo(() => {
+    const q = search ? search.toLowerCase() : "";
+
     return projects.filter((p) => {
       if (filterStatus !== "all" && p.status !== filterStatus) return false;
       if (filterType !== "all" && p.project_type !== filterType) return false;
       if (filterSubCategory !== "all" && p.sub_category !== filterSubCategory) return false;
       if (search) {
-        const q = search.toLowerCase();
         const matchesTitle = p.title.toLowerCase().includes(q);
         const matchesDesc = p.description?.toLowerCase().includes(q);
         const matchesSkills = (p.required_skills ?? []).some((s) => s.toLowerCase().includes(q));
