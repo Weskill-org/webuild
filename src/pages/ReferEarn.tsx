@@ -187,6 +187,7 @@ const ReferEarn = () => {
               size="icon"
               className="h-14 w-14 shrink-0 rounded-xl border-2 border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all"
               onClick={handleCopyCode}
+              aria-label="Copy referral code"
             >
               {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
             </Button>

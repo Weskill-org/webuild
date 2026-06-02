@@ -210,7 +210,12 @@ const Batches = () => {
                       </p>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(batch.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(batch.id)}
+                    aria-label="Delete batch"
+                  >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>

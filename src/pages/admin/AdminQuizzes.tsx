@@ -833,6 +833,7 @@ export default function AdminQuizzes() {
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Preview"
                           onClick={() => setPreviewQuiz(quiz)}
+                          aria-label="Preview quiz"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -842,6 +843,7 @@ export default function AdminQuizzes() {
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Duplicate"
                           onClick={() => duplicateQuiz(quiz)}
+                          aria-label="Duplicate quiz"
                         >
                           <Copy className="w-4 h-4" />
                         </Button>
@@ -851,6 +853,7 @@ export default function AdminQuizzes() {
                           className="h-8 w-8 text-primary hover:bg-primary/10"
                           title="Edit"
                           onClick={() => openEdit(quiz)}
+                          aria-label="Edit quiz"
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -860,6 +863,7 @@ export default function AdminQuizzes() {
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           title="Delete"
                           onClick={() => setDeleteTarget(quiz)}
+                          aria-label="Delete quiz"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -994,6 +998,7 @@ export default function AdminQuizzes() {
                           variant="ghost"
                           className="h-7 w-7 text-destructive hover:bg-destructive/10"
                           onClick={() => removeSection(sec.id)}
+                          aria-label="Remove section"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -1086,6 +1091,7 @@ export default function AdminQuizzes() {
                         variant="ghost"
                         className="h-7 w-7 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
                         onClick={() => removeQuestion(qi)}
+                        aria-label="Remove question"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -1134,6 +1140,7 @@ export default function AdminQuizzes() {
                               variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               onClick={() => removeOption(qi, oi)}
+                              aria-label="Remove option"
                             >
                               <X className="w-3.5 h-3.5" />
                             </Button>
@@ -1189,6 +1196,7 @@ export default function AdminQuizzes() {
                                 variant="ghost"
                                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                 onClick={() => removeOption(qi, oi)}
+                                aria-label="Remove option"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </Button>
