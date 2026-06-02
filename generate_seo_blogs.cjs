@@ -299,5 +299,5 @@ for (let i = 0; i < 100; i++) {
   });
 }
 
-fs.writeFileSync('src/blogPosts.json', JSON.stringify(blogs, null, 2));
+let existing = []; try { existing = JSON.parse(fs.readFileSync('src/blogPosts.json', 'utf8')); } catch(e) {} fs.writeFileSync('src/blogPosts.json', JSON.stringify(existing.concat(blogs), null, 2));
 console.log('Successfully generated 100 unique, non-repetitive super SEO-friendly blog posts in src/blogPosts.json');
