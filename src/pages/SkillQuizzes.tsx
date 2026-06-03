@@ -918,14 +918,17 @@ export default function SkillQuizzes() {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    // ⚡ Bolt Optimization: Loop consolidation
+    // 🎯 Why: Previously ran five separate `Object.values().filter()` loops on every render when the exam was active, especially expensive during active exam timer countdowns.
+    // 📊 Impact: Combined O(5n) iterations into a single O(n) pass.
+    const counts = { answered: 0, not_answered: 0, marked: 0, answered_marked: 0, not_visited: 0 };
+    for (const status of Object.values(paletteStatuses)) {
+      if (status === "answered") counts.answered++;
+      else if (status === "not_answered") counts.not_answered++;
+      else if (status === "marked") counts.marked++;
+      else if (status === "answered_marked") counts.answered_marked++;
+      else if (status === "not_visited") counts.not_visited++;
+    }
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
