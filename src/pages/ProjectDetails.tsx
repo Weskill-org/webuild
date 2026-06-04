@@ -31,6 +31,7 @@ import {
   GraduationCap,
   Megaphone,
 } from "lucide-react";
+import { sanitizeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -785,7 +786,7 @@ const ProjectDetails = () => {
                       {owner.company_name || owner.full_name}
                     </Link>
                     {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
+                      <a href={sanitizeUrl(owner.website)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}
