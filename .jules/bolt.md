@@ -9,12 +9,19 @@
 ## 2026-05-24 - [Loop Consolidation in React Renders]
 **Learning:** Running multiple separate `.filter()` array passes to derive simple stats (like counting statuses) during a render cycle causes unnecessary iterations (O(n) times the number of passes). If these passes happen on every render or keystroke without memoization, it easily creates a performance bottleneck in large datasets.
 **Action:** When computing multiple derived stats from a single list, consolidate them into a single loop (e.g., using a traditional `for` loop or `reduce`) and wrap the calculation in `useMemo` to achieve optimal O(n) performance instead of O(x * n).
+
 ## 2026-05-24 - [Memoizing Derived State in Custom Hooks]
 **Learning:** In heavily used custom hooks like realtime synchronizers, derived state computations (like filtering arrays to get counts or reducing to a balance) happen on every re-render of the hook. If the hook is imported in multiple places, these expensive O(N) operations stack up. Memoizing them prevents performance bottlenecks when unrelated state changes trigger re-renders.
 **Action:** When calculating derived counts or aggregates from arrays in custom hooks, wrap the calculations in `useMemo` with explicit dependencies to avoid O(N) recalculations on every render.
-## 2024-05-23 - Memoization of Unnecessary List Recomputations
+
+## 2024-05-23 - [Memoization of Unnecessary List Recomputations]
 **Learning:** Certain high-complexity pages like `SkillQuizzes` contain highly active state updates (e.g., an exam timer decrementing every second). This triggers full component re-renders. Unmemoized derived state, such as large array filters (e.g., `quizzes.filter(...)`), are re-evaluated pointlessly on every tick, hurting performance.
 **Action:** When filtering or transforming large datasets in components that have frequently updating states like timers, always wrap the derived list computation in a `useMemo` block using the correct dependency arrays.
-## 2024-05-23 - Memoizing Client-side Search and Filtering Arrays in Admin Dashboard
+
+## 2024-05-23 - [Memoizing Client-side Search and Filtering Arrays in Admin Dashboard]
 **Learning:** In the `AdminDashboard` components, client-side filtering and slicing arrays directly inside the component body led to recalculation on every re-render (e.g., when a user typed into the input, the full list was filtered multiple times). While `useDebounce` might seem like an intuitive fix for filtering state to defer these updates, combining debounce with `useMemo` for filtering based on controlled inputs is actually a performance anti-pattern. That strategy delays the application of the `useMemo` memoized array, which forces React to perform mapping, reconciliation, and rendering against the older, *larger* list for every keystroke until the debounce resolves. Thus, debouncing filtering logic actually increased computations rather than reducing them.
 **Action:** When performing local, in-memory array filtering (like search filters) in React components, do *not* debounce the `search` input value. Instead, compute the filtered state immediately in a `useMemo` hook, avoiding intermediate calculations, allowing React to prune the DOM tree immediately on each keystroke. If real performance issues persist with large lists, use `useTransition` or `useDeferredValue` (React 18+) or virtualization, instead of `useDebounce`.
+
+## 2026-05-26 - [Procedural Generation of Human-Like Text]
+**Learning:** Generating highly readable, human-like text at scale without LLM access using simplistic CFG (Context-Free Grammar) leads to robotic, repetitive "word salad" that harms SEO and user experience. Simple random combinations of phrases inevitably sound mechanical over long word counts.
+**Action:** When tasked with generating large volumes of high-quality content without LLMs, adhere closely to environment constraints, but prioritize the best possible structural variation using deeply complex nested CFG templates if dynamic content generation is strictly required. Acknowledge that achieving true "senior strategist" quality is not feasible via simple scripting.
