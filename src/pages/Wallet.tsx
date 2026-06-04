@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,24 @@ const Wallet = () => {
   const [giftOpen, setGiftOpen] = useState(false);
 
   const quickAmounts = [500, 1000, 2000, 5000];
+
+  // ⚡ Bolt: Memoize grouped transactions
+  // 🎯 Why: Instead of running 6 separate `.filter()` array loops (2 per tab) every render,
+  // we do a single pass through the transactions array and cache the grouped result.
+  const groupedTransactions = useMemo(() => {
+    const grouped = {
+      all: transactions || [],
+      credit: [] as typeof transactions,
+      debit: [] as typeof transactions,
+    };
+
+    (transactions || []).forEach(tx => {
+      if (tx.type === "credit") grouped.credit.push(tx);
+      else if (tx.type === "debit") grouped.debit.push(tx);
+    });
+
+    return grouped;
+  }, [transactions]);
 
   const handleAddFunds = async () => {
     const amount = parseFloat(addFundAmount);
@@ -260,14 +278,11 @@ const Wallet = () => {
             </TabsList>
           </div>
 
-          {["all", "credit", "debit"].map((tab) => (
+          {(["all", "credit", "debit"] as const).map((tab) => (
             <TabsContent key={tab} value={tab}>
               <div className="grid gap-3">
-                {transactions
-                  .filter((tx) => tab === "all" || tx.type === tab)
-                  .length > 0 ? (
-                  transactions
-                    .filter((tx) => tab === "all" || tx.type === tab)
+                {groupedTransactions[tab].length > 0 ? (
+                  groupedTransactions[tab]
                     .map((tx) => (
                       <Card key={tx.id} className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
