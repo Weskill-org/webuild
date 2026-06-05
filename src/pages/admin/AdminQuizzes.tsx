@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -672,12 +672,13 @@ export default function AdminQuizzes() {
   };
 
   /* ───────── filter ───────── */
-  const filtered = quizzes.filter(
+  // ⚡ Bolt: Memoize filtered array to prevent O(n) recalculation on every render
+  const filtered = useMemo(() => quizzes.filter(
     (q) =>
       !search ||
       q.title.toLowerCase().includes(search.toLowerCase()) ||
       q.skill_name.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [quizzes, search]);
 
   /* ───────── stats ───────── */
   const totalAttempts = Object.values(attemptCounts).reduce((a, b) => a + b, 0);
