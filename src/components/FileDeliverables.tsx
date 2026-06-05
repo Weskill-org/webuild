@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { sanitizeUrl } from "@/lib/utils";
 
 interface Deliverable {
   id: string;
@@ -219,7 +220,7 @@ export default function FileDeliverables({ projectId, milestoneId, canUpload = t
               </div>
               <div className="flex gap-1">
                 <Button size="icon" variant="ghost" asChild aria-label="Download file">
-                  <a href={d.file_url} target="_blank" rel="noopener noreferrer">
+                  <a href={sanitizeUrl(d.file_url)} target="_blank" rel="noopener noreferrer">
                     <Download className="w-4 h-4" />
                   </a>
                 </Button>
