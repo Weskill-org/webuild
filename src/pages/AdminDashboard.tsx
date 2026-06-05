@@ -1207,11 +1207,25 @@ function ReferralsTab() {
     toast({ title: "Referral revoked" });
   };
 
-  const completedCount = referrals.filter((r) => r.status === "completed").length;
-  const revokedCount = referrals.filter((r) => r.status === "revoked").length;
-  const totalRewards = referrals
-    .filter((r) => r.status === "completed")
-    .reduce((sum, r) => sum + (r.referrer_reward ?? 0) + (r.referred_reward ?? 0), 0);
+  // ⚡ Bolt Optimization: Loop consolidation & Memoization
+  // 🎯 Why: Previously ran three separate array loops (`.filter` and `.reduce`) on every render.
+  // 📊 Impact: Combined three O(n) loops into a single O(n) loop and memoized the result based on `referrals`, saving redundant iterations.
+  const { completedCount, revokedCount, totalRewards } = useMemo(() => {
+    let completedCount = 0;
+    let revokedCount = 0;
+    let totalRewards = 0;
+
+    for (const r of referrals) {
+      if (r.status === "completed") {
+        completedCount++;
+        totalRewards += (r.referrer_reward ?? 0) + (r.referred_reward ?? 0);
+      } else if (r.status === "revoked") {
+        revokedCount++;
+      }
+    }
+
+    return { completedCount, revokedCount, totalRewards };
+  }, [referrals]);
 
   const filtered = useMemo(() => {
     return referrals.filter((r) => {
