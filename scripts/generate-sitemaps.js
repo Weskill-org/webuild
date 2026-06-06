@@ -5,6 +5,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper to extract existing lastmod dates
+function getExistingLastmods(sitemapPath) {
+  const lastmods = {};
+  if (fs.existsSync(sitemapPath)) {
+    const content = fs.readFileSync(sitemapPath, 'utf8');
+    const regex = /<loc>(.*?)<\/loc>\s*<lastmod>(.*?)<\/lastmod>/g;
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      lastmods[match[1]] = match[2];
+    }
+  }
+  return lastmods;
+}
+
 // Helper to generate URL-friendly slug (matches src/utils/slugify.ts)
 const generateSlug = (name) => {
   return name
@@ -36,14 +50,18 @@ const staticPages = [
 
 function generateSitemapXml() {
   const today = new Date().toISOString().split('T')[0];
+  const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
+  const existingLastmods = getExistingLastmods(sitemapPath);
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
   // 1. Add static pages
   for (const page of staticPages) {
     xml += `  <url>\n`;
-    xml += `    <loc>${BASE_URL}${page.path}</loc>\n`;
-    xml += `    <lastmod>${today}</lastmod>\n`;
+    const url = `${BASE_URL}${page.path}`;
+    const lastmodDate = existingLastmods[url] || today;
+    xml += `    <loc>${url}</loc>\n`;
+    xml += `    <lastmod>${lastmodDate}</lastmod>\n`;
     xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
     xml += `    <priority>${page.priority}</priority>\n`;
     xml += `  </url>\n`;
@@ -60,9 +78,11 @@ function generateSitemapXml() {
       for (const post of blogPosts) {
         if (post.title) {
           const slug = generateSlug(post.title);
+          const url = `${BASE_URL}/blog/${slug}`;
+          const lastmodDate = existingLastmods[url] || today;
           xml += `  <url>\n`;
-          xml += `    <loc>${BASE_URL}/blog/${slug}</loc>\n`;
-          xml += `    <lastmod>${today}</lastmod>\n`;
+          xml += `    <loc>${url}</loc>\n`;
+          xml += `    <lastmod>${lastmodDate}</lastmod>\n`;
           xml += `    <changefreq>weekly</changefreq>\n`;
           xml += `    <priority>0.8</priority>\n`;
           xml += `  </url>\n`;
