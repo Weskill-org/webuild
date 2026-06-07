@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { Transaction } from "@/types/database";
@@ -6,26 +7,31 @@ interface EarningsChartProps {
   transactions: Transaction[];
 }
 
-export default function EarningsChart({ transactions }: EarningsChartProps) {
-  // Group transactions by month
-  const monthlyData: Record<string, { credits: number; debits: number }> = {};
-  
-  transactions.forEach((tx) => {
-    const date = new Date(tx.created_at);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    if (!monthlyData[key]) monthlyData[key] = { credits: 0, debits: 0 };
-    if (tx.type === "credit") monthlyData[key].credits += tx.amount;
-    else if (tx.type === "debit") monthlyData[key].debits += tx.amount;
-  });
+const EarningsChart = memo(function EarningsChart({ transactions }: EarningsChartProps) {
+  // ⚡ Bolt Optimization: Memoize data derivation and wrap in React.memo
+  // 🎯 Why: Recharts and date parsing are computationally expensive. Dashboard updates frequently on search keystrokes.
+  // 📊 Impact: Prevents massive SVG recalculations and blocks main thread lag during typing by skipping re-renders.
+  const chartData = useMemo(() => {
+    // Group transactions by month
+    const monthlyData: Record<string, { credits: number; debits: number }> = {};
 
-  const chartData = Object.entries(monthlyData)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-6)
-    .map(([month, data]) => ({
-      month: new Date(month + "-01").toLocaleDateString("en-US", { month: "short" }),
-      earnings: data.credits,
-      spent: data.debits,
-    }));
+    transactions.forEach((tx) => {
+      const date = new Date(tx.created_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      if (!monthlyData[key]) monthlyData[key] = { credits: 0, debits: 0 };
+      if (tx.type === "credit") monthlyData[key].credits += tx.amount;
+      else if (tx.type === "debit") monthlyData[key].debits += tx.amount;
+    });
+
+    return Object.entries(monthlyData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([month, data]) => ({
+        month: new Date(month + "-01").toLocaleDateString("en-US", { month: "short" }),
+        earnings: data.credits,
+        spent: data.debits,
+      }));
+  }, [transactions]);
 
   if (chartData.length === 0) {
     return (
@@ -59,4 +65,6 @@ export default function EarningsChart({ transactions }: EarningsChartProps) {
       </div>
     </Card>
   );
-}
+});
+
+export default EarningsChart;
