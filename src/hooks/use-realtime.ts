@@ -90,7 +90,8 @@ export default function useRealtime() {
   useEffect(() => {
     if (!user || !profile?.id) return;
 
-    const channel = supabase.channel('public-realtime');
+    const channelId = `public-realtime-${Math.random().toString(36).substring(2, 11)}`;
+    const channel = supabase.channel(channelId);
 
     const tables: TableName[] = ['projects', 'wallets', 'transactions', 'messages', 'certificates', 'notifications'];
 
