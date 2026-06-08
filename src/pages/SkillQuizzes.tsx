@@ -90,6 +90,15 @@ export default function SkillQuizzes() {
   const [historyQuiz, setHistoryQuiz] = useState<Quiz | null>(null);
   const [percentileRank, setPercentileRank] = useState<number | null>(null);
 
+  const attemptsByQuiz = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const attempt of userAttempts) {
+      if (!counts[attempt.quiz_id]) counts[attempt.quiz_id] = 0;
+      counts[attempt.quiz_id]++;
+    }
+    return counts;
+  }, [userAttempts]);
+
   // Badge Popup (from legacy)
   const [badgePopupQuiz, setBadgePopupQuiz] = useState<Quiz | null>(null);
   const [rankData, setRankData] = useState<RankData | null>(null);
@@ -920,12 +929,19 @@ export default function SkillQuizzes() {
     
     // Counting for Palette Status Legend
     const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
+      answered: 0,
+      not_answered: 0,
+      marked: 0,
+      answered_marked: 0,
+      not_visited: 0,
     };
+    for (const status of Object.values(paletteStatuses)) {
+      if (status === "answered") counts.answered++;
+      else if (status === "not_answered") counts.not_answered++;
+      else if (status === "marked") counts.marked++;
+      else if (status === "answered_marked") counts.answered_marked++;
+      else if (status === "not_visited") counts.not_visited++;
+    }
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
@@ -1656,7 +1672,7 @@ export default function SkillQuizzes() {
               const tier = badge ? getBadgeTier(badge.score) : null;
               
               // Find attempts count for this specific quiz
-              const attemptsCount = userAttempts.filter(a => a.quiz_id === q.id).length;
+              const attemptsCount = attemptsByQuiz[q.id] || 0;
 
               return (
                 <Card key={q.id} className="p-5 flex flex-col justify-between space-y-4 hover:shadow-md transition-all border hover:border-muted-foreground/30 duration-200">
@@ -1760,7 +1776,7 @@ export default function SkillQuizzes() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            {historyQuiz && userAttempts.filter(a => a.quiz_id === historyQuiz.id).length === 0 ? (
+            {historyQuiz && (attemptsByQuiz[historyQuiz.id] || 0) === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No attempts found.</p>
             ) : (
               <div className="border rounded-lg overflow-hidden">
