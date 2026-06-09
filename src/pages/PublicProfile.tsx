@@ -8,6 +8,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import ReviewsSection from "@/components/ReviewsSection";
+import { sanitizeUrl } from "@/lib/utils";
 import type { Profile } from "@/types/database";
 
 const PublicProfile = () => {
@@ -104,12 +105,12 @@ const PublicProfile = () => {
               {profile.bio && <p className="text-muted-foreground mt-3">{profile.bio}</p>}
               <div className="flex items-center gap-3 mt-3">
                 {profile.website && (
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  <a href={sanitizeUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
                     <Globe className="w-3.5 h-3.5" /> Website
                   </a>
                 )}
                 {profile.linkedin && (
-                  <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  <a href={sanitizeUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
                     <Linkedin className="w-3.5 h-3.5" /> LinkedIn
                   </a>
                 )}
