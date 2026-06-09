@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -35,13 +35,23 @@ export default function AdminUsers() {
     })();
   }, []);
 
-  const filtered = users.filter((u) => {
-    const name = u.full_name || u.company_name || u.university || u.email || "";
-    return (!search || name.toLowerCase().includes(search.toLowerCase())) &&
-           (roleFilter === "all" || u.role === roleFilter);
-  });
-  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  // ⚡ Bolt: Memoized user filtering separately from pagination
+  // 🎯 Why: Searching/filtering a large list is O(N), while pagination is O(1).
+  // By splitting them, changing pages won't trigger a full re-filter of the user list.
+  const filtered = useMemo(() => {
+    return users.filter((u) => {
+      const name = u.full_name || u.company_name || u.university || u.email || "";
+      return (!search || name.toLowerCase().includes(search.toLowerCase())) &&
+             (roleFilter === "all" || u.role === roleFilter);
+    });
+  }, [users, search, roleFilter]);
+
+  const { paged, totalPages } = useMemo(() => {
+    return {
+      paged: filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+      totalPages: Math.ceil(filtered.length / PAGE_SIZE)
+    };
+  }, [filtered, page]);
 
   const handleRoleAction = async (userId: string, role: string, action: string) => {
     const finalRole = action === "grant" ? role : "user";
