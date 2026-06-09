@@ -47,6 +47,8 @@ const studentExamples = [
 
 // Procedural text generation components
 const transitions = [
+  "Specifically, ", "Remarkably, ", "Fundamentally, ", "Crucially, ", "In particular, ",
+  "Correspondingly, ", "Accordingly, ", "Therefore, ", "Subsequently, ", "Ultimately, ",
   "Furthermore, ", "In addition to this, ", "Moreover, ", "Consequently, ", "As a result, ",
   "In this context, ", "From a broader perspective, ", "Interestingly, ", "Remarkably, ",
   "Therefore, ", "Ultimately, ", "Significantly, ", "Notably, ", "By contrast, ",
@@ -55,6 +57,8 @@ const transitions = [
 ];
 
 const subjects = [
+  "agile methodologies", "modern enterprise strategies", "digital transformation initiatives",
+  "competency-based frameworks", "rapid technological shifts", "progressive policy reforms",
   "the modern professional landscape", "contemporary corporate culture", "the current job market",
   "innovative educational frameworks", "academic institutions", "forward-thinking organizations",
   "ambitious graduates", "industry leaders", "recruitment strategies", "talent acquisition pipelines",
@@ -65,6 +69,8 @@ const subjects = [
 ];
 
 const verbs = [
+  "catalyzes", "empowers", "streamlines", "validates", "optimizes",
+  "reinforces", "transforms", "amplifies", "magnifies", "simplifies",
   "continues to demand", "increasingly requires", "has shifted towards favoring",
   "demonstrates a clear preference for", "highlights the absolute necessity of",
   "fundamentally relies upon", "is deeply influenced by", "can be significantly improved through",
@@ -76,6 +82,8 @@ const verbs = [
 ];
 
 const objects = [
+  "cross-functional synergy", "measurable performance metrics", "sustainable development practices",
+  "long-term strategic alignment", "continuous feedback loops", "value-driven outcomes",
   "tangible, verified capabilities", "adaptability in fast-paced environments",
   "the capacity to solve complex, unstructured problems", "seamless collaboration across diverse teams",
   "immediate, practical contributions to business goals", "a strong, demonstrable portfolio of completed work",
@@ -87,6 +95,8 @@ const objects = [
 ];
 
 const extensions = [
+  "resulting in unprecedented scalability.", "paving the way for industry-wide adoption.",
+  "while mitigating systemic risks.", "thereby unlocking massive potential.", "creating resilient operational models.",
   "which ultimately redefines success in the field.",
   "thereby ensuring long-term career sustainability.",
   "a factor that cannot be ignored by anyone entering the workforce.",
@@ -166,6 +176,17 @@ function generateParagraph(keyword, field, minSentences, maxSentences) {
   return para.join(" ");
 }
 
+const titleVariations = [
+  "Comprehensive Overview", "Strategic Insights", "Actionable Frameworks", "Key Perspectives",
+  "In-Depth Analysis", "Core Principles", "Foundational Strategies", "Modern Approaches",
+  "Advanced Techniques", "Practical Implementations", "Essential Knowledge", "Vital Understandings"
+];
+const titleAngles = [
+  "Accelerating Growth", "Maximizing Potential", "Achieving Excellence", "Driving Innovation",
+  "Transforming Paradigms", "Fostering Development", "Unlocking Success", "Empowering Professionals",
+  "Optimizing Outcomes", "Elevating Standards", "Navigating Challenges", "Building Foundations"
+];
+
 function generateTitle(index, topicObj, field) {
   const templates = [
     `The Ultimate Guide to ${topicObj.topic} in ${field}`,
@@ -174,14 +195,35 @@ function generateTitle(index, topicObj, field) {
     `Unlocking Opportunities: ${topicObj.topic} for ${field} Professionals`,
     `Bridging the Gap: ${topicObj.topic} and the ${field} Industry`,
     `Mastering ${topicObj.topic}: Strategies for Success in ${field}`,
-    `The Secret to Success in ${field} Through ${topicObj.topic}`
+    `The Secret to Success in ${field} Through ${topicObj.topic}`,
+    `Navigating ${topicObj.topic} for Better ${field} Outcomes`,
+    `A Deep Dive into ${topicObj.topic} for ${field} Experts`,
+    `Evaluating ${topicObj.topic} Applications in ${field}`
   ];
-  return templates[index % templates.length] + ` - Essential Insights ${index + 1}`;
+
+  const template = templates[index % templates.length];
+  const variation = titleVariations[Math.floor(index / templates.length) % titleVariations.length];
+  const angle = titleAngles[Math.floor(index / (templates.length * titleVariations.length)) % titleAngles.length];
+
+  // Mix them up based on index parity
+  if (index % 2 === 0) {
+    return `${template} - ${variation} for ${angle}`;
+  } else {
+    return `${angle}: ${template} and ${variation}`;
+  }
 }
 
-const blogs = [];
+let blogs = [];
+if (fs.existsSync('src/blogPosts.json')) {
+  try {
+    blogs = JSON.parse(fs.readFileSync('src/blogPosts.json', 'utf8'));
+  } catch(e) {
+    console.error("Error reading existing blogs, starting fresh.", e);
+  }
+}
+const startIndex = blogs.length;
 
-for (let i = 0; i < 100; i++) {
+for (let i = startIndex; i < startIndex + 100; i++) {
   const topicObj = baseTopics[i % baseTopics.length];
   const field = specificFields[i % specificFields.length];
   const targetAudience = targetAudiences[i % targetAudiences.length];
@@ -209,20 +251,20 @@ for (let i = 0; i < 100; i++) {
 
   const sections = [
     { heading: "Introduction", targetWords: 300 },
-    { heading: "What the topic means", targetWords: 200 },
-    { heading: "Why it matters today", targetWords: 300 },
-    { heading: "Common problems students or companies face", targetWords: 300 },
-    { heading: "How real-world projects solve the problem", targetWords: 300 },
-    { heading: "How WeBuild helps", targetWords: 250 },
-    { heading: "Benefits for students", targetWords: 200 },
-    { heading: "Benefits for companies", targetWords: 200 },
-    { heading: "Benefits for colleges if relevant", targetWords: 150 },
-    { heading: "Practical examples", targetWords: 300 },
-    { heading: "Step-by-step guidance", targetWords: 250 },
-    { heading: "Mistakes to avoid", targetWords: 250 },
-    { heading: "Future trends", targetWords: 200 },
-    { heading: "Final conclusion", targetWords: 150 },
-    { heading: "Frequently Asked Questions", targetWords: 150 }
+    { heading: "What the topic means", targetWords: 250 },
+    { heading: "Why it matters today", targetWords: 350 },
+    { heading: "Common problems students or companies face", targetWords: 350 },
+    { heading: "How real-world projects solve the problem", targetWords: 350 },
+    { heading: "How WeBuild helps", targetWords: 350 },
+    { heading: "Benefits for students", targetWords: 250 },
+    { heading: "Benefits for companies", targetWords: 250 },
+    { heading: "Benefits for colleges if relevant", targetWords: 200 },
+    { heading: "Practical examples", targetWords: 350 },
+    { heading: "Step-by-step guidance", targetWords: 300 },
+    { heading: "Mistakes to avoid", targetWords: 300 },
+    { heading: "Future trends", targetWords: 250 },
+    { heading: "Final conclusion", targetWords: 200 },
+    { heading: "Frequently Asked Questions", targetWords: 200 }
   ];
 
   let totalWords = 0;
