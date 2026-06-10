@@ -101,6 +101,27 @@ export default function SkillQuizzes() {
 
   const timerRef = useRef<any>(null);
 
+  // Counting for Palette Status Legend
+  // Optimization: Consolidated 5 separate .filter() passes into a single O(N) loop
+  // and wrapped in useMemo to prevent recalculation on every timer tick.
+  const counts = useMemo(() => {
+    let answered = 0;
+    let not_answered = 0;
+    let marked = 0;
+    let answered_marked = 0;
+    let not_visited = 0;
+
+    for (const s of Object.values(paletteStatuses)) {
+      if (s === "answered") answered++;
+      else if (s === "not_answered") not_answered++;
+      else if (s === "marked") marked++;
+      else if (s === "answered_marked") answered_marked++;
+      else if (s === "not_visited") not_visited++;
+    }
+
+    return { answered, not_answered, marked, answered_marked, not_visited };
+  }, [paletteStatuses]);
+
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
       const query = searchQuery.toLowerCase().trim();
@@ -918,15 +939,6 @@ export default function SkillQuizzes() {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
-
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
 
