@@ -60,9 +60,23 @@ function generateSitemapXml() {
       for (const post of blogPosts) {
         if (post.title) {
           const slug = generateSlug(post.title);
+          // Fix for SEO Sitemap Integrity memory rule
+          // Try to extract date from the post, fallback to today
+          let postDate = today;
+          if (post.date) {
+            try {
+              const parsedDate = new Date(post.date);
+              if (!isNaN(parsedDate.getTime())) {
+                postDate = parsedDate.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+
           xml += `  <url>\n`;
           xml += `    <loc>${BASE_URL}/blog/${slug}</loc>\n`;
-          xml += `    <lastmod>${today}</lastmod>\n`;
+          xml += `    <lastmod>${postDate}</lastmod>\n`;
           xml += `    <changefreq>weekly</changefreq>\n`;
           xml += `    <priority>0.8</priority>\n`;
           xml += `  </url>\n`;
