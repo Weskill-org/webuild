@@ -81,15 +81,34 @@ const ReviewDialog = ({
         <div className="space-y-5 py-2">
           <div className="space-y-2">
             <Label>Rating</Label>
-            <div className="flex gap-1">
+            <div className="flex gap-1" role="radiogroup" aria-label="Rating">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
+                  id={`star-${star}`}
                   type="button"
+                  role="radio"
+                  aria-checked={rating === star}
+                  aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                  tabIndex={rating === star || (rating === 0 && star === 1) ? 0 : -1}
+                  onKeyDown={(e) => {
+                    let next = star;
+                    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                      next = star < 5 ? star + 1 : 1;
+                    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      next = star > 1 ? star - 1 : 5;
+                    }
+                    if (next !== star) {
+                      setRating(next);
+                      document.getElementById(`star-${next}`)?.focus();
+                    }
+                  }}
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   onClick={() => setRating(star)}
-                  className="p-0.5 transition-transform hover:scale-110"
+                  className="p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
                 >
                   <Star
                     className={`w-8 h-8 transition-colors ${

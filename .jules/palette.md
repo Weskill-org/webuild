@@ -1,0 +1,3 @@
+## 2026-06-12 - Star Rating Accessibility
+**Learning:** Custom interactive components like star ratings using an array of buttons need proper structural and interactive ARIA attributes to be fully accessible. Wrapping them in a container with `role="radiogroup"` and setting `role="radio"` along with `aria-checked` on the options standardizes the pattern for screen readers.
+**Action:** When implementing custom selection components from scratch without radix-ui or similar libraries, ensure appropriate grouping roles (`radiogroup`), item roles (`radio`), and keyboard accessibility indicators (`focus-visible:ring-2`) are applied.
