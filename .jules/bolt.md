@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2026-06-12 - [Admin Dashboard Array Consolidation & Memoization]
+**Learning:** In React components rendering large admin datasets (like referrals), using multiple unmemoized array passes (e.g., chained `.filter()` and `.reduce()`) to compute simple status metrics creates significant O(n * passes) performance bottlenecks on every keystroke or unrelated state change.
+**Action:** Consolidate multiple statistics derivations into a single loop using `reduce()` and always wrap the operation in a `useMemo` hook.
