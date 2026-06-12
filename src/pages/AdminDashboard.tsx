@@ -1207,11 +1207,21 @@ function ReferralsTab() {
     toast({ title: "Referral revoked" });
   };
 
-  const completedCount = referrals.filter((r) => r.status === "completed").length;
-  const revokedCount = referrals.filter((r) => r.status === "revoked").length;
-  const totalRewards = referrals
-    .filter((r) => r.status === "completed")
-    .reduce((sum, r) => sum + (r.referrer_reward ?? 0) + (r.referred_reward ?? 0), 0);
+  const { completedCount, revokedCount, totalRewards } = useMemo(() => {
+    // ⚡ Bolt: Consolidate multiple passes over the referrals array into a single pass to compute stats
+    return referrals.reduce(
+      (acc, r) => {
+        if (r.status === "completed") {
+          acc.completedCount++;
+          acc.totalRewards += (r.referrer_reward ?? 0) + (r.referred_reward ?? 0);
+        } else if (r.status === "revoked") {
+          acc.revokedCount++;
+        }
+        return acc;
+      },
+      { completedCount: 0, revokedCount: 0, totalRewards: 0 }
+    );
+  }, [referrals]);
 
   const filtered = useMemo(() => {
     return referrals.filter((r) => {
