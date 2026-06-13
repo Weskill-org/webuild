@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 const categories = ["Education", "Engineering", "Marketing", "Data Science", "Design", "Business", "AI & Machine Learning", "Career Growth", "Finance", "Human Resources"];
 const images = [
@@ -114,8 +115,8 @@ function getRandomElement(arr) {
   return arr[Math.floor(random() * arr.length)];
 }
 
-// Ensure no sentence is strictly repeated by keeping a Set (for the whole script run to be safe)
 const generatedSentences = new Set();
+const generatedSlugs = new Set(); // To strictly ensure unique URLs
 
 function generateUniqueSentence(keyword, field) {
   let attempt = 0;
@@ -166,20 +167,115 @@ function generateParagraph(keyword, field, minSentences, maxSentences) {
   return para.join(" ");
 }
 
+const allBlogTitles = [
+    "The Definitive Guide to Practical Experience for Junior Professionals",
+    "Navigating The Transition From Academia to Professional Work",
+    "Unlocking Future Careers With Applied Work And Internships",
+    "How Modern Portfolios Trump Traditional Resumes in Tech",
+    "Strategic Talent Sourcing Through Targeted Collegiate Projects",
+    "Revamping University Placements Through Verified Outcomes",
+    "The Skill-Based Recruitment Paradigm Shift Explained",
+    "Comparing Top Platforms for Project Based Professional Development",
+    "Charting Your Growth Trajectory in a Competitive Market",
+    "The Rising Value of Actionable Certificates in Hiring",
+    "Leveraging Remote Engagements to Accelerate Your Learning",
+    "Why Early Industry Exposure is Critical for Fresh Graduates",
+    "Preparing For The Job Market Long Before Graduation",
+    "The Superiority of Applied Knowledge Over Theoretical Concepts",
+    "WeBuild's Role in Revolutionizing Entry Level Recruitment",
+    "Mastering Technical Challenges Through Real World Scenarios",
+    "The Anatomy of a Successful Internship Application",
+    "Transforming Academic Knowledge into Marketable Skills",
+    "Building Confidence Through Meaningful Contributions",
+    "The Strategic Advantage of Corporate Sponsored Projects",
+    "Reimagining Talent Evaluation with Actionable Data",
+    "A New Era of Educational Collaboration",
+    "How to Showcase Your Technical Acumen Effectively",
+    "Breaking the Experience Paradox for Fresh Graduates",
+    "The ROI of Investing in Practical Skill Acquisition",
+    "Navigating Distributed Teams in Early Career Stages",
+    "Maximizing the Impact of Your Digital Portfolio",
+    "The Essential Guide to Skill Based Networking",
+    "Demystifying the Modern Recruitment Process",
+    "Why Credentials Must Reflect Demonstrable Competencies",
+    "The Future of Experiential Learning in Higher Education",
+    "Overcoming the Technical Skills Gap Promptly",
+    "A Blueprint for Successful Industry Partnerships",
+    "Accelerating Competency Through Intensive Projects",
+    "Redefining Entry Level Requirements in Tech",
+    "The Role of Mentorship in Practical Project Execution",
+    "Evaluating the Efficacy of Bootcamps vs Project Platforms",
+    "Crafting a Compelling Narrative Around Your Projects",
+    "The Hidden Benefits of Freelance Style Engagements",
+    "Strategies for Effective Remote Collaboration",
+    "Elevating Your Career Profile with Verified Contributions",
+    "The Intersection of Education and Talent Acquisition",
+    "Why Theory Alone Is Insufficient in Today's Economy",
+    "Practical Steps to Securing Your First Professional Role",
+    "Optimizing Your WeBuild Profile for Maximum Visibility",
+    "The Evolution of the Technical Interview",
+    "Harnessing the Power of Open Source and Corporate Projects",
+    "A Comprehensive Review of Skill Based Hiring Metrics",
+    "The Importance of Domain Specific Portfolios",
+    "Bridging the Gap Between Syllabus and Corporate Needs",
+    "Innovative Approaches to Graduate Employability",
+    "The Shift From Passive Learning to Active Doing",
+    "Understanding the Mechanics of Project Based Learning",
+    "How to Choose the Right Projects for Your Career Path",
+    "The Value Proposition of Real World Experience",
+    "Navigating The Challenges of First Time Employment",
+    "The Critical Role of Soft Skills in Technical Projects",
+    "Leveraging Feedback for Continuous Professional Improvement",
+    "The Impact of Verified Credentials on Salary Negotiation",
+    "A Guide to Managing Time During Intensive Internships",
+    "The Symbiotic Relationship Between Universities and Industry",
+    "Exploring Niche Opportunities Through Targeted Projects",
+    "The Rise of Micro Internships and Gig Based Learning",
+    "How to Translate Academic Success into Professional Wins",
+    "The Employer's Perspective on Entry Level Talent",
+    "Designing Effective Training Programs for Fresh Hires",
+    "The Nuances of Remote Project Management",
+    "Why Every Student Needs a Professional Digital Presence",
+    "The True Cost of the Experience Gap",
+    "Actionable Strategies for Improving Placement Rates",
+    "The Role of WeBuild in Shaping Future Leaders",
+    "Overcoming Imposter Syndrome Through Applied Work",
+    "The Anatomy of a High Impact Project Deliverable",
+    "Understanding Stakeholder Management Early On",
+    "The Future Trajectory of Higher Education Models",
+    "Cultivating a Problem Solving Mindset",
+    "The Importance of Adaptability in Modern Workplaces",
+    "Navigating Cross Functional Team Dynamics",
+    "How to Present Your Work Effectively to Non Technical Audiences",
+    "The Strategic Value of Early Career Networking",
+    "Building Resilience in the Face of Project Failures",
+    "The Role of Innovation in Entry Level Roles",
+    "A Primer on Agile Methodologies for Students",
+    "Understanding the Business Impact of Technical Decisions",
+    "The Importance of Ethical Considerations in Tech Projects",
+    "Leveraging Diversity in Collaborative Environments",
+    "The Role of Continuous Learning in Career Longevity",
+    "A Guide to Effective Technical Communication",
+    "The Impact of Emerging Technologies on Entry Level Skills",
+    "Navigating the Complexities of Global Remote Work",
+    "The Role of Empathy in User Centric Design Projects",
+    "Understanding the Economics of Talent Sourcing",
+    "The Importance of Aligning Projects with Personal Values",
+    "A Deep Dive into the Mechanics of WeBuild",
+    "The Role of Mentorship in Shaping Career Trajectories",
+    "Overcoming the Challenges of Asynchronous Collaboration",
+    "The Strategic Advantage of Interdisciplinary Knowledge",
+    "Building a Sustainable Career Foundation",
+    "The Future of Work and Experiential Learning",
+    "A Comprehensive Guide to Landing Your Dream Role"
+];
+
 function generateTitle(index, topicObj, field) {
-  const templates = [
-    `The Ultimate Guide to ${topicObj.topic} in ${field}`,
-    `Why ${topicObj.topic} is the Future of ${field} Careers`,
-    `How ${topicObj.topic} Can Transform Your ${field} Journey`,
-    `Unlocking Opportunities: ${topicObj.topic} for ${field} Professionals`,
-    `Bridging the Gap: ${topicObj.topic} and the ${field} Industry`,
-    `Mastering ${topicObj.topic}: Strategies for Success in ${field}`,
-    `The Secret to Success in ${field} Through ${topicObj.topic}`
-  ];
-  return templates[index % templates.length] + ` - Essential Insights ${index + 1}`;
+  // Using hardcoded unique titles to strictly comply with "unique titles" non-robotic anti-spam rule
+  return allBlogTitles[index];
 }
 
-const blogs = [];
+const newBlogs = [];
 
 for (let i = 0; i < 100; i++) {
   const topicObj = baseTopics[i % baseTopics.length];
@@ -192,7 +288,13 @@ for (let i = 0; i < 100; i++) {
   // Generating Meta Info
   const metaTitle = `${title.substring(0, 50)} | WeBuild`;
   const metaDescription = `Discover the ultimate guide on ${keyword} in the ${field} industry. Learn how real-world experience, practical skills, and WeBuild help you succeed.`;
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+  let slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  if (generatedSlugs.has(slug)) {
+      slug = `${slug}-${Math.floor(Math.random() * 10000)}`;
+  }
+  generatedSlugs.add(slug);
+
   const secondaryKeywords = [`${field} projects`, `real-world ${field} experience`, `WeBuild ${field}`, `student projects in ${field}`, `skill-based hiring for ${field}`, `${field} internships`, `portfolio building in ${field}`, `practical ${field} skills`, `industry-ready ${field}`, `college placements in ${field}`].join(", ");
 
   let contentStr = '';
@@ -263,7 +365,7 @@ for (let i = 0; i < 100; i++) {
   });
 
   // Internal and External Links
-  contentStr += `Internal Linking Suggestions:\n`;
+  contentStr += `Internal Linking Suggestions\n`;
   contentStr += `Link to WeBuild student projects page\n`;
   contentStr += `Link to WeBuild company collaboration page\n`;
   contentStr += `Link to WeBuild certificate page\n`;
@@ -271,14 +373,14 @@ for (let i = 0; i < 100; i++) {
   contentStr += `Link to WeBuild success stories\n`;
   contentStr += `Link to WeBuild college partnership page\n\n`;
 
-  contentStr += `External Linking Suggestions:\n`;
+  contentStr += `External Linking Suggestions\n`;
   contentStr += `Link to industry reports on the evolving skills gap\n`;
   contentStr += `Link to academic research highlighting the efficacy of project-based learning methodologies\n`;
   contentStr += `Link to foundational technical documentation or relevant business frameworks\n\n`;
 
-  contentStr += `Image Suggestions:\n`;
-  contentStr += `Image idea: Student working on a real company project\n`;
-  contentStr += `Alt text: Student completing real-world industry project on WeBuild\n\n`;
+  contentStr += `Image Suggestions\n`;
+  contentStr += `Image idea: Student working on a real company project in ${field}\n`;
+  contentStr += `Alt text: Student completing real-world industry project on WeBuild in ${field}\n\n`;
 
   // CTA
   contentStr += `Start building your career with real industry projects on WeBuild. Explore projects, work with companies, earn certificates, build your portfolio, and gain practical experience before graduation.\n\n`;
@@ -289,7 +391,7 @@ for (let i = 0; i < 100; i++) {
   const dateObj = new Date(Date.now() - i * 86400000);
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  blogs.push({
+  newBlogs.push({
     title: title,
     category: categories[i % categories.length],
     date: dateStr,
@@ -299,5 +401,15 @@ for (let i = 0; i < 100; i++) {
   });
 }
 
-fs.writeFileSync('src/blogPosts.json', JSON.stringify(blogs, null, 2));
-console.log('Successfully generated 100 unique, non-repetitive super SEO-friendly blog posts in src/blogPosts.json');
+const blogPostsPath = path.join(__dirname, 'src', 'blogPosts.json');
+let existingBlogs = [];
+if (fs.existsSync(blogPostsPath)) {
+  const existingRaw = fs.readFileSync(blogPostsPath, 'utf8');
+  existingBlogs = JSON.parse(existingRaw);
+}
+
+// Ensure appending instead of overwriting to preserve SEO
+const combinedBlogs = [...existingBlogs, ...newBlogs];
+fs.writeFileSync(blogPostsPath, JSON.stringify(combinedBlogs, null, 2));
+
+console.log(`Successfully generated and appended 100 new unique blog posts in ${blogPostsPath}`);
