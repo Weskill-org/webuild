@@ -21,3 +21,7 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+
+## 2025-06-14 - [Consolidating Derived Counts in Active Renders]
+**Learning:** In components with timers that trigger full re-renders (like the active exam portal in SkillQuizzes), calculating derived states by filtering object values multiple times (e.g. `Object.values(statuses).filter(...)`) leads to severe performance degradation. Every timer tick runs O(N * number of passes) iterations unnecessarily.
+**Action:** Always consolidate multiple map/filter passes into a single `.reduce()` loop and ensure the result is wrapped in `useMemo` so it only recalculates when the dependency (e.g. the `statuses` object) actually changes, not on unrelated state updates like a ticking timer.
