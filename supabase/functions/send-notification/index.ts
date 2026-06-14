@@ -306,7 +306,7 @@ serve(async (req) => {
     // ─── 2. Send FCM push notifications ─────────────────────────────────────
     let fcmSentCount = 0;
     let fcmFailCount = 0;
-    let staleTokens: string[] = [];
+    const staleTokens: string[] = [];
 
     if (FIREBASE_SA_JSON) {
       try {

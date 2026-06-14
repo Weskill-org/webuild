@@ -112,6 +112,23 @@ export default function SkillQuizzes() {
     });
   }, [quizzes, searchQuery]);
 
+  // Counting for Palette Status Legend
+  const counts = useMemo(() => {
+    const initialCounts = {
+      answered: 0,
+      not_answered: 0,
+      marked: 0,
+      answered_marked: 0,
+      not_visited: 0,
+    };
+    return Object.values(paletteStatuses).reduce((acc, status) => {
+      if (status in acc) {
+        acc[status as keyof typeof initialCounts]++;
+      }
+      return acc;
+    }, initialCounts);
+  }, [paletteStatuses]);
+
   /* ───────────────── Fetching Data ───────────────── */
   const fetchAllData = async () => {
     if (!profile?.id) return;
@@ -918,15 +935,6 @@ export default function SkillQuizzes() {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
-
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
 

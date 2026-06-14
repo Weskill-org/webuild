@@ -60,7 +60,7 @@ export function useChat() {
         partnerIds.push(initialPartnerId);
       }
 
-      let profileMap: Record<string, Profile> = {};
+      const profileMap: Record<string, Profile> = {};
       if (partnerIds.length > 0) {
         const { data: profiles } = await supabase.from("profiles").select("*").in("id", partnerIds);
         (profiles ?? []).forEach((p: any) => (profileMap[p.id] = p as Profile));
