@@ -60,9 +60,21 @@ function generateSitemapXml() {
       for (const post of blogPosts) {
         if (post.title) {
           const slug = generateSlug(post.title);
+          let lastmodDate = today;
+          if (post.date) {
+            try {
+              const parsedDate = new Date(post.date);
+              if (!isNaN(parsedDate.getTime())) {
+                lastmodDate = parsedDate.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              // Ignore invalid dates and fallback to today
+            }
+          }
+
           xml += `  <url>\n`;
           xml += `    <loc>${BASE_URL}/blog/${slug}</loc>\n`;
-          xml += `    <lastmod>${today}</lastmod>\n`;
+          xml += `    <lastmod>${lastmodDate}</lastmod>\n`;
           xml += `    <changefreq>weekly</changefreq>\n`;
           xml += `    <priority>0.8</priority>\n`;
           xml += `  </url>\n`;
