@@ -830,6 +830,7 @@ export default function AdminQuizzes() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          aria-label="Preview quiz"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Preview"
                           onClick={() => setPreviewQuiz(quiz)}
@@ -839,6 +840,7 @@ export default function AdminQuizzes() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          aria-label="Duplicate quiz"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title="Duplicate"
                           onClick={() => duplicateQuiz(quiz)}
@@ -848,6 +850,7 @@ export default function AdminQuizzes() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          aria-label="Edit quiz"
                           className="h-8 w-8 text-primary hover:bg-primary/10"
                           title="Edit"
                           onClick={() => openEdit(quiz)}
@@ -857,6 +860,7 @@ export default function AdminQuizzes() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          aria-label="Delete quiz"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           title="Delete"
                           onClick={() => setDeleteTarget(quiz)}
@@ -992,6 +996,7 @@ export default function AdminQuizzes() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          aria-label="Remove section"
                           className="h-7 w-7 text-destructive hover:bg-destructive/10"
                           onClick={() => removeSection(sec.id)}
                         >
@@ -1084,6 +1089,7 @@ export default function AdminQuizzes() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label="Remove question"
                         className="h-7 w-7 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
                         onClick={() => removeQuestion(qi)}
                       >
@@ -1132,6 +1138,7 @@ export default function AdminQuizzes() {
                             <Button
                               size="icon"
                               variant="ghost"
+                              aria-label="Remove option"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               onClick={() => removeOption(qi, oi)}
                             >
@@ -1187,6 +1194,7 @@ export default function AdminQuizzes() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                aria-label="Remove option"
                                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                 onClick={() => removeOption(qi, oi)}
                               >

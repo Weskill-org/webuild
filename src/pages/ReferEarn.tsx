@@ -185,6 +185,7 @@ const ReferEarn = () => {
             <Button
               variant="outline"
               size="icon"
+              aria-label="Copy referral code"
               className="h-14 w-14 shrink-0 rounded-xl border-2 border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all"
               onClick={handleCopyCode}
             >

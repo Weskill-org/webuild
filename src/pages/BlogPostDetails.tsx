@@ -193,6 +193,7 @@ const BlogPostDetails = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Share on X"
                         onClick={() => handleShare("x")}
                         className="w-10 h-10 rounded-full hover:bg-black hover:text-white transition-all duration-300 border border-border/50 hover:border-black"
                       >
@@ -209,6 +210,7 @@ const BlogPostDetails = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Share on Facebook"
                         onClick={() => handleShare("facebook")}
                         className="w-10 h-10 rounded-full hover:bg-[#1877F2] hover:text-white transition-all duration-300 border border-border/50 hover:border-[#1877F2]"
                       >
@@ -223,6 +225,7 @@ const BlogPostDetails = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Share on LinkedIn"
                         onClick={() => handleShare("linkedin")}
                         className="w-10 h-10 rounded-full hover:bg-[#0A66C2] hover:text-white transition-all duration-300 border border-border/50 hover:border-[#0A66C2]"
                       >
@@ -237,6 +240,7 @@ const BlogPostDetails = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Share on WhatsApp"
                         onClick={() => handleShare("whatsapp")}
                         className="w-10 h-10 rounded-full hover:bg-[#25D366] hover:text-white transition-all duration-300 border border-border/50 hover:border-[#25D366]"
                       >
@@ -253,6 +257,7 @@ const BlogPostDetails = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Copy to clipboard"
                         onClick={copyToClipboard}
                         className="w-10 h-10 rounded-full hover:bg-primary/10 hover:text-primary transition-all duration-300 border border-border/50 hover:border-primary/30"
                       >
