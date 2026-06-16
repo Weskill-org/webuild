@@ -24,6 +24,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { PROJECT_TYPES, getSubCategories, getCategoryColor } from "@/lib/projectCategories";
 import type { Project, Profile } from "@/types/database";
 import { formatProjectBudget } from "@/lib/projectUtils";
+import { sanitizeUrl } from "@/lib/utils";
 
 interface Deliverable {
   id: string;
@@ -419,7 +420,7 @@ const Projects = () => {
                             </span>
                           </div>
                           <a 
-                            href={file.file_url} 
+                            href={sanitizeUrl(file.file_url)}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-primary hover:underline text-xs font-medium whitespace-nowrap"
