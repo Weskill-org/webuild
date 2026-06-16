@@ -13,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, ArrowLeft, PlusCircle, Trash2, Layers, Tag, GraduationCap, Megaphone, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +71,7 @@ const CreateProject = () => {
     end_date: "",
   });
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestoneToDelete, setMilestoneToDelete] = useState<number | null>(null);
   const [selectedEligibility, setSelectedEligibility] = useState<string[]>([]);
   const [customCriteria, setCustomCriteria] = useState("");
   const [eligibilitySelectValue, setEligibilitySelectValue] = useState("");
@@ -97,6 +108,7 @@ const CreateProject = () => {
 
   const removeMilestone = (idx: number) => {
     setMilestones(milestones.filter((_, i) => i !== idx));
+    setMilestoneToDelete(null);
   };
 
   const toggleEligibility = (option: string) => {
@@ -684,7 +696,7 @@ const CreateProject = () => {
                       onChange={(e) => updateMilestone(idx, "due_date", e.target.value)}
                       className="w-36"
                     />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMilestone(idx)}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setMilestoneToDelete(idx)} aria-label={`Remove milestone ${idx + 1}`}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -710,6 +722,23 @@ const CreateProject = () => {
           </form>
         </Card>
       </div>
+
+      <AlertDialog open={milestoneToDelete !== null} onOpenChange={(open) => !open && setMilestoneToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Milestone</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this milestone?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => milestoneToDelete !== null && removeMilestone(milestoneToDelete)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

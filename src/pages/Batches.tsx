@@ -12,6 +12,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BookOpen, PlusCircle, Loader2, Users, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -43,6 +53,7 @@ const Batches = () => {
   const [batchStudents, setBatchStudents] = useState<any[]>([]);
   const [viewStudentsOpen, setViewStudentsOpen] = useState(false);
   const [fetchingStudents, setFetchingStudents] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
 
 
   const fetchBatches = async () => {
@@ -149,6 +160,7 @@ const Batches = () => {
     }
     setBatches((prev) => prev.filter((b) => b.id !== id));
     toast({ title: "Batch deleted" });
+    setBatchToDelete(null);
   };
 
   return (
@@ -210,7 +222,7 @@ const Batches = () => {
                       </p>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(batch.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => setBatchToDelete(batch)} aria-label={`Delete batch ${batch.name}`}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
@@ -298,6 +310,23 @@ const Batches = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!batchToDelete} onOpenChange={(open) => !open && setBatchToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Batch</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the "{batchToDelete?.name}" batch? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => batchToDelete && handleDelete(batchToDelete.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
 
   );
