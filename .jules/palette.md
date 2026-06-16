@@ -1,0 +1,3 @@
+## 2024-06-16 - Accessible Custom Star Ratings
+**Learning:** Custom interactive components like star ratings using mapped buttons often lack proper structural semantics, preventing screen readers from understanding the grouping and state. Simple focus rings are also frequently missed on individual custom inputs.
+**Action:** When implementing custom rating interactions, always wrap the options in a container with `role="radiogroup"` and `aria-label`, assign `role="radio"` and dynamic `aria-checked` to the individual buttons, and ensure proper `focus-visible` styling is applied for keyboard navigability.
