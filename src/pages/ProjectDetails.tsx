@@ -39,6 +39,7 @@ import ReviewDialog from "@/components/ReviewDialog";
 import { sendNotification } from "@/lib/notifications";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getCategoryColor } from "@/lib/projectCategories";
+import { sanitizeUrl } from "@/lib/utils";
 import FileDeliverables from "@/components/FileDeliverables";
 import IssueCertificateDialog from "@/components/IssueCertificateDialog";
 import ReleasePayoutDialog from "@/components/ReleasePayoutDialog";
@@ -785,7 +786,7 @@ const ProjectDetails = () => {
                       {owner.company_name || owner.full_name}
                     </Link>
                     {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
+                      <a href={sanitizeUrl(owner.website)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}

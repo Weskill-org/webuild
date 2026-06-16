@@ -2,3 +2,7 @@
 **Vulnerability:** The `razorpay` Edge Function (`supabase/functions/razorpay/index.ts`) allows any unauthenticated user to call the `release_payment` action and release funds from escrow.
 **Learning:** Edge Functions invoked via `supabase.functions.invoke()` need explicit authentication checks (e.g., parsing the JWT token from the `Authorization` header) when performing sensitive operations like transferring funds. Simply using `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and assumes the backend has verified the request.
 **Prevention:** Always verify the caller's JWT token (using `createClient` with `SUPABASE_ANON_KEY` and `auth.getUser(token)`) and ensure they are authorized to perform the action (e.g., verifying they are the owner of the project) before executing sensitive business logic in Edge Functions.
+## 2024-05-20 - Stored XSS via Unsanitized Profile Links
+**Vulnerability:** User-provided URLs for `website` and `linkedin` fields in profiles were directly rendered into `href` attributes in `src/pages/PublicProfile.tsx` and `src/pages/ProjectDetails.tsx`. This allowed for Stored Cross-Site Scripting (XSS) if a user entered a `javascript:` or `data:` URI.
+**Learning:** Always validate and sanitize user-provided URLs before rendering them as links. Simple string validation is not enough due to potential bypasses (e.g., prepending control characters).
+**Prevention:** Use a robust `sanitizeUrl` utility that strips control characters (`/[\x00-\x1F\x7F]/g`) and utilizes the native `URL` parser to enforce safe protocols (`http:`, `https:`, `mailto:`).
