@@ -51,7 +51,7 @@ const ReviewsSection = ({ userId, projectId, title = "Reviews" }: ReviewsSection
       profiles?.forEach((p: any) => (profileMap[p.id] = p as Profile));
 
       // Fetch project titles if showing user reviews
-      let projectMap: Record<string, string> = {};
+      const projectMap: Record<string, string> = {};
       if (userId) {
         const projectIds = [...new Set(reviewList.map((r) => r.project_id))];
         const { data: projects } = await supabase.from("projects").select("id, title").in("id", projectIds);
