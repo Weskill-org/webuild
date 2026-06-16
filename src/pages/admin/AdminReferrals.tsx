@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,16 +38,32 @@ export default function AdminReferrals() {
     toast({ title: "Referral revoked" });
   };
 
-  const completedCount = referrals.filter((r) => r.status === "completed").length;
-  const revokedCount = referrals.filter((r) => r.status === "revoked").length;
-  const totalRewards = referrals.filter((r) => r.status === "completed").reduce((sum, r) => sum + (r.referrer_reward ?? 0) + (r.referred_reward ?? 0), 0);
+  const { completedCount, revokedCount, totalRewards } = useMemo(() => {
+    // ⚡ Bolt: Consolidate multiple passes over the referrals array into a single pass to compute stats
+    return referrals.reduce(
+      (acc, r) => {
+        if (r.status === "completed") {
+          acc.completedCount++;
+          acc.totalRewards += (r.referrer_reward ?? 0) + (r.referred_reward ?? 0);
+        } else if (r.status === "revoked") {
+          acc.revokedCount++;
+        }
+        return acc;
+      },
+      { completedCount: 0, revokedCount: 0, totalRewards: 0 }
+    );
+  }, [referrals]);
 
-  const filtered = referrals.filter((r) => {
-    const referrerName = profiles[r.referrer_id] || "";
-    const referredName = profiles[r.referred_id] || "";
-    return (!search || referrerName.toLowerCase().includes(search.toLowerCase()) || referredName.toLowerCase().includes(search.toLowerCase()) || (r.referral_code || "").toLowerCase().includes(search.toLowerCase())) &&
-           (statusFilter === "all" || r.status === statusFilter);
-  });
+  const filtered = useMemo(() => {
+    // ⚡ Bolt: Hoist search.toLowerCase() outside the filter loop to avoid recalculating it for every item
+    const lowerSearch = search ? search.toLowerCase() : "";
+    return referrals.filter((r) => {
+      const referrerName = profiles[r.referrer_id] || "";
+      const referredName = profiles[r.referred_id] || "";
+      return (!lowerSearch || referrerName.toLowerCase().includes(lowerSearch) || referredName.toLowerCase().includes(lowerSearch) || (r.referral_code || "").toLowerCase().includes(lowerSearch)) &&
+             (statusFilter === "all" || r.status === statusFilter);
+    });
+  }, [referrals, search, statusFilter, profiles]);
 
   return (
     <div className="space-y-6">
