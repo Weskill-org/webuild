@@ -1,0 +1,3 @@
+## 2024-03-24 - Missing ARIA labels on Icon Buttons in Dashboard Layout
+**Learning:** Found multiple icon-only buttons lacking `aria-label` attributes in `DashboardLayout.tsx` (like Notifications, Profile Settings, and the Mobile Drawer Close button). This is a common pattern when quickly adding utility buttons, but creates significant accessibility barriers for screen reader users trying to navigate the core dashboard interface.
+**Action:** When adding or reviewing `<Button size="icon">` or custom rounded icon-only buttons (especially in core layout components), always explicitly verify that a descriptive `aria-label` is present to ensure screen reader accessibility.

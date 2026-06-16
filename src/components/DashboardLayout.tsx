@@ -302,6 +302,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <button
                 onClick={() => navigate("/settings")}
                 className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0"
+                aria-label="Profile settings"
               >
                 {profile?.logo_url ? (
                   <img src={profile.logo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
@@ -399,6 +400,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-9 h-9 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-muted-foreground transition-colors"
+                  aria-label="Close menu"
                 >
                   <X className="w-5 h-5" />
                 </button>
