@@ -44,6 +44,7 @@ import IssueCertificateDialog from "@/components/IssueCertificateDialog";
 import ReleasePayoutDialog from "@/components/ReleasePayoutDialog";
 import type { Project, ProjectMilestone, ProjectApplication, Profile, Review } from "@/types/database";
 import { formatProjectBudget } from "@/lib/projectUtils";
+import { sanitizeUrl } from "@/lib/utils";
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -785,7 +786,7 @@ const ProjectDetails = () => {
                       {owner.company_name || owner.full_name}
                     </Link>
                     {owner.website && (
-                      <a href={owner.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
+                      <a href={sanitizeUrl(owner.website)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline block">
                         {owner.website}
                       </a>
                     )}
