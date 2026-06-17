@@ -1,0 +1,3 @@
+## 2024-03-24 - Accessible Star Rating Component
+**Learning:** Custom interactive components like star ratings often lack keyboard accessibility and screen reader support out of the box, making them unusable for users with disabilities. Specifically, star ratings should use `role="radiogroup"` on the container and `role="radio"` with `aria-checked` and `aria-label` on the individual star buttons. Focus visible styles are also crucial for keyboard navigation.
+**Action:** When implementing custom rating interactions, ensure `role="radiogroup"` is used on the container, and `role="radio"`, `aria-checked`, and `aria-label` are used on the options, alongside keyboard focus styles (e.g., `focus-visible:ring-2`).
