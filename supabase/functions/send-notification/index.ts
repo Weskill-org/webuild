@@ -130,8 +130,40 @@ serve(async (req) => {
     const { event, project_id, user_id, data } = await req.json();
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let authUserId = null;
+    if (authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+      const token = authHeader.replace("Bearer ", "");
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      authUserId = user.id;
+
+      // Ensure users cannot send messages impersonating someone else
+      if (event === "message" && user_id !== authUserId) {
+         return new Response(JSON.stringify({ error: "Forbidden: Cannot send messages as another user" }), {
+           status: 403,
+           headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+      }
+    }
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -306,7 +338,7 @@ serve(async (req) => {
     // ─── 2. Send FCM push notifications ─────────────────────────────────────
     let fcmSentCount = 0;
     let fcmFailCount = 0;
-    let staleTokens: string[] = [];
+    const staleTokens: string[] = [];
 
     if (FIREBASE_SA_JSON) {
       try {
