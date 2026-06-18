@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2025-05-24 - [Avoid Nested Iteration in Renders]
+**Learning:** In components rendering nested lists (e.g., sections containing filtered questions), running `.map()` over the parent array and then calling `.filter()` on the child array within each iteration produces $O(S \times Q)$ complexity on every render cycle. When triggered by a fast-updating state like a 1-second countdown timer, this heavily blocks the main thread.
+**Action:** Always precompute grouped child items by parent ID outside the render loop using `useMemo` (e.g., creating a `Record<string, Item[]>`), converting the nested iteration into a simple $O(1)$ lookup per parent.
