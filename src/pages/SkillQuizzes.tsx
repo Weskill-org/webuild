@@ -112,6 +112,36 @@ export default function SkillQuizzes() {
     });
   }, [quizzes, searchQuery]);
 
+  // ⚡ Bolt: Hoisted counts calculation to obey rules of hooks
+  const paletteCounts = useMemo(() => {
+    return Object.values(paletteStatuses).reduce(
+      (acc, status) => {
+        if (status === "answered") acc.answered++;
+        else if (status === "not_answered") acc.not_answered++;
+        else if (status === "marked") acc.marked++;
+        else if (status === "answered_marked") acc.answered_marked++;
+        else if (status === "not_visited") acc.not_visited++;
+        return acc;
+      },
+      { answered: 0, not_answered: 0, marked: 0, answered_marked: 0, not_visited: 0 }
+    );
+  }, [paletteStatuses]);
+
+  // ⚡ Bolt: Hoisted grouped questions calculation to obey rules of hooks
+  const questionsBySection = useMemo(() => {
+    const grouped: Record<string, { q: any; idx: number }[]> = {};
+    if (!activeQuiz) return grouped;
+    activeQuiz.sections.forEach(sec => {
+      grouped[sec.id] = [];
+    });
+    activeQuiz.questions.forEach((q, idx) => {
+      if (grouped[q.section_id]) {
+        grouped[q.section_id].push({ q, idx });
+      }
+    });
+    return grouped;
+  }, [activeQuiz]);
+
   /* ───────────────── Fetching Data ───────────────── */
   const fetchAllData = async () => {
     if (!profile?.id) return;
@@ -919,13 +949,7 @@ export default function SkillQuizzes() {
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
     // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    const counts = paletteCounts;
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
@@ -1161,7 +1185,7 @@ export default function SkillQuizzes() {
               {/* Scrollable Palette Grid */}
               <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
                 {activeQuiz.sections.map((sec) => {
-                  const secQuestions = activeQuiz.questions.map((q, idx) => ({ q, idx })).filter(item => item.q.section_id === sec.id);
+                  const secQuestions = questionsBySection[sec.id] || [];
                   if (secQuestions.length === 0) return null;
                   return (
                     <div key={sec.id} className="space-y-2 border-t pt-3 first:border-0 first:pt-0">
