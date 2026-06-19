@@ -135,6 +135,40 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // Check if the request is using the service role key (e.g., from a database webhook)
+    const isServiceRole = token === SUPABASE_SERVICE_ROLE_KEY;
+
+    // If it's not the service role key, validate the JWT
+    if (!isServiceRole) {
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+      if (!SUPABASE_ANON_KEY) {
+         return new Response(JSON.stringify({ error: "Server configuration error" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+      }
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+
     // Build notification based on event type
     let notification: { title: string; body: string; recipients: string[] } | null = null;
 
