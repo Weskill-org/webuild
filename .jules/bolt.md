@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2025-06-21 - [Memoizing Loop Aggregations Inside Renders]
+**Learning:** Calling `.filter()` iteratively inside a `map` loop inside a React component's render body (e.g., `quizzes.map(q => userAttempts.filter(a => a.quiz_id === q.id).length)`) creates an O(N*M) performance bottleneck, as the inner filter iterates over the entire `userAttempts` array for every quiz, on every re-render.
+**Action:** When needing counts or filtered sub-arrays from a large parent array based on child IDs, pre-compute a dictionary using `Array.prototype.reduce` inside a `useMemo` block (e.g., grouping `userAttempts` by `quiz_id`). Then, perform an O(1) lookup inside the render loop instead of an O(N) array pass.
