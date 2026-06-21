@@ -130,8 +130,40 @@ serve(async (req) => {
     const { event, project_id, user_id, data } = await req.json();
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+    // 🛡️ Sentinel: Enforce Authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // Check if invoked via Database Webhooks or Service Role
+    const isServiceRole = token === SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!isServiceRole) {
+      // Validate normal user JWT
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent user impersonation: The authenticated user must be the sender for manual triggers
+      // (For events like new_application, the user_id passed might be the recipient, but typically
+      // the authenticated user initiates the action. We'll verify they have a valid token.)
+    }
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
