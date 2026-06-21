@@ -101,6 +101,17 @@ export default function SkillQuizzes() {
 
   const timerRef = useRef<any>(null);
 
+  const attemptsByQuiz = useMemo(() => {
+    // ⚡ Bolt: Group user attempts by quiz_id to prevent O(N*M) filtering in the render body
+    return userAttempts.reduce((acc: Record<string, any[]>, attempt: any) => {
+      if (!acc[attempt.quiz_id]) {
+        acc[attempt.quiz_id] = [];
+      }
+      acc[attempt.quiz_id].push(attempt);
+      return acc;
+    }, {});
+  }, [userAttempts]);
+
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
       const query = searchQuery.toLowerCase().trim();
@@ -1655,8 +1666,8 @@ export default function SkillQuizzes() {
               const badge = badges[q.id];
               const tier = badge ? getBadgeTier(badge.score) : null;
               
-              // Find attempts count for this specific quiz
-              const attemptsCount = userAttempts.filter(a => a.quiz_id === q.id).length;
+              // Find attempts count for this specific quiz using the memoized map
+              const attemptsCount = (attemptsByQuiz[q.id] || []).length;
 
               return (
                 <Card key={q.id} className="p-5 flex flex-col justify-between space-y-4 hover:shadow-md transition-all border hover:border-muted-foreground/30 duration-200">
@@ -1760,7 +1771,7 @@ export default function SkillQuizzes() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            {historyQuiz && userAttempts.filter(a => a.quiz_id === historyQuiz.id).length === 0 ? (
+            {historyQuiz && (attemptsByQuiz[historyQuiz.id] || []).length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No attempts found.</p>
             ) : (
               <div className="border rounded-lg overflow-hidden">
@@ -1775,9 +1786,8 @@ export default function SkillQuizzes() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {historyQuiz && userAttempts
-                      .filter(a => a.quiz_id === historyQuiz.id)
-                      .map((attempt) => {
+                    {historyQuiz && (attemptsByQuiz[historyQuiz.id] || [])
+                      .map((attempt: any) => {
                         const date = new Date(attempt.submitted_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
                         return (
                           <TableRow key={attempt.id} className="hover:bg-secondary/35 transition-colors">
