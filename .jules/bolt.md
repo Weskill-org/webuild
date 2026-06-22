@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2026-06-06 - [Consolidating Unmemoized Passes in Frequent Timers]
+**Learning:** In the `SkillQuizzes` exam view, deriving stats (like counts of answered/marked questions) using multiple separate `Object.values().filter()` passes inside the render cycle creates a massive \(O(N \times Passes)\) performance sink. Because the active exam view has a ticking timer state that triggers a re-render every second, this expensive calculation locks the main thread frequently.
+**Action:** Always consolidate multiple array derivations into a single `reduce()` pass to guarantee \(O(N)\) performance. Do not use `useMemo` if the derivation happens inside an early return or conditional block, as that violates React Hook Rules.
