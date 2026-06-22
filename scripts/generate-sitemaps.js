@@ -62,7 +62,8 @@ function generateSitemapXml() {
           const slug = generateSlug(post.title);
           xml += `  <url>\n`;
           xml += `    <loc>${BASE_URL}/blog/${slug}</loc>\n`;
-          xml += `    <lastmod>${today}</lastmod>\n`;
+          const lastMod = post.date ? post.date : today;
+          xml += `    <lastmod>${lastMod}</lastmod>\n`;
           xml += `    <changefreq>weekly</changefreq>\n`;
           xml += `    <priority>0.8</priority>\n`;
           xml += `  </url>\n`;
