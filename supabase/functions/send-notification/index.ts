@@ -133,6 +133,37 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    // If it's not the service role key, verify the user token
+    if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // For message events, prevent impersonation by ensuring the sender matches the authenticated user
+      if (event === "message" && user_id && user_id !== userData.user.id) {
+        return new Response(JSON.stringify({ error: "Unauthorized to send messages on behalf of another user" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Build notification based on event type
