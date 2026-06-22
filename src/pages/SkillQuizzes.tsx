@@ -914,18 +914,25 @@ export default function SkillQuizzes() {
   /* ────────────────────────────────────────────────────────────────────────── */
   /* ───────────────── RENDER 3: Active Exam Portal ───────────────── */
   /* ────────────────────────────────────────────────────────────────────────── */
+  // Counting for Palette Status Legend
+  const counts = useMemo(() => {
+    // ⚡ Bolt: Consolidate multiple array passes into a single pass and memoize
+    return Object.values(paletteStatuses).reduce(
+      (acc, status) => {
+        if (status === "answered") acc.answered++;
+        else if (status === "not_answered") acc.not_answered++;
+        else if (status === "marked") acc.marked++;
+        else if (status === "answered_marked") acc.answered_marked++;
+        else if (status === "not_visited") acc.not_visited++;
+        return acc;
+      },
+      { answered: 0, not_answered: 0, marked: 0, answered_marked: 0, not_visited: 0 }
+    );
+  }, [paletteStatuses]);
+
   if (activeQuiz && examMode === "active") {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
-    
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
