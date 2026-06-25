@@ -127,9 +127,33 @@ serve(async (req) => {
   }
 
   try {
-    const { event, project_id, user_id, data } = await req.json();
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // Bypass check if service role key is used (e.g. from Database Webhooks)
+    if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+      const supabaseClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const { event, project_id, user_id, data } = await req.json();
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
