@@ -31,6 +31,7 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
   const [editing, setEditing] = useState<Subcategory | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Subcategory | null>(null);
   const [form, setForm] = useState({ name: "", slug: "", description: "", display_order: 0 });
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchData = async () => {
     if (!category?.id) return;
@@ -68,6 +69,7 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
     if (!category?.id) return;
     if (!form.name.trim()) { toast({ title: "Name is required", variant: "destructive" }); return; }
     
+    setIsSaving(true);
     const slug = form.slug || generateSlug(form.name);
     const payload = { 
       name: form.name.trim(), 
@@ -78,28 +80,37 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
       updated_at: new Date().toISOString() 
     };
 
-    if (editing) {
-      const { error } = await supabase.from("admin_subcategories").update(payload).eq("id", editing.id);
-      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Subcategory updated" });
-    } else {
-      const { error } = await supabase.from("admin_subcategories").insert(payload);
-      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Subcategory created" });
-      onUpdateCounts();
+    try {
+      if (editing) {
+        const { error } = await supabase.from("admin_subcategories").update(payload).eq("id", editing.id);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+        toast({ title: "Subcategory updated" });
+      } else {
+        const { error } = await supabase.from("admin_subcategories").insert(payload);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+        toast({ title: "Subcategory created" });
+        onUpdateCounts();
+      }
+      setShowSubDialog(false);
+      fetchData();
+    } finally {
+      setIsSaving(false);
     }
-    setShowSubDialog(false); 
-    fetchData();
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const { error } = await supabase.from("admin_subcategories").delete().eq("id", deleteTarget.id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    setDeleteTarget(null); 
-    toast({ title: "Subcategory deleted" }); 
-    onUpdateCounts();
-    fetchData();
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from("admin_subcategories").delete().eq("id", deleteTarget.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      setDeleteTarget(null);
+      toast({ title: "Subcategory deleted" });
+      onUpdateCounts();
+      fetchData();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleToggle = async (sub: Subcategory) => {
@@ -147,11 +158,11 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
                       <TableCell className="font-semibold text-sm">{sub.name}</TableCell>
                       <TableCell className="text-xs text-muted-foreground font-mono">{sub.slug}</TableCell>
                       <TableCell className="text-sm">{sub.display_order}</TableCell>
-                      <TableCell><Switch checked={sub.is_enabled} onCheckedChange={() => handleToggle(sub)} className="scale-75" /></TableCell>
+                      <TableCell><Switch checked={sub.is_enabled} onCheckedChange={() => handleToggle(sub)} aria-label={`Toggle ${sub.name}`} className="scale-75" /></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(sub)}><Pencil className="w-3 h-3" /></Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(sub)}><Trash2 className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(sub)} aria-label="Edit subcategory"><Pencil className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(sub)} aria-label="Delete subcategory"><Trash2 className="w-3 h-3" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -189,8 +200,11 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSubDialog(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editing ? "Update" : "Create"}</Button>
+            <Button variant="outline" onClick={() => setShowSubDialog(false)} disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editing ? "Update" : "Create"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -201,8 +215,11 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
           <DialogHeader><DialogTitle>Delete Subcategory</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Are you sure you want to delete <strong>{deleteTarget?.name}</strong>?</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
