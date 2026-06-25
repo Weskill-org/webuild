@@ -919,13 +919,24 @@ export default function SkillQuizzes() {
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
     // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    // Optimized: Combine multiple filters into a single reduce pass
+    const counts = useMemo(() => {
+      return Object.values(paletteStatuses).reduce(
+        (acc, status) => {
+          if (acc[status as keyof typeof acc] !== undefined) {
+            acc[status as keyof typeof acc]++;
+          }
+          return acc;
+        },
+        {
+          answered: 0,
+          not_answered: 0,
+          marked: 0,
+          answered_marked: 0,
+          not_visited: 0,
+        }
+      );
+    }, [paletteStatuses]);
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
