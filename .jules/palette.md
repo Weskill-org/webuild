@@ -1,0 +1,3 @@
+## 2026-06-26 - Custom Rating Component Accessibility
+**Learning:** Custom interactive components like star ratings (often implemented with an array of buttons) lack default semantics and fail keyboard accessibility out-of-the-box. They require explicit ARIA roles (`radiogroup` and `radio`) and states (`aria-checked`), along with `focus-visible` utility classes for visual focus indication.
+**Action:** When implementing or reviewing custom selection components, explicitly verify they have the appropriate `role`, ARIA state attributes, an accessible `aria-label`, and visible focus styles to ensure parity with native HTML elements.
