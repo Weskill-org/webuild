@@ -81,7 +81,8 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin" && user.id !== campus_id) {
+    // Verify user is either an admin, or they are explicitly a campus account matching the payload's campus_id
+    if (profile?.role !== "admin" && (profile?.role !== "campus" || user.id !== campus_id)) {
        return new Response(
           JSON.stringify({ error: "Forbidden: You do not have access to this campus" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
