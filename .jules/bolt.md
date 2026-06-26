@@ -21,3 +21,7 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+
+## 2024-05-24 - Unnecessary generation of slugs for static data
+**Learning:** In the blog feature, the slug is generated repeatedly on the fly during render and matching, which involves expensive string operations across a large array of static JSON data. We can precalculate it.
+**Action:** Move expensive slug calculation for blog posts out of the render cycle or component mount and precompute it statically where applicable, or memorize it if needed, to avoid O(N) regex calculations per render or mount.
