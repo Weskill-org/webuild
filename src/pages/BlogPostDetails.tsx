@@ -24,16 +24,19 @@ import {
 import allPostsData from "@/blogPosts.json";
 import { generateSlug } from "@/utils/slugify";
 
+// Precompute slugs for O(1) lookup
+const postsBySlug = new Map(
+  allPostsData.map((post) => [generateSlug(post.title), post])
+);
+
 const BlogPostDetails = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
 
-  // Find the post matching the slug
-  const post = allPostsData.find(
-    (p) => generateSlug(p.title) === slug
-  );
+  // Find the post matching the slug in O(1) time
+  const post = slug ? postsBySlug.get(slug) : undefined;
 
   // Update SEO Metadata dynamically
   useEffect(() => {
