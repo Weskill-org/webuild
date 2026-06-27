@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,10 +107,20 @@ const ReferEarn = () => {
     }
   };
 
-  const completedReferrals = referrals.filter((r) => r.status === "completed").length;
-  const totalEarned = referrals
-    .filter((r) => r.status === "completed" && r.referrer_credited)
-    .reduce((sum, r) => sum + (r.referrer_reward ?? 0), 0);
+  const { completedReferrals, totalEarned } = useMemo(() => {
+    return referrals.reduce(
+      (acc, r) => {
+        if (r.status === "completed") {
+          acc.completedReferrals++;
+          if (r.referrer_credited) {
+            acc.totalEarned += r.referrer_reward ?? 0;
+          }
+        }
+        return acc;
+      },
+      { completedReferrals: 0, totalEarned: 0 }
+    );
+  }, [referrals]);
 
   return (
     <DashboardLayout>
