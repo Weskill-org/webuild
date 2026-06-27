@@ -1,0 +1,3 @@
+## 2024-06-27 - Dynamic ARIA Labels for Theme Toggle
+**Learning:** Using a static "Toggle theme" label does not convey to screen reader users what the current state is or what the button will do. Adding a dynamic `aria-label` (and `title` for tooltip on hover) that explicitly states "Switch to dark theme" or "Switch to light theme" significantly improves both accessibility and standard UX.
+**Action:** When implementing toggles, especially icon-only buttons like theme toggles, ensure the label text dynamically reflects the *action* that will occur based on the current state, rather than just stating what the button is.
