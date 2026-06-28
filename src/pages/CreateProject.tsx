@@ -684,7 +684,7 @@ const CreateProject = () => {
                       onChange={(e) => updateMilestone(idx, "due_date", e.target.value)}
                       className="w-36"
                     />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMilestone(idx)}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMilestone(idx)} aria-label="Remove milestone">
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
