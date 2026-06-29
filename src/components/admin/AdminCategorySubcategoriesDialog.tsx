@@ -150,8 +150,8 @@ export function AdminCategorySubcategoriesDialog({ category, open, onOpenChange,
                       <TableCell><Switch checked={sub.is_enabled} onCheckedChange={() => handleToggle(sub)} className="scale-75" /></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(sub)}><Pencil className="w-3 h-3" /></Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(sub)}><Trash2 className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(sub)} aria-label="Edit subcategory"><Pencil className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteTarget(sub)} aria-label="Delete subcategory"><Trash2 className="w-3 h-3" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
