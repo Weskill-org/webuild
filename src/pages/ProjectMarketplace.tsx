@@ -229,25 +229,25 @@ const ProjectMarketplace = () => {
                   {projectType !== "all" && (
                     <Badge variant="secondary" className={`text-xs gap-1 ${getCategoryColor(projectType)}`}>
                       {projectType}
-                      <button onClick={() => { setProjectType("all"); setSubCategory("all"); }}><X className="w-2.5 h-2.5" /></button>
+                      <button aria-label="Clear project type filter" className="hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm" onClick={() => { setProjectType("all"); setSubCategory("all"); }}><X className="w-2.5 h-2.5" /></button>
                     </Badge>
                   )}
                   {subCategory !== "all" && (
                     <Badge variant="secondary" className="text-xs gap-1 border-primary/20 bg-primary/5">
                       {subCategory}
-                      <button onClick={() => setSubCategory("all")}><X className="w-2.5 h-2.5" /></button>
+                      <button aria-label="Clear sub-category filter" className="hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm" onClick={() => setSubCategory("all")}><X className="w-2.5 h-2.5" /></button>
                     </Badge>
                   )}
                   {duration !== "all" && (
                     <Badge variant="secondary" className="text-xs gap-1">
                       {duration}
-                      <button onClick={() => setDuration("all")}><X className="w-2.5 h-2.5" /></button>
+                      <button aria-label="Clear duration filter" className="hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm" onClick={() => setDuration("all")}><X className="w-2.5 h-2.5" /></button>
                     </Badge>
                   )}
                   {skillFilter && (
                     <Badge variant="secondary" className="text-xs gap-1">
                       Skills: {skillFilter}
-                      <button onClick={() => setSkillFilter("")}><X className="w-2.5 h-2.5" /></button>
+                      <button aria-label="Clear skills filter" className="hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm" onClick={() => setSkillFilter("")}><X className="w-2.5 h-2.5" /></button>
                     </Badge>
                   )}
                 </div>

@@ -1,0 +1,3 @@
+## 2026-06-30 - Interactive elements inside Badges require explicit focus states
+**Learning:** When using custom small buttons (like clear/delete 'X' icons) inside non-interactive containers like `Badge`, standard component focus states are often lost. Keyboard users are unable to see when they've tabbed onto the clear filter button, and screen readers just announce 'button' if an aria-label isn't provided.
+**Action:** Always add `aria-label` and explicit `focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm` to custom icon-only buttons placed inside badges or pills.
