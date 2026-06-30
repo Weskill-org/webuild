@@ -130,10 +130,45 @@ serve(async (req) => {
     const { event, project_id, user_id, data } = await req.json();
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
+    // Authentication Check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const isServiceRole = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+    let authUser = null;
+
+    if (!isServiceRole) {
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      authUser = user;
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Authorization Check for specific events
+    if (event === "message" && !isServiceRole && authUser?.id !== user_id) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: You can only send messages as yourself" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Build notification based on event type
     let notification: { title: string; body: string; recipients: string[] } | null = null;
@@ -306,7 +341,7 @@ serve(async (req) => {
     // ─── 2. Send FCM push notifications ─────────────────────────────────────
     let fcmSentCount = 0;
     let fcmFailCount = 0;
-    let staleTokens: string[] = [];
+    const staleTokens: string[] = [];
 
     if (FIREBASE_SA_JSON) {
       try {
