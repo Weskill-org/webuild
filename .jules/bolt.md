@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2026-07-01 - Conditional Hooks During Refactoring
+**Learning:** Adding `useMemo` inside an existing component's conditional render block (e.g., `if (examMode === 'active') { ... }`) violates React Hook Rules, causing `eslint react-hooks/rules-of-hooks` errors and failing CI.
+**Action:** When refactoring rendering logic embedded within a conditional block or after an early return, use inline JavaScript optimizations (like `.reduce()`) directly on local variables instead of trying to hoist hooks, unless you are extracting the entire block into a separate child component.
