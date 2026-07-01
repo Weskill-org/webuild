@@ -915,17 +915,27 @@ export default function SkillQuizzes() {
   /* ───────────────── RENDER 3: Active Exam Portal ───────────────── */
   /* ────────────────────────────────────────────────────────────────────────── */
   if (activeQuiz && examMode === "active") {
+    // Counting for Palette Status Legend
+    const paletteCounts = Object.values(paletteStatuses).reduce(
+      (acc, status) => {
+        if (status in acc) {
+          acc[status as keyof typeof acc]++;
+        }
+        return acc;
+      },
+      { answered: 0, not_answered: 0, marked: 0, answered_marked: 0, not_visited: 0 }
+    );
+
+    // Grouping questions for the Palette Grid
+    const questionsBySection = activeQuiz.questions.reduce((acc, q, idx) => {
+      if (!acc[q.section_id]) acc[q.section_id] = [];
+      acc[q.section_id].push({ q, idx });
+      return acc;
+    }, {} as Record<string, { q: any, idx: number }[]>);
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
     
-    // Counting for Palette Status Legend
-    const counts = {
-      answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
-      not_answered: Object.values(paletteStatuses).filter(s => s === "not_answered").length,
-      marked: Object.values(paletteStatuses).filter(s => s === "marked").length,
-      answered_marked: Object.values(paletteStatuses).filter(s => s === "answered_marked").length,
-      not_visited: Object.values(paletteStatuses).filter(s => s === "not_visited").length,
-    };
+    const counts = paletteCounts;
 
     const isLowTime = timeLeft <= 300;
     const isCriticalTime = timeLeft <= 120;
@@ -1161,7 +1171,7 @@ export default function SkillQuizzes() {
               {/* Scrollable Palette Grid */}
               <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
                 {activeQuiz.sections.map((sec) => {
-                  const secQuestions = activeQuiz.questions.map((q, idx) => ({ q, idx })).filter(item => item.q.section_id === sec.id);
+                  const secQuestions = questionsBySection[sec.id] || [];
                   if (secQuestions.length === 0) return null;
                   return (
                     <div key={sec.id} className="space-y-2 border-t pt-3 first:border-0 first:pt-0">
