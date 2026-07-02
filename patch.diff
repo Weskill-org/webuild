@@ -1,0 +1,28 @@
+--- src/pages/SkillQuizzes.tsx
++++ src/pages/SkillQuizzes.tsx
+@@ -113,6 +113,16 @@
+     });
+   }, [quizzes, searchQuery]);
+
++  // ⚡ Bolt: Precompute questions by section to avoid O(N*M) mapping/filtering during frequent re-renders (like timer updates)
++  const questionsBySection = useMemo(() => {
++    if (!activeQuiz) return {};
++    return activeQuiz.questions.reduce((acc, q, idx) => {
++      if (!acc[q.section_id]) acc[q.section_id] = [];
++      acc[q.section_id].push({ q, idx });
++      return acc;
++    }, {} as Record<string, { q: QuizQuestion; idx: number }[]>);
++  }, [activeQuiz]);
++
+   /* ───────────────── Fetching Data ───────────────── */
+   const fetchAllData = async () => {
+     if (!profile?.id) return;
+@@ -1161,7 +1171,7 @@
+               {/* Scrollable Palette Grid */}
+               <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
+                 {activeQuiz.sections.map((sec) => {
+-                  const secQuestions = activeQuiz.questions.map((q, idx) => ({ q, idx })).filter(item => item.q.section_id === sec.id);
++                  const secQuestions = questionsBySection[sec.id] || [];
+                   if (secQuestions.length === 0) return null;
+                   return (
+                     <div key={sec.id} className="space-y-2 border-t pt-3 first:border-0 first:pt-0">

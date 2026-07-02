@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Loader2, CheckCircle, XCircle, AlertCircle, Award, ShieldCheck, Trophy, 
+import {
+  Loader2, CheckCircle, XCircle, AlertCircle, Award, ShieldCheck, Trophy,
   TrendingUp, Users, Star, X, Timer, ChevronLeft, ChevronRight, Bookmark,
   Info, FileText, Check, HelpCircle, History, ArrowLeft, RefreshCw, Play,
   Search
@@ -112,16 +112,6 @@ export default function SkillQuizzes() {
     });
   }, [quizzes, searchQuery]);
 
-  // ⚡ Bolt: Precompute questions by section to avoid O(N*M) mapping/filtering during frequent re-renders (like timer updates)
-  const questionsBySection = useMemo(() => {
-    if (!activeQuiz) return {};
-    return activeQuiz.questions.reduce((acc, q, idx) => {
-      if (!acc[q.section_id]) acc[q.section_id] = [];
-      acc[q.section_id].push({ q, idx });
-      return acc;
-    }, {} as Record<string, { q: QuizQuestion; idx: number }[]>);
-  }, [activeQuiz]);
-
   /* ───────────────── Fetching Data ───────────────── */
   const fetchAllData = async () => {
     if (!profile?.id) return;
@@ -144,7 +134,7 @@ export default function SkillQuizzes() {
           question_type: "single_choice",
         };
         const sections = rawSections.length > 0 ? rawSections : [defaultSec];
-        
+
         const rawQuestions = Array.isArray(q.questions) ? (q.questions as any[]) : [];
         const processedQuestions: QuizQuestion[] = rawQuestions.map((question) => {
           const type = question.type || "single_choice";
@@ -182,8 +172,8 @@ export default function SkillQuizzes() {
       setQuizzes(processedQuizzes);
 
       const bMap: Record<string, { passed: boolean; score: number }> = {};
-      (badgeRes.data ?? []).forEach((b: any) => { 
-        bMap[b.quiz_id] = { passed: b.passed, score: b.score }; 
+      (badgeRes.data ?? []).forEach((b: any) => {
+        bMap[b.quiz_id] = { passed: b.passed, score: b.score };
       });
       setBadges(bMap);
 
@@ -221,7 +211,7 @@ export default function SkillQuizzes() {
         .select("percentage")
         .eq("quiz_id", quizId);
       if (!data || data.length === 0) return 100;
-      
+
       const lowerOrEqualCount = data.filter((a: any) => Number(a.percentage) <= percentage).length;
       const totalAttempts = data.length;
       const percentile = (lowerOrEqualCount / totalAttempts) * 100;
@@ -281,21 +271,21 @@ export default function SkillQuizzes() {
             return 0;
           }
           const nextTime = prev - 1;
-          
+
           // Toast warnings for low time
           if (nextTime === 300 && !hasWarnedLowTime) {
-            toast({ 
-              variant: "destructive", 
-              title: "Time Warning", 
-              description: "Only 5 minutes remaining! Review and save your answers." 
+            toast({
+              variant: "destructive",
+              title: "Time Warning",
+              description: "Only 5 minutes remaining! Review and save your answers."
             });
             setHasWarnedLowTime(true);
           }
           if (nextTime === 120 && !hasWarnedCriticalTime) {
-            toast({ 
-              variant: "destructive", 
-              title: "Critical Time Warning", 
-              description: "Less than 2 minutes left! Answers will auto-submit shortly." 
+            toast({
+              variant: "destructive",
+              title: "Critical Time Warning",
+              description: "Less than 2 minutes left! Answers will auto-submit shortly."
             });
             setHasWarnedCriticalTime(true);
           }
@@ -304,7 +294,7 @@ export default function SkillQuizzes() {
           if (nextTime % 10 === 0) {
             saveProgressToLocalStorage(nextTime);
           }
-          
+
           return nextTime;
         });
       }, 1000);
@@ -439,7 +429,7 @@ export default function SkillQuizzes() {
     if (!activeQuiz) return;
     setShowResumeDialog(false);
     localStorage.removeItem(`jee_exam_progress_${profile?.id}_${activeQuiz.id}`);
-    
+
     const hasTaken = badges[activeQuiz.id];
     if (hasTaken) {
       handleRetake(activeQuiz);
@@ -646,7 +636,7 @@ export default function SkillQuizzes() {
 
     // Save answer
     setAnswers((prev) => ({ ...prev, [activeQuestionIndex]: currentTemp }));
-    
+
     // Update Palette
     setPaletteStatuses((prev) => ({
       ...prev,
@@ -656,7 +646,7 @@ export default function SkillQuizzes() {
     if (activeQuestionIndex < activeQuiz.questions.length - 1) {
       const nextIndex = activeQuestionIndex + 1;
       setActiveQuestionIndex(nextIndex);
-      
+
       // Update next question's status to not_answered if it was not_visited
       if (paletteStatuses[nextIndex] === "not_visited") {
         setPaletteStatuses((prev) => ({ ...prev, [nextIndex]: "not_answered" }));
@@ -686,7 +676,7 @@ export default function SkillQuizzes() {
     if (activeQuestionIndex < activeQuiz.questions.length - 1) {
       const nextIndex = activeQuestionIndex + 1;
       setActiveQuestionIndex(nextIndex);
-      
+
       if (paletteStatuses[nextIndex] === "not_visited") {
         setPaletteStatuses((prev) => ({ ...prev, [nextIndex]: "not_answered" }));
       }
@@ -720,7 +710,7 @@ export default function SkillQuizzes() {
 
   const handlePaletteClick = (idx: number) => {
     if (!activeQuiz) return;
-    
+
     // Discard any unsaved changes to tempAnswers (restore from committed answers)
     setTempAnswers((prev) => ({
       ...prev,
@@ -870,7 +860,7 @@ export default function SkillQuizzes() {
               <FileText className="w-5 h-5 text-primary" />
               General Guidelines & Marking Schemes
             </h2>
-            
+
             <div className="text-sm text-muted-foreground space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
               <div className="whitespace-pre-line leading-relaxed">
                 {activeQuiz.instructions || "Please read the section marking schemes and instructions carefully."}
@@ -909,7 +899,7 @@ export default function SkillQuizzes() {
             </div>
           </Card>
 
-          <Button 
+          <Button
             className="w-full py-6 text-base font-semibold"
             disabled={!agreedToInstructions}
             onClick={startExamActive}
@@ -927,7 +917,7 @@ export default function SkillQuizzes() {
   if (activeQuiz && examMode === "active") {
     const currentQuestion = activeQuiz.questions[activeQuestionIndex];
     const currentSection = activeQuiz.sections.find((s) => s.id === currentQuestion.section_id) || activeQuiz.sections[0];
-    
+
     // Counting for Palette Status Legend
     const counts = {
       answered: Object.values(paletteStatuses).filter(s => s === "answered").length,
@@ -945,7 +935,7 @@ export default function SkillQuizzes() {
         <div className="grid lg:grid-cols-12 gap-6 min-h-[calc(100vh-140px)] select-none">
           {/* LEFT COLUMN: Question & Selection Panel */}
           <div className="lg:col-span-8 flex flex-col justify-between space-y-6">
-            
+
             {/* Header Section Tabs */}
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3 bg-secondary/30 p-3 rounded-lg border">
@@ -1001,8 +991,8 @@ export default function SkillQuizzes() {
                             key={oi}
                             onClick={() => setTempAnswers((prev) => ({ ...prev, [activeQuestionIndex]: oi }))}
                             className={`w-full text-left p-4 rounded-xl border text-sm transition-all duration-200 flex items-start gap-3 hover:scale-[1.01] ${
-                              isSelected 
-                                ? "border-primary bg-primary/10 ring-1 ring-primary font-semibold text-primary" 
+                              isSelected
+                                ? "border-primary bg-primary/10 ring-1 ring-primary font-semibold text-primary"
                                 : "border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
                             }`}
                           >
@@ -1023,7 +1013,7 @@ export default function SkillQuizzes() {
                       {currentQuestion.options.map((opt, oi) => {
                         const currentChoices = Array.isArray(tempAnswers[activeQuestionIndex]) ? tempAnswers[activeQuestionIndex] : [];
                         const isSelected = currentChoices.includes(oi);
-                        
+
                         const handleMultiToggle = () => {
                           let nextChoices: number[];
                           if (isSelected) {
@@ -1039,8 +1029,8 @@ export default function SkillQuizzes() {
                             key={oi}
                             onClick={handleMultiToggle}
                             className={`w-full text-left p-4 rounded-xl border text-sm transition-all duration-200 flex items-start gap-3 hover:scale-[1.01] ${
-                              isSelected 
-                                ? "border-primary bg-primary/10 ring-1 ring-primary font-semibold text-primary" 
+                              isSelected
+                                ? "border-primary bg-primary/10 ring-1 ring-primary font-semibold text-primary"
                                 : "border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
                             }`}
                           >
@@ -1100,7 +1090,7 @@ export default function SkillQuizzes() {
 
           {/* RIGHT COLUMN: Profile, Palette & Navigation */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* Candidate Card & Timer */}
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b">
@@ -1115,10 +1105,10 @@ export default function SkillQuizzes() {
                 </div>
                 {/* Timer block */}
                 <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-bold tracking-tight shadow-inner ${
-                  isCriticalTime 
-                    ? "bg-red-500/15 border-red-500 text-red-500 animate-pulse" 
-                    : isLowTime 
-                      ? "bg-amber-500/15 border-amber-500 text-amber-500" 
+                  isCriticalTime
+                    ? "bg-red-500/15 border-red-500 text-red-500 animate-pulse"
+                    : isLowTime
+                      ? "bg-amber-500/15 border-amber-500 text-amber-500"
                       : "bg-secondary text-secondary-foreground"
                 }`}>
                   <Timer className={`w-4 h-4 ${isCriticalTime ? "animate-spin text-red-500" : ""}`} />
@@ -1171,7 +1161,7 @@ export default function SkillQuizzes() {
               {/* Scrollable Palette Grid */}
               <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
                 {activeQuiz.sections.map((sec) => {
-                  const secQuestions = questionsBySection[sec.id] || [];
+                  const secQuestions = activeQuiz.questions.map((q, idx) => ({ q, idx })).filter(item => item.q.section_id === sec.id);
                   if (secQuestions.length === 0) return null;
                   return (
                     <div key={sec.id} className="space-y-2 border-t pt-3 first:border-0 first:pt-0">
@@ -1199,7 +1189,7 @@ export default function SkillQuizzes() {
               </div>
 
               <div className="pt-2 border-t">
-                <Button 
+                <Button
                   onClick={() => setShowSubmitConfirm(true)}
                   className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-5 shadow-md transition-all hover:scale-[1.01]"
                 >
@@ -1269,9 +1259,9 @@ export default function SkillQuizzes() {
     const wrongCount = activeAttempt.wrong_answers_count;
     const skippedCount = activeAttempt.unattempted_answers_count;
     const totalQCount = activeQuiz.questions.length;
-    
-    const accuracy = correctCount + wrongCount > 0 
-      ? Math.round((correctCount / (correctCount + wrongCount)) * 100) 
+
+    const accuracy = correctCount + wrongCount > 0
+      ? Math.round((correctCount / (correctCount + wrongCount)) * 100)
       : 0;
 
     const sectionsScoresData = activeAttempt.section_scores || {};
@@ -1280,7 +1270,7 @@ export default function SkillQuizzes() {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto space-y-6">
-          
+
           {/* Header Banner */}
           <div className="flex items-center justify-between border-b pb-4 flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -1307,7 +1297,7 @@ export default function SkillQuizzes() {
             {/* TAB 1: OVERVIEW */}
             <TabsContent value="overview" className="space-y-6 mt-4">
               <div className="grid md:grid-cols-3 gap-6">
-                
+
                 {/* Circular Score Circle Card */}
                 <Card className="p-6 flex flex-col items-center justify-center text-center space-y-4">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase">Percentage Score</h3>
@@ -1315,14 +1305,14 @@ export default function SkillQuizzes() {
                     {/* SVG Circular Progress bar */}
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="72" cy="72" r="60" className="stroke-secondary fill-none" strokeWidth="8" />
-                      <circle 
-                        cx="72" 
-                        cy="72" 
-                        r="60" 
-                        className={`fill-none transition-all duration-1000 ${isPassed ? "stroke-emerald-500" : "stroke-rose-500"}`} 
-                        strokeWidth="8" 
-                        strokeDasharray={2 * Math.PI * 60} 
-                        strokeDashoffset={2 * Math.PI * 60 * (1 - Math.max(0, activeAttempt.percentage) / 100)} 
+                      <circle
+                        cx="72"
+                        cy="72"
+                        r="60"
+                        className={`fill-none transition-all duration-1000 ${isPassed ? "stroke-emerald-500" : "stroke-rose-500"}`}
+                        strokeWidth="8"
+                        strokeDasharray={2 * Math.PI * 60}
+                        strokeDashoffset={2 * Math.PI * 60 * (1 - Math.max(0, activeAttempt.percentage) / 100)}
                       />
                     </svg>
                     <div className="absolute text-center">
@@ -1331,8 +1321,8 @@ export default function SkillQuizzes() {
                     </div>
                   </div>
                   <Badge className={`py-1 px-4 text-xs font-semibold border ${
-                    isPassed 
-                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                    isPassed
+                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                       : "bg-rose-500/10 text-rose-600 border-rose-500/20"
                   }`}>
                     {isPassed ? "Passed ✓" : "Failed ✗"}
@@ -1438,8 +1428,8 @@ export default function SkillQuizzes() {
                       };
                       const totalQuestions = data.totalQuestions || 0;
                       const attempted = (data.correct || 0) + (data.wrong || 0);
-                      const secAccuracy = attempted > 0 
-                        ? Math.round((data.correct / attempted) * 100) 
+                      const secAccuracy = attempted > 0
+                        ? Math.round((data.correct / attempted) * 100)
                         : 0;
 
                       return (
@@ -1465,7 +1455,7 @@ export default function SkillQuizzes() {
                 const sec = activeQuiz.sections.find((s) => s.id === q.section_id) || activeQuiz.sections[0];
                 const studentAns = attemptAnswers[idx];
                 const isSkipped = studentAns === undefined || studentAns === null || studentAns === "" || (Array.isArray(studentAns) && studentAns.length === 0);
-                
+
                 let isCorrect = false;
                 if (!isSkipped) {
                   if (q.type === "single_choice") {
@@ -1490,10 +1480,10 @@ export default function SkillQuizzes() {
                         Question {idx + 1} of {totalQCount} · {sec.name}
                       </span>
                       <Badge className={`text-[10px] font-bold border py-0.5 px-2.5 ${
-                        isSkipped 
-                          ? "bg-secondary text-secondary-foreground border-border" 
-                          : isCorrect 
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                        isSkipped
+                          ? "bg-secondary text-secondary-foreground border-border"
+                          : isCorrect
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : "bg-rose-500/10 text-rose-600 border-rose-500/20"
                       }`}>
                         {isSkipped ? "Unattempted (0)" : isCorrect ? `Correct (+${sec.positive_marks})` : `Incorrect (${sec.negative_marks})`}
@@ -1506,10 +1496,10 @@ export default function SkillQuizzes() {
                     {q.type !== "numerical" && (
                       <div className="grid md:grid-cols-2 gap-2 text-xs">
                         {q.options.map((opt, oi) => {
-                          const isCorrectOpt = q.type === "multiple_choice" 
+                          const isCorrectOpt = q.type === "multiple_choice"
                             ? (Array.isArray(q.correct) && (q.correct as number[]).includes(oi))
                             : Number(q.correct) === oi;
-                            
+
                           const isSelectedOpt = q.type === "multiple_choice"
                             ? (Array.isArray(studentAns) && (studentAns as number[]).includes(oi))
                             : Number(studentAns) === oi;
@@ -1541,10 +1531,10 @@ export default function SkillQuizzes() {
                           <p className="text-sm font-extrabold mt-0.5">{q.correct}</p>
                         </div>
                         <div className={`p-3 border rounded-lg ${
-                          isSkipped 
-                            ? "bg-secondary/40 border-border" 
-                            : isCorrect 
-                              ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400" 
+                          isSkipped
+                            ? "bg-secondary/40 border-border"
+                            : isCorrect
+                              ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                               : "bg-rose-500/5 border-rose-500/20 text-rose-600 dark:text-rose-400"
                         }`}>
                           <p className="font-bold">Your Response:</p>
@@ -1580,7 +1570,7 @@ export default function SkillQuizzes() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        
+
         {/* Dashboard Title & Meta */}
         <div className="flex items-center gap-3 pb-4 border-b">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -1664,7 +1654,7 @@ export default function SkillQuizzes() {
             {filteredQuizzes.map((q) => {
               const badge = badges[q.id];
               const tier = badge ? getBadgeTier(badge.score) : null;
-              
+
               // Find attempts count for this specific quiz
               const attemptsCount = userAttempts.filter(a => a.quiz_id === q.id).length;
 
@@ -1681,7 +1671,7 @@ export default function SkillQuizzes() {
                     </div>
                     <Badge variant="secondary" className="text-[10px] font-bold tracking-wide uppercase px-2">{q.skill_name}</Badge>
                     {q.description && <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{q.description}</p>}
-                    
+
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-muted-foreground pt-1.5">
                       <div className="flex items-center gap-1">
                         <FileText className="w-3.5 h-3.5 text-primary/70" />
@@ -1706,7 +1696,7 @@ export default function SkillQuizzes() {
                   <div className="pt-3 border-t space-y-2">
                     {attemptsCount > 0 && (
                       <div className="flex items-center justify-between text-xs pb-1">
-                        <button 
+                        <button
                           onClick={() => openAttemptsHistory(q)}
                           className="text-primary hover:underline font-semibold flex items-center gap-1 text-[11px]"
                         >
@@ -1745,7 +1735,7 @@ export default function SkillQuizzes() {
           <div className="py-4 text-center space-y-3">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto animate-bounce" />
             <p className="text-sm leading-relaxed text-muted-foreground">
-              You have an ongoing attempt saved in progress for <strong className="text-foreground">{activeQuiz?.title}</strong>. 
+              You have an ongoing attempt saved in progress for <strong className="text-foreground">{activeQuiz?.title}</strong>.
               Would you like to restore your progress and resume testing, or start a completely fresh attempt?
             </p>
           </div>
@@ -1796,17 +1786,17 @@ export default function SkillQuizzes() {
                             <TableCell className="text-center text-xs font-bold">{attempt.percentage}%</TableCell>
                             <TableCell className="text-center">
                               <Badge className={`text-[9px] font-bold border py-0.5 ${
-                                attempt.passed 
-                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                                attempt.passed
+                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                                   : "bg-rose-500/10 text-rose-600 border-rose-500/20"
                               }`}>
                                 {attempt.passed ? "Passed" : "Failed"}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right pr-4">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
+                              <Button
+                                size="sm"
+                                variant="ghost"
                                 className="h-7 text-xs text-primary hover:text-primary/80 font-bold"
                                 onClick={() => {
                                   setActiveQuiz(historyQuiz);
