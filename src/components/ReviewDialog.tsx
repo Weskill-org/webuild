@@ -81,25 +81,30 @@ const ReviewDialog = ({
         <div className="space-y-5 py-2">
           <div className="space-y-2">
             <Label>Rating</Label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  onClick={() => setRating(star)}
-                  className="p-0.5 transition-transform hover:scale-110"
-                >
-                  <Star
-                    className={`w-8 h-8 transition-colors ${
-                      star <= displayRating
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-muted-foreground/30"
-                    }`}
-                  />
-                </button>
-              ))}
+            <div className="flex gap-1" role="group" aria-label="Rating">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const labels = ["Poor", "Fair", "Good", "Very Good", "Excellent"];
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    onClick={() => setRating(star)}
+                    className="p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                    aria-label={`${star} star${star > 1 ? "s" : ""} - ${labels[star - 1]}`}
+                    aria-pressed={star <= rating}
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        star <= displayRating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted-foreground/30"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
             </div>
             {rating > 0 && (
               <p className="text-sm text-muted-foreground">
