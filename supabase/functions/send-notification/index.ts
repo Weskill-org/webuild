@@ -133,6 +133,44 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FIREBASE_SA_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const token = authHeader.replace("Bearer ", "");
+
+    let isServiceRole = false;
+    let authUserId = null;
+
+    if (token === SUPABASE_SERVICE_ROLE_KEY) {
+      isServiceRole = true;
+    } else {
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabaseClient = createClient(SUPABASE_URL, supabaseAnonKey);
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      authUserId = user.id;
+    }
+
+    // IDOR Check: Ensure users can't spoof message senders
+    if (event === "message" && !isServiceRole) {
+      if (authUserId !== user_id) {
+         return new Response(
+            JSON.stringify({ error: "Forbidden: Cannot send messages as another user" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+         );
+      }
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Build notification based on event type
