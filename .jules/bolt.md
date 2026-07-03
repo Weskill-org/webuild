@@ -21,3 +21,9 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2026-07-03 - [Extracting O(N*M) Filtering from Renders]
+**Learning:** In complex views like `SkillQuizzes`, iterating through a massive array inside a `.map()` to filter related subsets (e.g., finding questions for a specific section) creates an O(Sections * Questions) rendering overhead on every keystroke or timer tick, destroying performance.
+**Action:** Always pre-calculate grouped subsets (like a `secQuestionsMap`) using `useMemo` and `reduce` outside the render loop, reducing rendering complexity to O(1) lookups.
+## 2026-07-03 - [Consolidating Unmemoized Passes in Renders]
+**Learning:** Running multiple separate `.filter()` array passes to derive simple stats (like counting palette statuses) during a render cycle causes unnecessary O(n) passes on every tick. Consolidating them into a single `.reduce` loop prevents redundant O(passes * n) array traversals.
+**Action:** Combine multiple array passes for computing stats into a single `reduce()` loop. If it depends on high-frequency state (like `paletteStatuses`), this O(N) consolidation is critical for performance.
