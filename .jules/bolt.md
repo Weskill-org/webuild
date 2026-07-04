@@ -21,3 +21,6 @@
 ## 2026-06-06 - [Consolidating Unmemoized Passes in Arrays]
 **Learning:** In React components like AdminDashboard that render large data lists (e.g., `referrals`), computing derived statistics with multiple separate, unmemoized `.filter()` and `.reduce()` passes causes unnecessary O(n * passes) iterations on every single re-render, creating noticeable performance bottlenecks as lists grow.
 **Action:** Combine multiple array passes for computing stats into a single `reduce()` loop and wrap the calculation in a `useMemo` hook to ensure O(n) performance and to avoid re-calculating stats on unrelated state updates.
+## 2026-07-04 - [Consolidating Loop Passes in Timer Components]
+**Learning:** In components driven by high-frequency updates like a countdown timer (`timeLeft`), deriving state counts via multiple separate `Object.values(obj).filter(...)` passes creates significant, repetitive overhead, re-evaluating five O(n) loops and allocating arrays every single second.
+**Action:** Always consolidate multiple array derivations into a single `.reduce()` loop. If possible, wrap it in a `useMemo` or place it locally if variables depend on rapidly changing state, ensuring it runs efficiently in one O(n) pass instead of O(x*n).
